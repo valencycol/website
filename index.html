@@ -1340,8 +1340,12 @@ function parseGroundNews(html) {
   const seen = new Set();
   const uniq = [];
   for (const s of stories) {
-    if (seen.has(s.link)) continue;
-    seen.add(s.link);
+    /* dedup by headline, not link: the same story appears in several
+       flight segments and its slug/UUID sometimes resolves differently
+       between them, so keying on the link lets duplicates through */
+    const key = slugify(s.title).slice(0, 80);
+    if (seen.has(key)) continue;
+    seen.add(key);
     uniq.push(s);
   }
   uniq.sort((a, b) => b.date - a.date);

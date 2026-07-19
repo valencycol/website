@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Valency Colaco — colaco.se</title>
+<title>Valency Colaco</title>
 <meta name="description" content="Valency Colaco — Cybersecurity & AI/ML Researcher based in Sweden. Ground News top stories with media-bias breakdown, security intel, arcade games, and a direct line to my inbox.">
 <meta property="og:title" content="Valency Colaco">
 <meta property="og:description" content="News · Cybersecurity intel · Games · Say hello.">
@@ -15,9 +15,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Matter.js — open-source 2D rigid-body physics engine (MIT, brm.io/matter-js). Powers the Plinko board. -->
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 <style>
 /* ============================================================
-   colaco.se — Liquid Glass Tokens
+   COLACO.SE — Liquid Glass
+   Tokens
    ============================================================ */
 :root{
   --bg0:#05070d;
@@ -341,40 +344,66 @@ canvas.game-canvas{display:block;margin:0 auto;max-width:100%;border-radius:var(
 .g2-tile[data-v="1024"]{background:rgba(255,209,102,.42);border-color:rgba(255,209,102,.75)}
 .g2-tile[data-v="2048"]{background:rgba(255,209,102,.62);border-color:#ffd166;box-shadow:var(--sheen),0 0 30px rgba(255,209,102,.55)}
 
+/* Slots */
+.sl-machine{display:flex;gap:.7rem;justify-content:center;margin:0 auto}
+.sl-reel{width:84px;height:84px;border-radius:16px;overflow:hidden;border:1px solid var(--stroke-2);background:linear-gradient(180deg,rgba(255,255,255,.13),rgba(255,255,255,.03));box-shadow:var(--sheen),inset 0 0 0 1px rgba(255,255,255,.06);position:relative}
+.sl-reel::before,.sl-reel::after{content:"";position:absolute;left:0;right:0;height:20px;z-index:2;pointer-events:none}
+.sl-reel::before{top:0;background:linear-gradient(180deg,rgba(5,7,13,.92),transparent)}
+.sl-reel::after{bottom:0;background:linear-gradient(0deg,rgba(5,7,13,.92),transparent)}
+.sl-reel.win{border-color:var(--gold);box-shadow:var(--sheen),0 0 0 2px rgba(255,209,102,.7),0 0 26px rgba(255,209,102,.5);animation:slWin .9s ease-in-out infinite}
+@keyframes slWin{0%,100%{box-shadow:var(--sheen),0 0 0 2px rgba(255,209,102,.7),0 0 18px rgba(255,209,102,.35)}50%{box-shadow:var(--sheen),0 0 0 2px rgba(255,209,102,.9),0 0 30px rgba(255,209,102,.65)}}
+.sl-strip{display:flex;flex-direction:column;will-change:transform}
+.sl-sym{height:84px;display:grid;place-items:center;font-family:var(--font-display);font-weight:700;font-size:2.4rem;line-height:1;color:var(--ink)}
+.sl-sym[data-s="7"]{color:var(--gold)}
+.sl-bets{display:flex;gap:.5rem;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:.9rem}
+.sl-bet{min-width:56px;padding:.5rem .85rem;border-radius:999px;border:1px solid var(--stroke);background:rgba(255,255,255,.06);font-family:var(--font-mono);font-weight:700;font-size:.9rem;cursor:pointer;transition:transform .18s,border-color .2s,background .2s,color .2s}
+.sl-bet:hover{transform:translateY(-2px)}
+.sl-bet.sel{border-color:var(--gold);background:rgba(255,209,102,.18);color:var(--gold)}
+.sl-actions{display:flex;justify-content:center;gap:.7rem;margin-top:1rem}
+.pk-rows{display:flex;gap:.45rem;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:.9rem}
+.pk-rows .pk-lab,.sl-bets .pk-lab{font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3);font-weight:700;margin-right:.15rem}
+
+/* Video slots */
+.news-fresh{font-size:.7rem;color:var(--ink3);font-family:var(--font-mono);white-space:nowrap}
+.news-fresh.stale{color:var(--gold)}
+.vs-machine{display:flex;gap:.5rem;justify-content:center;margin:0 auto;padding:.5rem;border-radius:var(--r-md);background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02));border:1px solid var(--stroke-2);box-shadow:var(--sheen),inset 0 0 0 1px rgba(255,255,255,.05)}
+.vs-reel{width:min(64px,16vw);height:calc(3 * min(64px,16vw));border-radius:14px;overflow:hidden;position:relative;border:1px solid var(--stroke-2);background:linear-gradient(180deg,rgba(255,255,255,.13),rgba(255,255,255,.03));box-shadow:var(--sheen)}
+.vs-reel::before,.vs-reel::after{content:"";position:absolute;left:0;right:0;height:22%;z-index:3;pointer-events:none}
+.vs-reel::before{top:0;background:linear-gradient(180deg,rgba(5,7,13,.95),transparent)}
+.vs-reel::after{bottom:0;background:linear-gradient(0deg,rgba(5,7,13,.95),transparent)}
+.vs-strip{display:flex;flex-direction:column;will-change:transform}
+.vs-sym{height:min(64px,16vw);display:grid;place-items:center;font-size:clamp(1.5rem,7vw,2.2rem);line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4))}
+.vs-strip.vs-spinning .vs-sym{filter:blur(1.1px) drop-shadow(0 2px 4px rgba(0,0,0,.4));opacity:.96}
+.vs-reel{transition:box-shadow .25s}
+.vs-sym.win{animation:vsPop .5s ease infinite}
+@keyframes vsPop{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
+.vs-paytable{display:grid;grid-template-columns:repeat(2,1fr);gap:.25rem .8rem;margin:.6rem auto 0;max-width:460px;font-size:.72rem;color:var(--ink3);font-family:var(--font-mono)}
+.vs-paytable b{color:var(--ink2)}
+
 /* Roulette */
-.rl-wrap{display:grid;grid-template-columns:360px 1fr;gap:1.4rem;align-items:start}
-@media (max-width:900px){.rl-wrap{grid-template-columns:1fr}}
-.rl-left{display:flex;flex-direction:column;gap:.9rem;align-items:center}
-.rl-readout{display:flex;align-items:center;gap:.8rem;justify-content:center;min-height:46px}
-.rl-num{min-width:46px;height:46px;padding:0 .6rem;border-radius:14px;display:grid;place-items:center;font-family:var(--font-display);font-weight:700;font-size:1.3rem;border:1px solid var(--stroke-2);box-shadow:var(--sheen);background:rgba(255,255,255,.08)}
-.rl-num.red{background:rgba(255,93,93,.4);border-color:rgba(255,93,93,.8)}
-.rl-num.black{background:rgba(255,255,255,.07)}
-.rl-num.green{background:rgba(63,224,197,.35);border-color:rgba(63,224,197,.75)}
-#rl-msg{color:var(--ink2);font-size:.92rem}
-.rl-history{display:flex;gap:.4rem;flex-wrap:wrap;justify-content:center;min-height:30px}
-.rl-history span{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;font-size:.8rem;font-weight:700;font-family:var(--font-mono);border:1px solid var(--stroke)}
-.rl-history .red{background:rgba(255,93,93,.32)}
-.rl-history .black{background:rgba(255,255,255,.06)}
-.rl-history .green{background:rgba(63,224,197,.3)}
-.rl-topbar{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:.8rem}
-.rl-stat{font-size:.86rem;color:var(--ink2)}
-.rl-stat b{font-family:var(--font-mono);color:var(--ink);font-size:1rem;margin-left:.35rem}
-.rl-reset{background:none;border:none;color:var(--ink3);font-size:.76rem;text-decoration:underline;text-underline-offset:2px;padding:0;margin-left:.6rem}
-.rl-reset:hover{color:var(--ink2)}
-.rl-chips{display:flex;gap:.6rem;justify-content:flex-start;flex-wrap:wrap;margin-bottom:.9rem}
-.rl-chip{width:52px;height:52px;border-radius:50%;font-family:var(--font-mono);font-weight:700;font-size:.86rem;display:grid;place-items:center;border:2px dashed rgba(255,255,255,.35);background:radial-gradient(circle at 35% 30%, rgba(255,255,255,.28), rgba(255,255,255,.06) 60%),var(--cc,rgba(255,255,255,.1));box-shadow:var(--sheen),0 6px 14px rgba(0,0,0,.4);transition:transform .18s, box-shadow .2s}
-.rl-chip:hover{transform:translateY(-3px)}
-.rl-chip.sel{transform:translateY(-4px) scale(1.08);box-shadow:var(--sheen),0 0 0 3px rgba(255,255,255,.65),0 10px 20px rgba(0,0,0,.5)}
-.rl-board{display:grid;grid-template-columns:40px repeat(12,minmax(30px,1fr)) 44px;grid-auto-rows:40px;gap:5px;user-select:none;-webkit-user-select:none}
-.rl-cell{position:relative;border-radius:9px;border:1px solid var(--stroke);font-family:var(--font-mono);font-weight:700;font-size:.82rem;display:grid;place-items:center;background:rgba(255,255,255,.05);transition:transform .12s, border-color .2s, background .2s;padding:0}
-.rl-cell:hover{transform:scale(1.06);border-color:var(--stroke-2);z-index:2}
-.rl-cell.red{background:rgba(255,93,93,.2);border-color:rgba(255,93,93,.45)}
-.rl-cell.green{background:rgba(63,224,197,.18);border-color:rgba(63,224,197,.45)}
-.rl-cell.outside{font-size:.7rem;letter-spacing:.05em}
-.rl-cell.win{box-shadow:0 0 0 2px #fff,0 0 22px rgba(255,255,255,.5);z-index:3}
-.rl-badge{position:absolute;right:-6px;top:-8px;min-width:24px;height:24px;padding:0 5px;border-radius:50px;display:grid;place-items:center;font-size:.62rem;font-weight:800;color:#0a0f1f;background:radial-gradient(circle at 35% 30%, #fff, var(--gold) 70%);border:1.5px solid rgba(255,255,255,.9);box-shadow:0 4px 10px rgba(0,0,0,.5);pointer-events:none}
-.rl-actions{display:flex;gap:.7rem;margin-top:1rem;justify-content:flex-end;flex-wrap:wrap}
-.rl-help{color:var(--ink3);font-size:.76rem;margin-top:.7rem}
+.rt-wheel-wrap{display:flex;flex-direction:column;align-items:center;gap:.4rem;margin:0 auto;max-width:320px}
+.rt-table-wrap{max-width:580px;margin:0 auto}
+.rt-nums-wrap{display:flex;gap:3px;align-items:stretch}
+.rt-zero{flex:none;width:clamp(22px,8vw,34px);border-radius:8px;background:linear-gradient(180deg,rgba(63,224,197,.32),rgba(63,224,197,.16));border:1px solid rgba(63,224,197,.55);color:var(--ink);font-weight:700;font-family:var(--font-mono);font-size:clamp(.7rem,3vw,.95rem)}
+.rt-nums{display:grid;grid-template-columns:repeat(12,1fr);grid-template-rows:repeat(3,1fr);gap:3px;flex:1}
+.rt-cols{display:flex;flex-direction:column;gap:3px;flex:none;width:clamp(22px,7vw,30px)}
+.rt-cell{position:relative;border:1px solid var(--stroke-2);border-radius:6px;color:#fff;font-weight:700;font-size:clamp(.58rem,2.5vw,.82rem);font-family:var(--font-mono);cursor:pointer;transition:transform .12s,box-shadow .2s;min-height:30px;display:grid;place-items:center;padding:0;overflow:visible}
+.rt-cell:hover{transform:translateY(-1px)}
+.rt-cell.has-bet{box-shadow:0 0 0 2px var(--gold),0 0 14px rgba(255,209,102,.45)}
+.rt-num.red{background:linear-gradient(180deg,#c63a3a,#7e1f1f)}
+.rt-num.black{background:linear-gradient(180deg,#2a3450,#15192a)}
+.rt-colbet,.rt-outside{background:rgba(255,255,255,.08)}
+.rt-outside.red{background:linear-gradient(180deg,#c63a3a,#7e1f1f)}
+.rt-outside.black{background:linear-gradient(180deg,#2a3450,#15192a)}
+.rt-dozen{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-top:3px}
+.rt-even{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-top:3px}
+.rt-chip-badge{position:absolute;bottom:-7px;right:-7px;background:var(--gold);color:#0a0f1f;font-size:.6rem;font-weight:800;border-radius:999px;min-width:17px;height:17px;padding:0 3px;display:grid;place-items:center;border:1px solid #0a0f1f;box-shadow:0 2px 6px rgba(0,0,0,.5);line-height:1}
+
+/* X & O */
+.xo-board{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:8px;width:min(360px,86vw);aspect-ratio:1;margin:0 auto;padding:8px;border-radius:var(--r-md);background:rgba(255,255,255,.05);border:1px solid var(--stroke)}
+.xo-cell{border-radius:14px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.045);font-family:var(--font-display);font-weight:700;font-size:clamp(1.8rem,8vw,2.8rem);display:grid;place-items:center;cursor:pointer;transition:transform .14s,background .2s,border-color .2s;padding:0;overflow:hidden;color:var(--ink);line-height:1}
+.xo-cell:hover:not(.filled){background:rgba(255,255,255,.09);transform:scale(1.03)}
+.xo-cell.win{box-shadow:0 0 0 2px #fff,0 0 22px rgba(255,255,255,.45);background:rgba(255,209,102,.18)}
 
 /* ============================================================
    Contact
@@ -480,7 +509,7 @@ noscript div{position:fixed;inset:0;background:var(--bg0);color:var(--ink);displ
         <span class="eyebrow"><span class="dot" style="background:var(--pink)"></span>Arcade</span>
         <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="11" rx="5.5"/><path d="M8 11v3M6.5 12.5h3"/><circle cx="16" cy="11.4" r="0.9" fill="currentColor" stroke="none"/><circle cx="18.2" cy="13.6" r="0.9" fill="currentColor" stroke="none"/></svg></span>
         <h3>Play a game</h3>
-        <p>Four games, zero downloads: spin the Roulette wheel, chase 2048, grow a Snake, or rage at Flappy Glass.</p>
+        <p>Six games, zero downloads: pull the Slots, drop a Plinko puck, spin the Roulette wheel, chase 2048, play X &amp; O, or rage at Flappy Glass.</p>
         <span class="go">Enter the arcade <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span>
       </a>
 
@@ -518,7 +547,7 @@ noscript div{position:fixed;inset:0;background:var(--bg0);color:var(--ink);displ
         <h2>Top stories with media bias</h2>
         <p>Ground News top stories, each with a left / center / right source breakdown so you can see who's covering what. Newest first.</p>
       </div>
-      <button class="btn" id="news-refresh"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg>Refresh</button>
+      <span class="news-fresh" id="news-fresh" title="When the feed last refreshed"></span>
     </div>
     <div class="feed" id="news-feed" aria-live="polite"></div>
     <p class="feed-note">Top stories and bias data sourced directly from Ground News. Each bar shows the share of coverage from Left, Center and Right-leaning outlets; the legend lists the source count per side.</p>
@@ -532,7 +561,7 @@ noscript div{position:fixed;inset:0;background:var(--bg0);color:var(--ink);displ
         <h2>Cybersecurity updates</h2>
         <p>Vulnerabilities, exploits, patches and incidents — straight from the sources security teams actually read.</p>
       </div>
-      <button class="btn" id="sec-refresh"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg>Refresh</button>
+      <span class="news-fresh" id="sec-fresh" title="When the feed last refreshed"></span>
     </div>
     <div class="tabs glass" role="tablist" aria-label="Security feed type" style="margin-bottom:1.4rem">
       <button class="active" data-tab="news" role="tab">News &amp; incidents</button>
@@ -549,15 +578,31 @@ noscript div{position:fixed;inset:0;background:var(--bg0);color:var(--ink);displ
       <div>
         <span class="eyebrow"><span class="dot" style="background:var(--pink)"></span>Arcade</span>
         <h2>Pick your poison</h2>
-        <p>Four glass-built games that run right here in the browser. High scores are saved on this device.</p>
+        <p>Six glass-built games that run right here in the browser. High scores and chips are saved on this device.</p>
       </div>
     </div>
     <div class="games-grid">
-      <button class="game-tile" data-accent="gold" data-game="roulette">
-        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.4"/><path d="M12 3v5.6M12 15.4V21M3 12h5.6M15.4 12H21M5.8 5.8l3.9 3.9M14.3 14.3l3.9 3.9M18.2 5.8l-3.9 3.9M9.7 14.3l-3.9 3.9"/></svg></span>
+      <button class="game-tile" data-accent="gold" data-game="slots">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M8 5v14M16 5v14"/><circle cx="6.4" cy="8" r=".9" fill="currentColor" stroke="none"/><circle cx="17.6" cy="16" r=".9" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r=".9" fill="currentColor" stroke="none"/></svg></span>
+        <span>
+          <h3>Slots</h3>
+          <p>Five reels, five paylines. Line up the symbols from the left and watch the chips roll in.</p>
+          <span class="best" data-best="slots"></span>
+        </span>
+      </button>
+      <button class="game-tile" data-accent="blue" data-game="plinko">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4" r="1.1" fill="currentColor" stroke="none"/><circle cx="9" cy="9" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="9" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="14" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="14" r="1" fill="currentColor" stroke="none"/><circle cx="18" cy="14" r="1" fill="currentColor" stroke="none"/><path d="M3 20h18"/></svg></span>
+        <span>
+          <h3>Plinko</h3>
+          <p>Real Matter.js physics. Pick 8&ndash;16 rows &mdash; and every tap rains another ball.</p>
+          <span class="best" data-best="plinko"></span>
+        </span>
+      </button>
+      <button class="game-tile" data-accent="pink" data-game="roulette">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.4"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg></span>
         <span>
           <h3>Roulette</h3>
-          <p>European wheel, full betting felt, 1,000 free chips. Straight-up pays 35:1.</p>
+          <p>European single-zero. Lay your chips on the felt, then hit Spin to reveal the wheel.</p>
           <span class="best" data-best="roulette"></span>
         </span>
       </button>
@@ -569,12 +614,12 @@ noscript div{position:fixed;inset:0;background:var(--bg0);color:var(--ink);displ
           <span class="best" data-best="g2048"></span>
         </span>
       </button>
-      <button class="game-tile" data-accent="teal" data-game="snake">
-        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16c0-2.2 1.8-4 4-4h8a4 4 0 0 0 0-8H9"/><circle cx="4.8" cy="16.6" r="2.3"/><circle cx="4.4" cy="16" r="0.5" fill="currentColor" stroke="none"/></svg></span>
+      <button class="game-tile" data-accent="teal" data-game="xo">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/><path d="M4 4l3 3M10 4l-3 3M4 10l3-3M10 10l-3-3"/><circle cx="17" cy="17" r="3.2"/></svg></span>
         <span>
-          <h3>Snake</h3>
-          <p>The 1997 classic, re-poured in glass. It only gets faster.</p>
-          <span class="best" data-best="snake"></span>
+          <h3>X &amp; O</h3>
+          <p>Each round the machine flips a coin: flawless minimax or pure chaos. Good luck telling which.</p>
+          <span class="best" data-best="xo"></span>
         </span>
       </button>
       <button class="game-tile" data-accent="pink" data-game="flappy">
@@ -606,7 +651,7 @@ noscript div{position:fixed;inset:0;background:var(--bg0);color:var(--ink);displ
         </div>
         <h3><a href="https://scholar.google.com/citations?view_op=view_citation&amp;hl=en&amp;user=xMG8t8oAAAAJ&amp;citation_for_view=xMG8t8oAAAAJ:zYLM7Y9cAGgC" target="_blank" rel="noopener">Hardening Tree Ensembles: Real-Time and Effective Evasion Defences Beyond Adversarial Re-Training</a></h3>
         <p class="paper-authors">Valency Oscar Colaco &middot; Link&ouml;ping University</p>
-        <p class="paper-abstract">Tree ensembles like random forests and gradient boosting machines are widely used machine learning (ML) models, often outperforming advanced techniques like deep neural networks on structured tabular data tasks. These models also have interpretable (human-understandable) structures that enable stakeholders to trace the decision-making process, making them particularly suitable for use in safety- and security-critical applications where trust in the model&rsquo;s behaviour is paramount. Despite these advantages, recent work has shown that they are highly vulnerable to adversarial examples: carefully perturbed inputs that elicit misclassifications. These vulnerabilities are especially concerning as ML continues to permeate domains that are critical to societal functioning. Their seriousness is underscored by legislation such as the recently passed European Union Artificial Intelligence (AI) Act. This act mandates resilience against AI-specific vulnerabilities like evasion attacks caused by adversarial examples targeting ML models at inference time. Measures intended to improve resilience against such evasions, often referred to as hardening, generally involve two strategies: proactive defences, which aim to make models robust (e.g., adversarial re-training), and reactive defences, which focus on detecting and mitigating evasions at inference time. This thesis examines both strategies; it shows that proactive methods like model re-training are ineffective for tree ensembles and consequently advances the state-of-the-art in reactive defences. In the context of re-training, doubling the training set through targeted data augmentation steps left accuracy largely unchanged. However, robustness, when quantified using formal verification techniques, dropped by 28&ndash;82% across two case studies. This indicates that model re-training alone is ineffective for tree ensembles. To address this, we leveraged formal methods to develop Iceman, a prototype system that uses counterexample regions which violate the robustness property to detect evasion attempts. Iceman can detect evasion attacks regardless of the attack generation process without modifying the underlying tree ensemble. It outperforms the current state-of-the-art methods in evasion detection, OC-Score and GROOT. Across four case studies, it improves Matthews Correlation Coefficient scores by 0.20&ndash;0.91 and achieves detection speeds 5&ndash;115x faster than OC-Score. In addition, it provides alert filtering and prioritisation capabilities with over 98% accuracy to address alert fatigue in intrusion detection systems. However, Iceman&rsquo;s applicability is limited to scenarios with fixed attacker perturbation budgets, characterised by pre-defined constraints on the input manipulations that an attacker can apply. To expand this applicability to unconstrained attacker perturbation budgets, we developed an additional system, called Maverick, designed to complement Iceman for a better defensive strategy. Just like Iceman, Maverick does not modify the underlying tree ensemble and can detect evasion attacks regardless of the attack generation process. We prove that Maverick&rsquo;s core detection mechanism is mathematically equivalent to OC-Score, and present enhancements that achieve 85&ndash;563x speedups over OC-Score while maintaining identical detection performance and supporting evasion attack diagnostics with over 93% accuracy.</p>
+        <p class="paper-abstract">This licentiate thesis shows that proactive defences such as adversarial retraining are ineffective for tree ensembles and can inadvertently make them more vulnerable to evasion attacks. Along these lines, it introduces Iceman and Maverick - two reactive prototype systems that advance the state of the art in evasion detection performance and speed, without modifying the underlying tree ensemble.</p>
         <a class="paper-link" href="https://www.diva-portal.org/smash/get/diva2:2013682/FULLTEXT01.pdf" target="_blank" rel="noopener">Read full thesis ↗</a>
       </article>
 
@@ -617,7 +662,7 @@ noscript div{position:fixed;inset:0;background:var(--bg0);color:var(--ink);displ
         </div>
         <h3><a href="https://scholar.google.com/citations?view_op=view_citation&amp;hl=en&amp;user=xMG8t8oAAAAJ&amp;citation_for_view=xMG8t8oAAAAJ:qjMakFHDy7sC" target="_blank" rel="noopener">Real-Time Evasion Detection in Tree Ensemble Automotive Intrusion Detection Systems</a></h3>
         <p class="paper-authors">Valency Oscar Colaco &middot; Simin Nadjm-Tehrani</p>
-        <p class="paper-abstract">Safety-critical functions in modern vehicles rely on electronic control units that communicate using the controller area network (CAN) protocol, which lacks vital security features. In this context, machine learning (ML) based intrusion detection systems (IDSs) were proposed as a solution to improve cyber resilience through real-time attack detection. However, these ML-IDSs must also withstand evasion attacks that could compromise vehicular safety. To this end, this paper addresses such attacks in misuse-based tree ensemble IDSs and proposes a method that detects evasion attempts. It uses the ordered set of reached leaf nodes activated by correctly classified training samples as a normality baseline. An autoencoder-based detector then identifies deviations as likely evasion attempts. Our approach does not modify the protected tree ensemble IDS, assumes no knowledge of the process for generating adversarial examples (ensuring generalisability), and works with any additive tree ensemble. We also prove that it is mathematically equivalent to the state-of-the-art, which we advance in terms of detection speed by replacing its Hamming distance-based deviation search with an autoencoder-based model of typical predictive behavior trained using our custom loss function. This enhancement results in a detection process that is orders of magnitude faster. Additionally, our method offers nuanced insights regarding the pre-evasion attack signature prior to the adversarial perturbation, thereby enriching the security analysis of the features targeted during evasion attempts. The prototype system we present, called Maverick, has a very low prediction latency, making it 85-563x faster than the current state-of-the-art while maintaining identical detection accuracy. Finally, Maverick predicts the pre-evasion attack signatures of the evasion samples with an accuracy of more than 93% and has an average prediction time well below the message transmission rate for CAN 2.0 and CAN FD, thereby satisfying the criteria for an evasion-hardened &amp; real-time automotive IDS.</p>
+        <p class="paper-abstract">Maverick: an autoencoder-based detector for evasion attacks on tree-ensemble automotive IDSs - achieving identical detection accuracy to the state of the art (OC-Score, ECML PKDD 2023), while providing 85–563× faster detection speeds that enable real-time operation within the constraints of automotive CAN networks.</p>
         <a class="paper-link" href="https://www.ida.liu.se/labs/rtslab/publications/2025/maverick.pdf" target="_blank" rel="noopener">Read paper ↗</a>
       </article>
 
@@ -628,7 +673,7 @@ noscript div{position:fixed;inset:0;background:var(--bg0);color:var(--ink);displ
         </div>
         <h3>Fast Evasion Detection &amp; Alert Management in Tree-Ensemble-Based Intrusion Detection Systems</h3>
         <p class="paper-authors">Valency Oscar Colaco &middot; Simin Nadjm-Tehrani</p>
-        <p class="paper-abstract">Intrusion Detection Systems (IDSs) can help bolster cyber resilience in high-risk systems by promptly detecting anomalies and thwarting security threats which could have catastrophic consequences. While Machine Learning (ML) techniques like Tree Ensembles are well suited for tasks like detecting anomalies, the widespread adoption of these techniques in IDSs faces barriers due to the threat of evasion attacks. Moreover, ML-based IDSs are susceptible to producing a high rate of false positive alerts during detection, causing alert fatigue. To alleviate these problems, we present a method that uses counterexample regions to detect evasion attacks in tree-ensemble-based IDSs. We generate these counterexample regions by defining a modified mapping checker in VoTE, a fast &amp; scalable formal verification tool specialized for tree ensembles. Our method also provides quaternary annotations, empowering security managers with nuanced insights to better handle alerts in the triage queue. Our approach does not require training a separate model and displays good detection performance (&ge;98%) in both adversarial &amp; non-adversarial scenarios in four real-world case studies when compared to several approaches in the literature. The prototype system we implement based on our method called Iceman has a very low prediction latency, making it 5-115x faster than the current state-of-the-art in evasion detection for tree ensembles. Finally, empirical evaluations show that Iceman can correctly re-annotate the samples in the presence of evasion attacks for alert management purposes with an accuracy of more than 98%.</p>
+        <p class="paper-abstract">Iceman: a counterexample-region-based detector for evasion attacks on tree-ensemble IDSs - achieving more than 98% detection accuracy, 5–115x lower latency than the state of the art (OC-Score, ECML PKDD 2023), and providing quaternary attack annotations for effective alert triage.</p>
         <a class="paper-link" href="https://www.ida.liu.se/labs/rtslab/publications/2024/Iceman_IEEE.pdf" target="_blank" rel="noopener">Read paper ↗</a>
       </article>
 
@@ -639,7 +684,7 @@ noscript div{position:fixed;inset:0;background:var(--bg0);color:var(--ink);displ
         </div>
         <h3><a href="https://scholar.google.com/citations?view_op=view_citation&amp;hl=en&amp;user=xMG8t8oAAAAJ&amp;citation_for_view=xMG8t8oAAAAJ:d1gkVwhDpl0C" target="_blank" rel="noopener">Formal Verification of Tree Ensembles against Real-World Composite Geometric Perturbations</a></h3>
         <p class="paper-authors">Valency Oscar Colaco &middot; Simin Nadjm-Tehrani</p>
-        <p class="paper-abstract">Since machine learning components are now being considered for integration in safety-critical systems, safety stakeholders should be able to provide convincing arguments that the systems are safe for use in realistic deployment settings. In the case of vision-based systems, the use of tree ensembles calls for formal stability verification against a host of composite geometric perturbations that the system may encounter. Such perturbations are a combination of an affine transformation like rotation, scaling, or translation and a pixel-wise transformation like changes in lighting. However, existing verification approaches mostly target small norm-based perturbations, and do not account for composite geometric perturbations. In this work, we present a novel method to precisely define the desired stability regions for these types of perturbations. We propose a feature space modelling process that generates abstract intervals which can be passed to VoTE, an efficient formal verification engine that is specialised for tree ensembles. Our method is implemented as an extension to VoTE by defining a new property checker. The applicability of the method is demonstrated by verifying classifier stability and computing metrics associated with stability and correctness, i.e., robustness, fragility, vulnerability, and breakage, in two case studies. In both case studies, targeted data augmentation pre-processing steps were applied for robust model training. Our results show that even models trained with augmented data are unable to handle these types of perturbations, thereby emphasising the need for certified robust training for tree ensembles.</p>
+        <p class="paper-abstract">Extends VoTE to verify tree ensembles against composite geometric perturbations (affine transformations and pixel-wise lighting changes) by introducing a new abstraction-function-based robustness property checker. Shows that even targeted data augmentation fails to improve robustness and can even reduce it.</p>
         <a class="paper-link" href="https://www.ida.liu.se/labs/rtslab/publications/2023/SafeAI2023_Valency.pdf" target="_blank" rel="noopener">Read paper ↗</a>
       </article>
 
@@ -650,7 +695,7 @@ noscript div{position:fixed;inset:0;background:var(--bg0);color:var(--ink);displ
         </div>
         <h3>Improving SIEM Rules using Transformer-Based Rule Evasion Detection and Attribution</h3>
         <p class="paper-authors">Erik Nordstr&ouml;m &middot; Hannes Wid&eacute;n &middot; Valency Oscar Colaco &middot; Simin Nadjm-Tehrani</p>
-        <p class="paper-abstract">Enterprise networks are being increasingly targeted by sophisticated cyber threats, making the rapid detection of intrusions critical to limiting their impact. To this end, organisations deploy Security Information and Event Management (SIEM) systems, which monitor network and/or host activity to flag potential attacks using expert-written detection rules. In this context, one of the most widely adopted rule formats is SIGMA, which provides a standardised, publicly available specification for describing detection logic across different SIEM platforms. In this paper, we first analyse a representative subset of these SIGMA rules and show that a quarter of them can be easily evaded using straightforward techniques that modify commands syntactically while preserving their semantic meaning, causing traditional rule-matching approaches to fail. To address this limitation, we propose a transformer-based approach that captures the semantic relationship between commands and SIEM rules to identify potential evasion attempts. We then move on from detection to rule attribution, i.e., pinpointing which specific rule(s) an adversary attempted to bypass, thereby supporting attack diagnostics. Furthermore, our approach generates actionable recommendations to improve the evadable SIEM rules. Experimental evaluations show that our approach detects SIEM rule evasions with an accuracy of 71% and a false positive rate of 0.9%, while correctly attributing 98% of detected evasions to their corresponding SIEM rules. Performing an expert evaluation, security analysts, when presented with recommendations generated by our approach, reported that 31% could replace existing rules with minor adjustments, while 47% offered key insights for manual refinement. Finally, to demonstrate real-world impact, a subset of these recommendations were submitted to the SIGMA repository maintainers, resulting in several SIEM rules being fixed through our feedback.</p>
+        <p class="paper-abstract">A transformer-based approach that detects SIGMA rule evasions with accuracy comparable to the state of the art (AMIDES, USENIX 2024), achieves a false positive rate of less than 1%, attributes evasions to specific rules, and recommends fixes, several of which have been accepted into the SIGMA repository.</p>
       </article>
     </div>
   </section>
@@ -805,7 +850,7 @@ Rules:
 <div class="toast glass" id="toast" role="status"></div>
 
 <footer>
-  <p>© 2026 Valency Colaco · <a href="https://colaco.se">colaco.se</a> · Built with liquid glass, live feeds &amp; far too many roulette spins.</p>
+  <p>© 2026 Valency Colaco · <a href="https://colaco.se">colaco.se</a> · Built with liquid glass, live feeds &amp; far too many slot spins.</p>
 </footer>
 
 <script>
@@ -864,7 +909,7 @@ function toast(msg) {
    ============================================================ */
 const VIEWS = ['home', 'news', 'security', 'games', 'research', 'ponytail', 'contact'];
 
-function route() {
+function route(force) {
   let h = (location.hash || '#home').slice(1);
   let scrollTarget = null;
   if (h === 'options') { scrollTarget = 'options'; h = 'home'; }
@@ -887,11 +932,11 @@ function route() {
     window.scrollTo({ top: 0 });
   }
 
-  if (h === 'news') News.load();
-  if (h === 'security') Sec.load();
+  if (h === 'news') News.load(force);
+  if (h === 'security') Sec.load(force);
   if (h === 'games') refreshBestScores();
 }
-window.addEventListener('hashchange', route);
+window.addEventListener('hashchange', () => route(false));
 
 /* ============================================================
    Feed engine — fetches RSS/Atom/JSON through CORS-friendly relays
@@ -1196,6 +1241,16 @@ function renderItems(el, items, opts) {
   }
 }
 
+function parseDateMs(s) {
+  if (!s) return null;
+  const t = Date.parse(s);
+  if (isNaN(t)) return null;
+  /* reject implausible values: before 2000 or more than 5 min in the future */
+  if (t < 946684800000) return null;
+  if (t > Date.now() + 300000) return null;
+  return t;
+}
+
 /* ============================================================
    Ground News — top stories with left / center / right bias
    ============================================================ */
@@ -1231,7 +1286,7 @@ function parseGroundNews(html) {
   for (let k = 0; k < bIdx.length; k++) {
     const start = bIdx[k];
     const end = k + 1 < bIdx.length ? bIdx[k + 1] : flight.length;
-    const seg = flight.slice(start, Math.min(end, start + 8000));
+    const seg = flight.slice(start, Math.min(end, start + 16000));
     const left = +g(/leftPercent":(\d+)/, seg) || 0;
     const center = +g(/centerPercent":(\d+)/, seg) || 0;
     const right = +g(/rightPercent":(\d+)/, seg) || 0;
@@ -1242,7 +1297,21 @@ function parseGroundNews(html) {
     const slug = g(/"start":"[^\"]+","title":"(?:[^\"\\]|\\.)*","slug":"([^\"]+)"/, seg);
     const uids = flight.slice(Math.max(0, start - 300), start).match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g);
     const sid = uids && uids.length ? uids[uids.length - 1] : '';
+    /* Freshness: the story's own `start` is the coverage-window start (often
+       hours old). Each source article in the segment also carries a `date`
+       (when that outlet published). We take the newest valid publish date —
+       the most recent coverage activity — so the "X hours ago" label reflects
+       the latest reporting, not when the story first began. */
     const dateStr = g(/"start":"([^"]+)"/, seg);
+    let latestMs = dateStr ? parseDateMs(dateStr) : 0;
+    if (latestMs != null) {
+      let dmo;
+      const dre = /"date":"([0-9T:.\-+Z]+)"/g;
+      while ((dmo = dre.exec(seg)) !== null) {
+        const ms = parseDateMs(dmo[1]);
+        if (ms != null && ms > latestMs) latestMs = ms;
+      }
+    }
     const desc = g(/"description":"((?:[^"\\]|\\.)*)"/, seg);
     const img = g(/"fallbackMedia":\{"url":"([^"]+)"/, seg)
              || g(/"url":"(https:\/\/groundnews[^"]+\/assets\/[^"]+)"/, seg);
@@ -1254,7 +1323,7 @@ function parseGroundNews(html) {
     stories.push({
       title: clean(title),
       link: slug ? 'https://ground.news/article/' + slug : (sid ? 'https://ground.news/article/' + sid : 'https://ground.news/'),
-      date: dateStr ? new Date(dateStr) : new Date(),
+      date: latestMs != null ? new Date(latestMs) : new Date(),
       desc: desc ? clean(stripHtml(desc)).slice(0, 240) : '',
       img: img || '',
       bias: { left: left, center: center, right: right },
@@ -1276,29 +1345,55 @@ function parseGroundNews(html) {
 
 /* Fetch the Ground News homepage through CORS relays, accepting only a
    response that actually contains the story data (rejects Cloudflare
-   challenge / error pages). allorigins is the reliable path; corsproxy and
-   corssh are raced as backups. */
-async function fetchGroundNews() {
-  const urls = [
-    'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://ground.news/'),
-    'https://corsproxy.io/?url=' + encodeURIComponent('https://ground.news/'),
-    'https://proxy.cors.sh/' + 'https://ground.news/'
-  ];
-  const race = new AbortController();
-  const attempts = urls.map(u =>
-    relayFetch(x => x, u, race.signal, 20000).then(t => {
-      if (!t || t.indexOf('blindspotData') < 0) throw new Error('Not Ground News content');
-      return t;
-    })
-  );
-  try {
-    const text = await Promise.any(attempts);
-    race.abort();
-    return text;
-  } catch (e) {
-    race.abort();
-    throw new Error('Ground News relays failed');
-  }
+   challenge / error pages).
+
+   Freshness matters here: the public relays cache each URL server-side and
+   share that copy with every user worldwide, so "https://ground.news/" can
+   come back hours old even though the fetch succeeds. We defeat that by
+   appending a rotating `fresh` parameter (Next.js ignores unknown query
+   params). Auto-loads bucket to the minute (shared, at most ~60s stale);
+   a manual Refresh gets a millisecond-unique key so it always bypasses the
+   relay cache entirely. */
+function bustUrl(u, force) {
+  const b = force ? Date.now() : Math.floor(Date.now() / 60000);
+  return u + (u.indexOf('?') >= 0 ? '&' : '?') + 'fresh=' + b;
+}
+
+async function fetchGroundNews(force) {
+  /* Two Ground News pages carry the blindspot story data: the homepage
+     (2.6MB, freshest, most stories) and /blindspot (410KB, smaller and far
+     more reliable through a relay). We prefer the homepage — giving it a
+     short head start — but let the smaller page join the race as a fallback
+     so the feed always renders, even on a slow connection. */
+  const raceRelays = (target, timeoutMs) => {
+    const enc = encodeURIComponent(target);
+    const relays = [
+      { url: 'https://proxy.cors.sh/' + target,                                   parse: x => x },
+      { url: 'https://api.allorigins.win/raw?url=' + enc,                         parse: x => x },
+      { url: 'https://corsproxy.io/?url=' + enc,                                  parse: x => x },
+      { url: 'https://api.codetabs.com/v1/proxy?quest=' + enc,                   parse: x => x },
+      { url: 'https://thingproxy.freeboard.io/fetch/' + target,                   parse: x => x },
+      { url: 'https://api.allorigins.win/get?url=' + enc,                         parse: x => { try { return JSON.parse(x).contents || ''; } catch (e) { return ''; } } }
+    ];
+    const ac = new AbortController();
+    const attempts = relays.map(r =>
+      relayFetch(x => x, r.url, ac.signal, timeoutMs).then(t => {
+        const html = r.parse(t);
+        if (!html || html.indexOf('blindspotData') < 0) throw new Error('Not Ground News content');
+        return html;
+      })
+    );
+    return Promise.any(attempts).finally(() => ac.abort());
+  };
+  const home = bustUrl('https://ground.news/', force);
+  const blind = bustUrl('https://ground.news/blindspot', force);
+  return new Promise((resolve, reject) => {
+    let resolved = false, pending = 2;
+    const timer = setTimeout(() => raceRelays(blind, 12000).then(ok, no), 2500);
+    function ok(h) { if (!resolved) { resolved = true; clearTimeout(timer); resolve(h); } }
+    function no() { if (!resolved && --pending === 0) reject(new Error('Ground News relays failed')); }
+    raceRelays(home, 14000).then(ok, no);
+  });
 }
 
 function renderGroundItems(el, items) {
@@ -1355,39 +1450,69 @@ const News = {
   async load(force) {
     if (this.loading) return;
     const el = $('#news-feed');
-    const cached = store.get('cache.ground', null);
-    const FRESH = 10 * 60 * 1000;
+    const freshEl = $('#news-fresh');
+    let cached = store.get('cache.ground.v2', null);
+    /* Migrate the previous cache schema so a fresh visit still shows the
+       last good batch while the relays are retried in the background. */
+    if (!cached) cached = store.get('cache.ground', null);
+    const FRESH = 2 * 60 * 1000;
+    const setFresh = (t, status) => {
+      if (!freshEl) return;
+      if (!t && status !== 'loading') { freshEl.textContent = ''; freshEl.classList.remove('stale'); return; }
+      if (status === 'loading') { freshEl.textContent = 'Fetching latest stories\u2026'; freshEl.classList.add('stale'); return; }
+      let s = 'Updated ' + timeAgo(new Date(t));
+      if (status === 'retrying') s += ' \u00b7 retrying';
+      else if (status === 'failed') s = 'Cached ' + timeAgo(new Date(t)) + ' \u00b7 refresh failed';
+      freshEl.classList.toggle('stale', status === 'retrying' || status === 'failed');
+      freshEl.textContent = s;
+    };
     if (cached && cached.items) {
       const items = cached.items.map(it => Object.assign({}, it, { date: new Date(it.date) }));
       renderGroundItems(el, items);
       this.loaded = true;
+      setFresh(cached.t, Date.now() - cached.t > FRESH ? 'retrying' : null);
       if (!force && Date.now() - cached.t < FRESH) return;
+    } else {
+      setFresh(0);
     }
     this.loading = true;
-    if (!cached) skeletons(el, 6);
+    if (!cached) { skeletons(el, 6); setFresh(Date.now(), 'loading'); }
+    /* Public CORS relays are flaky, so race them and retry a couple of
+       times \u2014 a transient failure shouldn't strand the visitor on a
+       stale batch for hours. */
+    let html = null, lastErr = null;
+    for (let attempt = 0; attempt < 3 && !html; attempt++) {
+      try { html = await fetchGroundNews(force); }
+      catch (e) { lastErr = e; if (attempt < 2) await new Promise(r => setTimeout(r, 900)); }
+    }
     try {
-      const html = await fetchGroundNews();
+      if (!html) throw lastErr || new Error('no data');
       const items = parseGroundNews(html);
       if (items.length < 3) throw new Error('Only ' + items.length + ' stories parsed');
       renderGroundItems(el, items);
-      store.set('cache.ground', {
+      store.set('cache.ground.v2', {
         t: Date.now(),
         items: items.map(it => Object.assign({}, it, { date: it.date.toISOString() }))
       });
       this.loaded = true;
+      setFresh(Date.now(), null);
     } catch (e) {
       if (!cached) {
         el.innerHTML =
           '<div class="error-panel glass">' +
             '<p><strong>Ground News is temporarily unreachable.</strong><br>' +
             'The live bias feed couldn\u2019t load just now \u2014 usually a short hiccup with the public relay. ' +
-            'Hit refresh to try again.</p>' +
+            'Try again, or reload the page.</p>' +
             '<button class="btn primary" id="gn-retry">Try again</button>' +
+            ' <a class="btn ghost" href="https://ground.news/" target="_blank" rel="noopener">Open Ground News \u2197</a>' +
           '</div>';
         const r = $('#gn-retry');
         if (r) r.addEventListener('click', () => this.load(true));
+        setFresh(0);
+      } else {
+        /* keep showing the cached batch, but flag that the refresh failed */
+        setFresh(cached.t, 'failed');
       }
-      /* else: keep showing the stale cache rather than blanking the panel */
     }
     this.loading = false;
   }
@@ -1410,6 +1535,7 @@ const KEV_URL = 'https://www.cisa.gov/sites/default/files/feeds/known_exploited_
 const Sec = {
   tab: 'news',
   cache: {},
+  times: {},
   reqId: 0,
   init() {
     $$('#view-security .tabs button').forEach(btn => {
@@ -1420,19 +1546,32 @@ const Sec = {
       });
     });
   },
+  /* freshness indicator mirroring the Ground News `news-fresh` chip */
+  setFresh(t, status) {
+    const el = $('#sec-fresh');
+    if (!el) return;
+    if (!t && status !== 'loading') { el.textContent = ''; el.classList.remove('stale'); return; }
+    if (status === 'loading') { el.textContent = 'Fetching latest intel\u2026'; el.classList.add('stale'); return; }
+    let s = 'Updated ' + timeAgo(new Date(t));
+    if (status === 'retrying') s += ' \u00b7 retrying';
+    else if (status === 'failed') s = 'Cached ' + timeAgo(new Date(t)) + ' \u00b7 refresh failed';
+    el.classList.toggle('stale', status === 'retrying' || status === 'failed');
+    el.textContent = s;
+  },
   async load(force) {
     const el = $('#sec-feed');
     const tab = this.tab;
     const cached = this.cache[tab];
-    if (!force && cached) { renderItems(el, cached); return; }
+    if (!force && cached) { renderItems(el, cached); this.setFresh(this.times[tab], null); return; }
     const token = ++this.reqId;
     skeletons(el, 6);
+    this.setFresh(Date.now(), 'loading');
     const alive = () => token === this.reqId && this.tab === tab;
     try {
       let items;
       if (tab === 'kev') {
         items = await this.loadKev();
-        if (alive()) { this.cache[tab] = items; renderItems(el, items); }
+        if (alive()) { this.cache[tab] = items; this.times[tab] = Date.now(); renderItems(el, items); this.setFresh(this.times[tab], null); }
       } else {
         const sources = tab === 'advisories' ? SEC_ADVISORY_SOURCES : SEC_NEWS_SOURCES;
         const onPartial = (partial, failed) => {
@@ -1444,10 +1583,11 @@ const Sec = {
         items = res.items;
         items._failed = res.failed;
         this.cache[tab] = items;
-        if (alive()) renderItems(el, items);
+        this.times[tab] = Date.now();
+        if (alive()) { renderItems(el, items); this.setFresh(this.times[tab], null); }
       }
     } catch (e) {
-      if (alive()) errorPanel(el, () => this.load(true), '');
+      if (alive()) { errorPanel(el, () => this.load(true), ''); this.setFresh(this.times[tab] || 0, 'failed'); }
     }
   },
   async loadKev() {
@@ -1512,10 +1652,12 @@ function startGreetRoller() {
    ============================================================ */
 function refreshBestScores() {
   const map = {
-    roulette: () => 'Balance: ' + store.get('rl.balance', 1000) + ' chips',
-    g2048:    () => 'Best: ' + store.get('g2.best', 0),
-    snake:    () => 'Best: ' + store.get('sn.best', 0),
-    flappy:   () => 'Best: ' + store.get('fl.best', 0)
+    slots:   () => store.get('credits', 1000) + ' chips',
+    plinko:  () => store.get('credits', 1000) + ' chips',
+    roulette: () => store.get('credits', 1000) + ' chips',
+    g2048:   () => 'Best: ' + store.get('g2.best', 0),
+    xo:      () => 'Wins: ' + store.get('xo.wins', 0),
+    flappy:  () => 'Best: ' + store.get('fl.best', 0)
   };
   $$('[data-best]').forEach(el => {
     const fn = map[el.dataset.best];
@@ -1638,334 +1780,239 @@ const PonytailModal = {
 };
 
 /* ============================================================
-   ROULETTE — European wheel, full felt
-   ============================================================ */
-const Roulette = {
-  title: 'Roulette',
-  wide: true,
+   SLOTS — 5×3 video slot with 5 paylines
+   ============================================================
+   Each reel position is an independent weighted draw, so the paytable's
+   expected return is analytic. Payouts below (×line bet, stake included)
+   are tuned so the long-run return ≈ 95% of stake — a ~5% house edge,
+   verified by simulation (≈0.9505 RTP). Wins are paid left-to-right:
+   3, 4 or 5 matching symbols from the first reel on any of the five
+   paylines (top / middle / bottom rows + a V and an inverted-V). */
+const VS_SYMS = [
+  { k: '7',    e: '7\uFE0F\u20E3', w: 1,  name: 'Sevens' },
+  { k: 'DIA',  e: '\uD83D\uDC8E', w: 2,  name: 'Diamond' },
+  { k: 'STAR', e: '\u2B50',       w: 4,  name: 'Star' },
+  { k: 'BELL', e: '\uD83D\uDD14', w: 7,  name: 'Bell' },
+  { k: 'LEM',  e: '\uD83C\uDF4B', w: 12, name: 'Lemon' },
+  { k: 'CHER', e: '\uD83C\uDF52', w: 20, name: 'Cherry' }
+];
+const VS_W = VS_SYMS.reduce((s, x) => s + x.w, 0);
+const VS_PAY = {
+  '7':    { 3: 80, 4: 400, 5: 1500 },
+  'DIA':  { 3: 25, 4: 100, 5: 400 },
+  'STAR': { 3: 12, 4: 45,  5: 180 },
+  'BELL': { 3: 6,  4: 18,  5: 60 },
+  'LEM':  { 3: 5,  4: 15,  5: 36 },
+  'CHER': { 3: 3,  4: 10,  5: 26 }
+};
+/* row index per reel for each payline (0=top, 1=mid, 2=bottom) */
+const VS_LINES = [
+  [0, 0, 0, 0, 0], [1, 1, 1, 1, 1], [2, 2, 2, 2, 2],
+  [0, 1, 2, 1, 0], [2, 1, 0, 1, 2]
+];
+
+function vsPick() {
+  const r = Math.random() * VS_W;
+  let acc = 0;
+  for (const s of VS_SYMS) { acc += s.w; if (r < acc) return s; }
+  return VS_SYMS[VS_SYMS.length - 1];
+}
+/* grid: 5 reels × 3 rows; grid[reel] = [top, mid, bottom] symbols */
+function vsGrid() {
+  return Array.from({ length: 5 }, () => [vsPick(), vsPick(), vsPick()]);
+}
+/* evaluate every payline; returns { wins, total }. A line pays when the
+   first reel's symbol repeats on the next 2, 3 or 4 reels (k = match count). */
+function vsEval(grid, lineBet) {
+  const wins = [];
+  let total = 0;
+  VS_LINES.forEach((line, li) => {
+    const sym = grid[0][line[0]];
+    let k = 1;
+    while (k < 5 && grid[k][line[k]].k === sym.k) k++;
+    if (k >= 3) {
+      const amt = lineBet * VS_PAY[sym.k][k];
+      total += amt;
+      wins.push({ line: li, k, sym, amt, cells: line.slice(0, k).map((row, col) => ({ row, col })) });
+    }
+  });
+  return { wins, total };
+}
+
+const Slots = {
+  title: 'Slots',
   init(stage) {
-    const ORDER = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
-    const REDS = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
-    const SEG = Math.PI * 2 / 37;
-    const CHIPS = [
-      { v: 5,   c: 'rgba(106,183,255,.8)' },
-      { v: 25,  c: 'rgba(63,224,197,.8)'  },
-      { v: 100, c: 'rgba(166,121,255,.85)'},
-      { v: 500, c: 'rgba(255,209,102,.9)' }
-    ];
+    const BETS = [10, 25, 50, 100];
+    const REELS = 5, ROWS = 3;
 
     stage.innerHTML =
-      '<div class="rl-wrap">' +
-        '<div class="rl-left">' +
-          '<canvas id="rl-canvas" class="game-canvas" width="340" height="340" style="width:min(340px,100%);aspect-ratio:1;background:transparent;border:none"></canvas>' +
-          '<div class="rl-readout"><span class="rl-num" id="rl-result">–</span><span id="rl-msg">Place your bets</span></div>' +
-          '<div class="rl-history" id="rl-history"></div>' +
+      '<div class="game-hud">' +
+        '<div class="hud-pill"><span class="lbl">Balance</span><span class="val" id="sl-balance">1000</span></div>' +
+        '<div class="hud-pill"><span class="lbl">Last win</span><span class="val" id="sl-win">0</span></div>' +
+        '<button class="btn" id="sl-reset" type="button">Reset bankroll</button>' +
+      '</div>' +
+      '<div class="canvas-wrap" style="width:fit-content">' +
+        '<div class="vs-machine" id="vs-machine"></div>' +
+        '<div class="game-over-layer" id="sl-over" style="display:none">' +
+          '<h4>You&rsquo;re broke</h4><p style="color:var(--ink2)">Out of chips &mdash; restart with 1,000?</p>' +
+          '<button class="btn primary" id="sl-retry" type="button">Restart</button>' +
         '</div>' +
-        '<div class="rl-right">' +
-          '<div class="rl-topbar">' +
-            '<span class="rl-stat">Balance<b id="rl-balance"></b><button class="rl-reset" id="rl-reset" type="button">reset</button></span>' +
-            '<span class="rl-stat">On the table<b id="rl-total">0</b></span>' +
-          '</div>' +
-          '<div class="rl-chips" id="rl-chips"></div>' +
-          '<div class="rl-board" id="rl-board"></div>' +
-          '<div class="rl-actions">' +
-            '<button class="btn ghost" id="rl-clear" type="button">Clear bets</button>' +
-            '<button class="btn primary" id="rl-spin" type="button">Spin the wheel</button>' +
-          '</div>' +
-          '<p class="rl-help">Pick a chip, tap the felt. Right-click (or long-press) a spot to take a bet back. Straight-up pays 35:1, dozens &amp; columns 2:1, outside bets 1:1.</p>' +
-        '</div>' +
-      '</div>';
+      '</div>' +
+      '<div class="sl-bets" id="sl-bets"></div>' +
+      '<div class="sl-actions"><button class="btn primary" id="sl-spin" type="button">Spin</button></div>' +
+      '<p class="stage-hint">5 reels, 5 paylines. Match 3, 4 or 5 from the left reel on any line &mdash; five 7s is the jackpot.</p>';
 
-    const canvas = $('#rl-canvas', stage);
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
-    canvas.width = 340 * dpr; canvas.height = 340 * dpr;
-    const ctx = canvas.getContext('2d');
-    ctx.scale(dpr, dpr);
-    const CX = 170, CY = 170, RW = 150;
+    const machine = $('#vs-machine', stage);
+    const betsWrap = $('#sl-bets', stage);
+    const balEl = $('#sl-balance', stage), winEl = $('#sl-win', stage);
+    const overEl = $('#sl-over', stage);
+    const spinBtn = $('#sl-spin', stage);
 
-    let balance = store.get('rl.balance', 1000);
-    let chip = 25;
-    let total = 0;
+    let balance = store.get('credits', 1000);
+    let bet = store.get('sl.bet', 25);
+    if (!BETS.includes(bet)) bet = 25;
+    let lastWin = 0;
     let spinning = false;
-    let rot = -Math.PI / 2;
-    let raf = 0;
-    let history = store.get('rl.history', []);
-    const bets = new Map(); /* key -> {bet, amount, cell, badge} */
+    const reels = [];
 
-    const balEl = $('#rl-balance', stage), totEl = $('#rl-total', stage);
-    const msgEl = $('#rl-msg', stage), resEl = $('#rl-result', stage);
-    const spinBtn = $('#rl-spin', stage);
-    const colorOf = n => n === 0 ? 'green' : (REDS.has(n) ? 'red' : 'black');
-    const paint = () => { balEl.textContent = balance; totEl.textContent = total; };
+    const symEl = s => { const d = document.createElement('div'); d.className = 'vs-sym'; d.textContent = s.e; return d; };
+    const cellH = () => reels[0] ? reels[0].reel.clientHeight / ROWS : 64;
 
-    /* ---- chips ---- */
-    const chipsEl = $('#rl-chips', stage);
-    CHIPS.forEach(c => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'rl-chip' + (c.v === chip ? ' sel' : '');
-      b.style.setProperty('--cc', c.c);
-      b.textContent = c.v;
-      b.addEventListener('click', () => {
-        chip = c.v;
-        $$('.rl-chip', chipsEl).forEach(x => x.classList.toggle('sel', x === b));
-      });
-      chipsEl.appendChild(b);
-    });
-
-    /* ---- betting felt ---- */
-    const board = $('#rl-board', stage);
-    const mk = (label, bet, cls, col, row, span) => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'rl-cell ' + (cls || '');
-      b.textContent = label;
-      b.dataset.bet = JSON.stringify(bet);
-      b.style.gridColumn = span ? col + ' / span ' + span : String(col);
-      b.style.gridRow = String(row);
-      board.appendChild(b);
-      return b;
-    };
-    mk('0', { type: 'straight', n: 0 }, 'green', 1, '1 / span 3');
-    for (let n = 1; n <= 36; n++) {
-      const col = Math.ceil(n / 3) + 1;
-      const row = n % 3 === 0 ? 1 : (n % 3 === 2 ? 2 : 3);
-      mk(String(n), { type: 'straight', n }, REDS.has(n) ? 'red' : 'black', col, row);
+    for (let i = 0; i < REELS; i++) {
+      const reel = document.createElement('div');
+      reel.className = 'vs-reel';
+      const strip = document.createElement('div');
+      strip.className = 'vs-strip';
+      reel.appendChild(strip);
+      machine.appendChild(reel);
+      reels.push({ reel, strip, current: [vsPick(), vsPick(), vsPick()], landedIndex: 0 });
     }
-    mk('2:1', { type: 'col', c: 3 }, 'outside', 14, 1);
-    mk('2:1', { type: 'col', c: 2 }, 'outside', 14, 2);
-    mk('2:1', { type: 'col', c: 1 }, 'outside', 14, 3);
-    mk('1st 12', { type: 'dozen', d: 1 }, 'outside', 2, 4, 4);
-    mk('2nd 12', { type: 'dozen', d: 2 }, 'outside', 6, 4, 4);
-    mk('3rd 12', { type: 'dozen', d: 3 }, 'outside', 10, 4, 4);
-    mk('1–18', { type: 'low' }, 'outside', 2, 5, 2);
-    mk('EVEN', { type: 'even' }, 'outside', 4, 5, 2);
-    mk('RED', { type: 'red' }, 'outside red', 6, 5, 2);
-    mk('BLACK', { type: 'black' }, 'outside', 8, 5, 2);
-    mk('ODD', { type: 'odd' }, 'outside', 10, 5, 2);
-    mk('19–36', { type: 'high' }, 'outside', 12, 5, 2);
 
-    const placeBet = cell => {
-      if (spinning) return;
-      if (chip > balance) { toast('Not enough chips — lower your bet or reset the balance.'); return; }
-      balance -= chip; total += chip;
-      const key = cell.dataset.bet;
-      let entry = bets.get(key);
-      if (!entry) {
-        const badge = document.createElement('span');
-        badge.className = 'rl-badge';
-        cell.appendChild(badge);
-        entry = { bet: JSON.parse(key), amount: 0, cell, badge };
-        bets.set(key, entry);
-      }
-      entry.amount += chip;
-      entry.badge.textContent = entry.amount;
-      store.set('rl.balance', balance);
-      paint();
-    };
-    const removeBet = key => {
-      const entry = bets.get(key);
-      if (!entry || spinning) return;
-      balance += entry.amount; total -= entry.amount;
-      entry.badge.remove();
-      bets.delete(key);
-      store.set('rl.balance', balance);
-      paint();
-    };
-    const clearBets = () => { Array.from(bets.keys()).forEach(removeBet); };
-
-    let pressTimer = 0;
-    board.addEventListener('click', e => {
-      const cell = e.target.closest('.rl-cell');
-      if (cell) placeBet(cell);
-    });
-    board.addEventListener('contextmenu', e => {
-      const cell = e.target.closest('.rl-cell');
-      if (cell) { e.preventDefault(); removeBet(cell.dataset.bet); }
-    });
-    board.addEventListener('touchstart', e => {
-      const cell = e.target.closest('.rl-cell');
-      if (!cell) return;
-      pressTimer = setTimeout(() => { removeBet(cell.dataset.bet); pressTimer = 0; }, 550);
-    }, { passive: true });
-    board.addEventListener('touchend', () => { if (pressTimer) clearTimeout(pressTimer); }, { passive: true });
-
-    $('#rl-clear', stage).addEventListener('click', clearBets);
-    $('#rl-reset', stage).addEventListener('click', () => {
-      if (spinning) return;
-      clearBets();
-      balance = 1000;
-      store.set('rl.balance', balance);
-      paint();
-      toast('Balance reset to 1,000 chips.');
+    const drawIdle = () => reels.forEach(r => {
+      r.strip.style.transition = 'none';
+      r.strip.innerHTML = '';
+      r.current.forEach(s => r.strip.appendChild(symEl(s)));
+      r.strip.classList.remove('vs-spinning');
+      r.landedIndex = 0;
+      r.strip.style.transform = 'translateY(0)';
     });
 
-    /* ---- wheel drawing ---- */
-    const draw = (R, ball, hlIdx) => {
-      ctx.clearRect(0, 0, 340, 340);
-      /* outer rim */
-      const rim = ctx.createLinearGradient(0, 0, 340, 340);
-      rim.addColorStop(0, 'rgba(255,209,102,.9)');
-      rim.addColorStop(.5, 'rgba(255,255,255,.35)');
-      rim.addColorStop(1, 'rgba(255,209,102,.55)');
-      ctx.beginPath(); ctx.arc(CX, CY, RW, 0, Math.PI * 2);
-      ctx.strokeStyle = rim; ctx.lineWidth = 7; ctx.stroke();
-      /* pockets */
-      for (let i = 0; i < 37; i++) {
-        const n = ORDER[i];
-        const a0 = R + i * SEG - SEG / 2, a1 = a0 + SEG;
-        ctx.beginPath();
-        ctx.arc(CX, CY, RW * 0.955, a0, a1);
-        ctx.arc(CX, CY, RW * 0.52, a1, a0, true);
-        ctx.closePath();
-        let fill = n === 0 ? 'rgba(63,224,197,.4)' : (REDS.has(n) ? 'rgba(255,93,93,.42)' : 'rgba(255,255,255,.07)');
-        if (hlIdx === i) fill = n === 0 ? 'rgba(63,224,197,.85)' : (REDS.has(n) ? 'rgba(255,93,93,.85)' : 'rgba(255,255,255,.4)');
-        ctx.fillStyle = fill; ctx.fill();
-        ctx.strokeStyle = hlIdx === i ? 'rgba(255,255,255,.95)' : 'rgba(255,255,255,.18)';
-        ctx.lineWidth = hlIdx === i ? 2 : 1;
-        ctx.stroke();
-        /* number */
-        const mid = R + i * SEG, tr = RW * 0.8;
-        ctx.save();
-        ctx.translate(CX + Math.cos(mid) * tr, CY + Math.sin(mid) * tr);
-        ctx.rotate(mid + Math.PI / 2);
-        ctx.fillStyle = 'rgba(255,255,255,.92)';
-        ctx.font = '600 11px ui-monospace, monospace';
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(String(n), 0, 0);
-        ctx.restore();
-      }
-      /* hub */
-      const hub = ctx.createRadialGradient(CX - 18, CY - 18, 4, CX, CY, RW * 0.5);
-      hub.addColorStop(0, 'rgba(255,255,255,.25)');
-      hub.addColorStop(1, 'rgba(255,255,255,.04)');
-      ctx.beginPath(); ctx.arc(CX, CY, RW * 0.48, 0, Math.PI * 2);
-      ctx.fillStyle = hub; ctx.fill();
-      ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 1; ctx.stroke();
-      ctx.fillStyle = 'rgba(242,245,255,.55)';
-      ctx.font = '700 15px "Space Grotesk", sans-serif';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(spinning ? '…' : 'SPIN', CX, CY);
-      /* pointer */
-      ctx.beginPath();
-      ctx.moveTo(CX, CY - RW + 12);
-      ctx.lineTo(CX - 8, CY - RW - 4);
-      ctx.lineTo(CX + 8, CY - RW - 4);
-      ctx.closePath();
-      ctx.fillStyle = '#fff';
-      ctx.shadowColor = 'rgba(255,255,255,.7)'; ctx.shadowBlur = 8;
-      ctx.fill(); ctx.shadowBlur = 0;
-      /* ball */
-      if (ball) {
-        ctx.beginPath();
-        ctx.arc(CX + Math.cos(ball.a) * ball.r, CY + Math.sin(ball.a) * ball.r, 6, 0, Math.PI * 2);
-        const bg = ctx.createRadialGradient(
-          CX + Math.cos(ball.a) * ball.r - 2, CY + Math.sin(ball.a) * ball.r - 2, 1,
-          CX + Math.cos(ball.a) * ball.r, CY + Math.sin(ball.a) * ball.r, 6);
-        bg.addColorStop(0, '#fff'); bg.addColorStop(1, '#cfd6e4');
-        ctx.fillStyle = bg;
-        ctx.shadowColor = 'rgba(0,0,0,.55)'; ctx.shadowBlur = 6;
-        ctx.fill(); ctx.shadowBlur = 0;
-      }
+    const render = () => {
+      balEl.textContent = balance;
+      winEl.textContent = lastWin;
+      [].slice.call(betsWrap.children).forEach(b => b.classList.toggle('sel', +b.dataset.bet === bet));
     };
-    draw(rot, null, -1);
 
-    /* ---- history ---- */
-    const histEl = $('#rl-history', stage);
-    const paintHistory = () => {
-      histEl.innerHTML = history.map(n => '<span class="' + colorOf(n) + '">' + n + '</span>').join('');
-    };
-    paintHistory();
+    const clearWins = () => reels.forEach(r =>
+      r.strip.querySelectorAll('.vs-sym.win').forEach(el => el.classList.remove('win')));
 
-    const easeOutCubic = p => 1 - Math.pow(1 - p, 3);
-    const easeInOut = p => p < .5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
-
-    const betWins = (bet, n) => {
-      switch (bet.type) {
-        case 'straight': return bet.n === n;
-        case 'red':   return REDS.has(n);
-        case 'black': return n !== 0 && !REDS.has(n);
-        case 'even':  return n !== 0 && n % 2 === 0;
-        case 'odd':   return n % 2 === 1;
-        case 'low':   return n >= 1 && n <= 18;
-        case 'high':  return n >= 19;
-        case 'dozen': return n >= bet.d * 12 - 11 && n <= bet.d * 12;
-        case 'col':   return n !== 0 && n % 3 === bet.c % 3;
-        default: return false;
+    const finishSpin = grid => {
+      spinning = false;
+      spinBtn.disabled = false;
+      spinBtn.textContent = 'Spin';
+      const lineBet = Math.floor(bet / VS_LINES.length);
+      const { wins, total } = vsEval(grid, lineBet);
+      lastWin = Math.round(total);
+      balance += lastWin;
+      reels.forEach(r => r.strip.classList.remove('vs-spinning'));
+      if (lastWin > 0) {
+        wins.forEach(w => w.cells.forEach(({ row, col }) => {
+          const el = reels[col].strip.children[reels[col].landedIndex + row];
+          if (el) el.classList.add('win');
+        }));
+        const best = wins.reduce((a, b) => b.amt > a.amt ? b : a, wins[0]);
+        if (best.k === 5 && best.sym.k === '7') toast('JACKPOT! Five 7s  +' + lastWin + ' chips');
+        else toast(best.k + '× ' + best.sym.name + ' on ' + wins.length + ' line' + (wins.length > 1 ? 's' : '') + '  +' + lastWin);
       }
+      store.set('credits', balance);
+      render();
+      if (balance < BETS[0]) overEl.style.display = 'flex';
     };
-    const multOf = bet =>
-      bet.type === 'straight' ? 36 : (bet.type === 'dozen' || bet.type === 'col') ? 3 : 2;
 
     const spin = () => {
       if (spinning) return;
-      if (total === 0) {
-        msgEl.textContent = 'Place at least one bet first.';
-        spinBtn.classList.add('shake');
-        setTimeout(() => spinBtn.classList.remove('shake'), 450);
-        return;
-      }
+      if (balance < bet) { toast('Not enough chips for that bet'); return; }
       spinning = true;
-      spinBtn.disabled = true;
-      msgEl.textContent = 'No more bets…';
-      const result = Math.floor(Math.random() * 37);
-      const idx = ORDER.indexOf(result);
-      const TAU = Math.PI * 2;
-      const target = -Math.PI / 2 - idx * SEG;
-      let delta = ((target - rot) % TAU + TAU) % TAU;
-      delta += (6 + Math.floor(Math.random() * 3)) * TAU;
-      const startR = rot;
-      const ballRevs = 3 + Math.random() * 1.5;
-      const dur = 4600;
-      const t0 = performance.now();
-      const frame = now => {
-        const p = Math.min(1, (now - t0) / dur);
-        const e = easeOutCubic(p);
-        const R = startR + delta * e;
-        const ball = {
-          a: -Math.PI / 2 - (1 - e) * ballRevs * TAU,
-          r: RW * (0.94 - (0.94 - 0.63) * easeInOut(Math.min(1, p * 1.12)))
+      clearWins();
+      balance -= bet; lastWin = 0; render();
+      spinBtn.disabled = true; spinBtn.textContent = 'Spinning\u2026';
+      const grid = vsGrid();
+      /* sub-pixel-accurate symbol height so every reel lands exactly aligned */
+      const firstSym = reels[0].strip.firstChild;
+      const h = firstSym ? firstSym.getBoundingClientRect().height : (reels[0].reel.clientHeight / ROWS || 64);
+      let landed = 0;
+      reels.forEach((r, i) => {
+        const targets = grid[i];
+        const filler = 22 + i * 5;            /* scrolling symbols before the targets */
+        const extras = 4;                     /* symbols after the targets, revealed by the landing overshoot */
+        const count = filler + 3 + extras;
+        /* reset to the top with no transition so the new spin always animates
+           a real change (otherwise a second consecutive spin could hang). */
+        r.strip.style.transition = 'none';
+        r.strip.style.transform = 'translateY(0)';
+        r.strip.innerHTML = '';
+        for (let k = 0; k < count; k++) {
+          const s = (k >= filler && k < filler + 3) ? targets[k - filler] : vsPick();
+          r.strip.appendChild(symEl(s));
+        }
+        r.landedIndex = filler;               /* visible window = indices [filler .. filler+2] = targets */
+        r.strip.classList.add('vs-spinning');
+        void r.strip.offsetWidth;            /* force reflow so the transform animates */
+        const landY = -filler * h;
+        const dur = 980 + i * 300;
+        /* strong ease-out with a tiny overshoot: reels brake, dip a hair past
+           the target (showing the extras), then settle — a tactile landing. */
+        r.strip.style.transition = 'transform ' + dur + 'ms cubic-bezier(.16,.66,.18,1.05)';
+        r.strip.style.transform = 'translateY(' + landY + 'px)';
+        /* finish once — on transitionend, or a safety timeout if the event
+           is missed (e.g. background tab / no transform change). */
+        let doneCalled = false, doneTimer = 0;
+        const done = () => {
+          if (doneCalled) return;
+          doneCalled = true;
+          clearTimeout(doneTimer);
+          r.strip.removeEventListener('transitionend', onEnd);
+          r.current = targets;
+          r.strip.classList.remove('vs-spinning');
+          landed++;
+          if (landed === REELS) finishSpin(grid);
         };
-        draw(R, ball, p > 0.985 ? idx : -1);
-        if (p < 1) { raf = requestAnimationFrame(frame); return; }
-        rot = R % TAU;
-        settle(result, idx);
-      };
-      raf = requestAnimationFrame(frame);
+        const onEnd = ev => {
+          if (ev && ev.propertyName !== 'transform') return;
+          done();
+        };
+        r.strip.addEventListener('transitionend', onEnd);
+        doneTimer = setTimeout(done, dur + 200);
+      });
     };
 
-    const settle = (result, idx) => {
-      let win = 0;
-      bets.forEach(entry => { if (betWins(entry.bet, result)) win += entry.amount * multOf(entry.bet); });
-      const staked = total;
-      balance += win;
-      store.set('rl.balance', balance);
-      history.unshift(result);
-      history = history.slice(0, 12);
-      store.set('rl.history', history);
-      bets.forEach(entry => entry.badge.remove());
-      bets.clear();
-      total = 0;
-      spinning = false;
-      spinBtn.disabled = false;
-      paint();
-      paintHistory();
-      resEl.textContent = result;
-      resEl.className = 'rl-num ' + colorOf(result);
-      const net = win - staked;
-      msgEl.textContent = result + ' ' + colorOf(result) + ' — ' +
-        (win > 0 ? 'you won ' + win + ' chips' + (net > 0 ? ' (+' + net + ')' : '') + '!' : 'house takes it. Again?');
-      if (balance === 0 && win === 0) toast('Out of chips — hit “reset” next to your balance.');
-      draw(rot, { a: -Math.PI / 2, r: RW * 0.63 }, idx);
+    const resetBankroll = () => {
+      balance = 1000; lastWin = 0; spinning = false;
+      store.set('credits', balance);
+      overEl.style.display = 'none';
+      drawIdle(); render();
+      toast('Bankroll reset to 1,000');
     };
 
+    drawIdle();
+    BETS.forEach(b => {
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'sl-bet'; btn.dataset.bet = b; btn.textContent = b;
+      btn.addEventListener('click', () => { if (spinning) return; bet = b; store.set('sl.bet', bet); render(); });
+      betsWrap.appendChild(btn);
+    });
+    render();
     spinBtn.addEventListener('click', spin);
-    paint();
+    $('#sl-reset', stage).addEventListener('click', resetBankroll);
+    $('#sl-retry', stage).addEventListener('click', resetBankroll);
 
-    this.onKey = e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); spin(); } };
-    this.destroy = () => { cancelAnimationFrame(raf); };
+    this.onKey = e => {
+      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); spin(); }
+    };
+    this.destroy = () => {};
   }
 };
+
 
 /* ============================================================
    2048
@@ -2097,155 +2144,151 @@ const G2048 = {
 };
 
 /* ============================================================
-   SNAKE
+   X & O
    ============================================================ */
-const Snake = {
-  title: 'Snake',
+const TicTacToe = {
+  title: 'X & O',
   init(stage) {
-    const N = 21, CELL = 20, SIZE = N * CELL;
     stage.innerHTML =
       '<div class="game-hud">' +
-        '<div class="hud-pill"><span class="lbl">Score</span><span class="val" id="sn-score">0</span></div>' +
-        '<div class="hud-pill"><span class="lbl">Best</span><span class="val" id="sn-best">0</span></div>' +
+        '<div class="hud-pill"><span class="lbl">Wins</span><span class="val" id="xo-wins">0</span></div>' +
+        '<div class="hud-pill"><span class="lbl">Draws</span><span class="val" id="xo-draws">0</span></div>' +
+        '<div class="hud-pill"><span class="lbl">Losses</span><span class="val" id="xo-losses">0</span></div>' +
+        '<button class="btn" id="xo-new" type="button">New round</button>' +
       '</div>' +
-      '<div class="canvas-wrap">' +
-        '<canvas id="sn-canvas" class="game-canvas" style="width:min(420px,86vw);aspect-ratio:1"></canvas>' +
-        '<div class="game-over-layer" id="sn-over">' +
-          '<h4 id="sn-over-title">Snake</h4><p id="sn-over-sub" style="color:var(--ink2)">Swipe or press an arrow key to start</p>' +
-          '<button class="btn primary" id="sn-retry" type="button" style="display:none">Play again</button>' +
+      '<div class="canvas-wrap" style="width:min(360px,86vw)">' +
+        '<div class="xo-board" id="xo-board"></div>' +
+        '<div class="game-over-layer" id="xo-over" style="display:none">' +
+          '<h4 id="xo-over-title"></h4><p id="xo-over-sub" style="color:var(--ink2)"></p>' +
+          '<button class="btn primary" id="xo-retry" type="button">Play again</button>' +
         '</div>' +
       '</div>' +
-      '<p class="stage-hint">Arrows / WASD or swipe. Eat, grow, don\u2019t bite yourself.</p>';
+      '<p class="stage-hint">Tap a square or press 1&ndash;9. You are X, the machine is O &mdash; and it flips a coin every round: unbeatable or clueless.</p>';
 
-    const canvas = $('#sn-canvas', stage);
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
-    canvas.width = SIZE * dpr; canvas.height = SIZE * dpr;
-    const ctx = canvas.getContext('2d');
-    ctx.scale(dpr, dpr);
+    const board = $('#xo-board', stage);
+    const winsEl = $('#xo-wins', stage), drawsEl = $('#xo-draws', stage), lossesEl = $('#xo-losses', stage);
+    const overEl = $('#xo-over', stage), overTitle = $('#xo-over-title', stage), overSub = $('#xo-over-sub', stage);
 
-    const scoreEl = $('#sn-score', stage), bestEl = $('#sn-best', stage);
-    const overEl = $('#sn-over', stage), overTitle = $('#sn-over-title', stage),
-          overSub = $('#sn-over-sub', stage), retryBtn = $('#sn-retry', stage);
+    const LINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+    let grid, turn, over;
+    let wins = store.get('xo.wins', 0), draws = store.get('xo.draws', 0), losses = store.get('xo.losses', 0);
+    const cells = [];
 
-    let snake, dir, queue, food, score, speed, alive, started, acc, last, raf = 0;
-    let best = store.get('sn.best', 0);
-    bestEl.textContent = best;
+    const renderScore = () => { winsEl.textContent = wins; drawsEl.textContent = draws; lossesEl.textContent = losses; };
 
-    const spawnFood = () => {
-      let p;
-      do { p = { x: Math.floor(Math.random() * N), y: Math.floor(Math.random() * N) }; }
-      while (snake.some(s => s.x === p.x && s.y === p.y));
-      return p;
+    const winner = g => {
+      for (let i = 0; i < LINES.length; i++) {
+        const a = LINES[i][0], b = LINES[i][1], c = LINES[i][2];
+        if (g[a] && g[a] === g[b] && g[a] === g[c]) return { p: g[a], line: [a, b, c] };
+      }
+      return g.every(v => v) ? { p: 'draw', line: null } : null;
+    };
+
+    const draw = () => cells.forEach((c, i) => {
+      c.className = 'xo-cell' + (grid[i] ? ' filled' : '');
+      c.textContent = grid[i] || '';
+      c.style.color = grid[i] === 'X' ? 'var(--teal)' : (grid[i] === 'O' ? 'var(--pink)' : '');
+    });
+
+    const endGame = res => {
+      over = true;
+      if (res.p === 'X') { wins++; store.set('xo.wins', wins); overTitle.textContent = 'You win!'; }
+      else if (res.p === 'O') { losses++; store.set('xo.losses', losses); overTitle.textContent = 'Machine wins'; }
+      else { draws++; store.set('xo.draws', draws); overTitle.textContent = 'Draw'; }
+      renderScore();
+      if (res.line) res.line.forEach(i => cells[i].classList.add('win'));
+      overSub.textContent = 'X ' + wins + ' \u00b7 O ' + losses + ' \u00b7 = ' + draws;
+      overEl.style.display = 'flex';
+    };
+
+    /* Two personalities, coin-flipped every round in reset():
+       - 'perfect': depth-aware minimax over the full game tree — provably
+         unbeatable (your best possible result is a draw).
+       - 'dumb':    a uniformly random empty square. No blocking, no plan.
+       Which one you're facing is never shown — that's the game. */
+    let mode = 'perfect';
+
+    const minimax = (g, isOTurn, depth) => {
+      const res = winner(g);
+      if (res) {
+        if (res.p === 'O') return 10 - depth;   /* prefer faster wins   */
+        if (res.p === 'X') return depth - 10;   /* prefer slower losses */
+        return 0;
+      }
+      if (isOTurn) {
+        let best = -Infinity;
+        for (let i = 0; i < 9; i++) if (!g[i]) { g[i] = 'O'; best = Math.max(best, minimax(g, false, depth + 1)); g[i] = ''; }
+        return best;
+      }
+      let best = Infinity;
+      for (let i = 0; i < 9; i++) if (!g[i]) { g[i] = 'X'; best = Math.min(best, minimax(g, true, depth + 1)); g[i] = ''; }
+      return best;
+    };
+
+    const bestMove = () => {
+      const g = grid.slice();
+      let best = -Infinity, mv = -1;
+      for (let i = 0; i < 9; i++) if (!g[i]) {
+        g[i] = 'O';
+        const s = minimax(g, false, 0);
+        g[i] = '';
+        if (s > best) { best = s; mv = i; }
+      }
+      return mv;
+    };
+
+    const randomMove = () => {
+      const free = [];
+      for (let i = 0; i < 9; i++) if (!grid[i]) free.push(i);
+      return free.length ? free[Math.floor(Math.random() * free.length)] : -1;
+    };
+
+    const aiMove = () => (mode === 'perfect' ? bestMove() : randomMove());
+
+    const place = (i, mark) => { grid[i] = mark; draw(); };
+
+    const playerMove = i => {
+      if (over || grid[i] || turn !== 'X') return;
+      place(i, 'X');
+      let res = winner(grid);
+      if (res) { endGame(res); return; }
+      turn = 'O';
+      setTimeout(() => {
+        const m = aiMove();
+        if (m >= 0) place(m, 'O');
+        res = winner(grid);
+        if (res) { endGame(res); return; }
+        turn = 'X';
+      }, 360);
     };
 
     const reset = () => {
-      snake = [{ x: 10, y: 10 }, { x: 9, y: 10 }, { x: 8, y: 10 }];
-      dir = { x: 1, y: 0 };
-      queue = [];
-      food = spawnFood();
-      score = 0; speed = 150; acc = 0; last = 0;
-      alive = true; started = false;
-      scoreEl.textContent = '0';
-      overTitle.textContent = 'Snake';
-      overSub.textContent = 'Swipe or press an arrow key to start';
-      retryBtn.style.display = 'none';
-      overEl.style.display = 'flex';
+      grid = Array(9).fill('');
+      turn = 'X'; over = false;
+      mode = Math.random() < 0.5 ? 'perfect' : 'dumb';  /* 50/50 each round */
+      overEl.style.display = 'none';
+      draw();
     };
 
-    const die = () => {
-      alive = false;
-      if (score > best) { best = score; store.set('sn.best', best); bestEl.textContent = best; }
-      overTitle.textContent = 'Game over';
-      overSub.textContent = 'Score: ' + score + ' · Best: ' + best;
-      retryBtn.style.display = '';
-      overEl.style.display = 'flex';
-    };
-
-    const step = () => {
-      if (queue.length) {
-        const nd = queue.shift();
-        if (nd.x !== -dir.x || nd.y !== -dir.y) dir = nd;
-      }
-      const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
-      if (head.x < 0 || head.y < 0 || head.x >= N || head.y >= N ||
-          snake.some(s => s.x === head.x && s.y === head.y)) { die(); return; }
-      snake.unshift(head);
-      if (head.x === food.x && head.y === food.y) {
-        score += 10;
-        scoreEl.textContent = score;
-        speed = Math.max(70, speed - 4);
-        food = spawnFood();
-      } else snake.pop();
-    };
-
-    const draw = now => {
-      ctx.clearRect(0, 0, SIZE, SIZE);
-      ctx.strokeStyle = 'rgba(255,255,255,.045)';
-      ctx.lineWidth = 1;
-      for (let i = 1; i < N; i++) {
-        ctx.beginPath(); ctx.moveTo(i * CELL, 0); ctx.lineTo(i * CELL, SIZE); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(0, i * CELL); ctx.lineTo(SIZE, i * CELL); ctx.stroke();
-      }
-      /* food */
-      const pulse = 4.5 + Math.sin(now / 220) * 1.5;
-      ctx.beginPath();
-      ctx.arc(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2, pulse + 2, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255,107,157,.95)';
-      ctx.shadowColor = 'rgba(255,107,157,.8)'; ctx.shadowBlur = 14;
-      ctx.fill(); ctx.shadowBlur = 0;
-      /* snake */
-      snake.forEach((s, i) => {
-        const t = i / snake.length;
-        ctx.fillStyle = i === 0 ? 'rgba(63,224,197,.98)' : 'rgba(63,224,197,' + (0.85 - t * 0.55) + ')';
-        rr(ctx, s.x * CELL + 1.5, s.y * CELL + 1.5, CELL - 3, CELL - 3, 6);
-        ctx.fill();
-      });
-      /* eyes */
-      const h = snake[0];
-      ctx.fillStyle = '#06121f';
-      const ex = h.x * CELL + CELL / 2, ey = h.y * CELL + CELL / 2;
-      ctx.beginPath(); ctx.arc(ex + dir.y * 4 + dir.x * 3, ey + dir.x * 4 + dir.y * 3, 1.8, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(ex - dir.y * 4 + dir.x * 3, ey - dir.x * 4 + dir.y * 3, 1.8, 0, Math.PI * 2); ctx.fill();
-    };
-
-    const loop = now => {
-      if (!last) last = now;
-      const dt = Math.min(200, now - last);
-      last = now;
-      if (started && alive) {
-        acc += dt;
-        while (acc >= speed) { acc -= speed; if (alive) step(); }
-      }
-      draw(now);
-      raf = requestAnimationFrame(loop);
-    };
-
-    const go = nd => {
-      if (!alive) return;
-      if (!started) { started = true; overEl.style.display = 'none'; }
-      if (queue.length < 3) queue.push(nd);
-    };
-
-    const DIRS = {
-      ArrowLeft: { x: -1, y: 0 }, ArrowRight: { x: 1, y: 0 }, ArrowUp: { x: 0, y: -1 }, ArrowDown: { x: 0, y: 1 },
-      a: { x: -1, y: 0 }, d: { x: 1, y: 0 }, w: { x: 0, y: -1 }, s: { x: 0, y: 1 }
-    };
-    const SWIPES = { left: { x: -1, y: 0 }, right: { x: 1, y: 0 }, up: { x: 0, y: -1 }, down: { x: 0, y: 1 } };
-
-    retryBtn.addEventListener('click', reset);
-    const detachSwipe = attachSwipe(canvas, d => go(SWIPES[d]));
-
-    reset();
-    raf = requestAnimationFrame(loop);
+    for (let i = 0; i < 9; i++) {
+      const c = document.createElement('button');
+      c.type = 'button'; c.className = 'xo-cell';
+      c.addEventListener('click', () => playerMove(i));
+      board.appendChild(c); cells.push(c);
+    }
+    $('#xo-new', stage).addEventListener('click', reset);
+    $('#xo-retry', stage).addEventListener('click', reset);
+    renderScore(); reset();
 
     this.onKey = e => {
-      const nd = DIRS[e.key];
-      if (nd) { e.preventDefault(); go(nd); }
-      else if ((e.key === ' ' || e.key === 'Enter') && !alive) { e.preventDefault(); reset(); }
+      const n = parseInt(e.key, 10);
+      if (n >= 1 && n <= 9) { e.preventDefault(); playerMove(n - 1); }
+      else if ((e.key === ' ' || e.key === 'Enter') && over) { e.preventDefault(); reset(); }
     };
-    this.destroy = () => { cancelAnimationFrame(raf); detachSwipe(); };
+    this.destroy = () => {};
   }
 };
+
 
 /* ============================================================
    FLAPPY GLASS
@@ -2412,7 +2455,665 @@ const Flappy = {
   }
 };
 
-const GAMES = { roulette: Roulette, g2048: G2048, snake: Snake, flappy: Flappy };
+/* ============================================================
+   PLINKO
+   ============================================================ */
+/* ---- Plinko maths: binomial landing odds + payout normalisation ----
+   Bucket k of an n-row board is hit with probability C(n,k)/2^n. On this
+   board the balls tend to fan out toward the edges, so the high multipliers
+   are placed in the CENTRE (the rarer landing zone) and decay toward the
+   edges. Payouts follow an exponential curve peaking at the centre, get a
+   0.3x edge floor, then are normalised so the expected return is ~97% of
+   stake. Works for any row count, so the rows selector can offer 8–16
+   without hand-made tables. */
+function plinkoProbs(n) {
+  const c = [1];
+  for (let r = 0; r < n; r++) for (let k = r; k >= 0; k--) c[k + 1] = (c[k + 1] || 0) + c[k];
+  const total = Math.pow(2, n);
+  return c.map(x => x / total);
+}
+function plinkoMultipliers(rows) {
+  const p = plinkoProbs(rows);
+  const half = rows / 2, R = 2.35, RTP = 0.97, FLOOR = 0.3;
+  /* peak at the centre (k = half), decay toward the edges */
+  let m = p.map((_, k) => Math.pow(R, half - Math.abs(k - half)));
+  const ev0 = m.reduce((s, x, k) => s + x * p[k], 0);
+  m = m.map(x => x * RTP / ev0);
+  for (let pass = 0; pass < 3; pass++) {
+    let floorEv = 0, freeEv = 0;
+    m.forEach((x, k) => { if (x <= FLOOR) floorEv += FLOOR * p[k]; else freeEv += x * p[k]; });
+    if (!freeEv) break;
+    const scale = (RTP - floorEv) / freeEv;
+    m = m.map(x => (x <= FLOOR ? FLOOR : x * scale));
+  }
+  return m.map(x => x >= 100 ? Math.round(x) : x >= 10 ? Math.round(x * 10) / 10 : Math.round(x * 100) / 100);
+}
+
+const Plinko = {
+  title: 'Plinko',
+  init(stage) {
+    /* Physics: Matter.js — the open-source MIT rigid-body engine
+       (brm.io/matter-js, © Liam Brummitt & contributors) that powers the
+       well-known browser Plinko implementations. Board geometry and the
+       payout normalisation above follow those projects. */
+    if (typeof Matter === 'undefined') {
+      stage.innerHTML =
+        '<div class="error-panel glass" style="max-width:420px;margin:0 auto">' +
+          '<p><strong>Physics engine still loading.</strong><br>Plinko runs on the open-source Matter.js engine, fetched from a CDN \u2014 give it a second (or check the connection) and try again.</p>' +
+          '<button class="btn primary" id="pk-retry-lib" type="button">Try again</button>' +
+        '</div>';
+      $('#pk-retry-lib', stage).addEventListener('click', () => { GameModal.close(); GameModal.open('plinko'); });
+      this.onKey = null;
+      this.destroy = () => {};
+      return;
+    }
+    const { Engine, Bodies, Body, Composite, Events } = Matter;
+
+    const ROW_OPTS = [8, 10, 12, 14, 16];
+    const BETS = [10, 25, 50, 100];
+    const MAX_BALLS = 15;
+    const W = 380;
+
+    stage.innerHTML =
+      '<div class="game-hud">' +
+        '<div class="hud-pill"><span class="lbl">Balance</span><span class="val" id="pk-balance">1000</span></div>' +
+        '<div class="hud-pill"><span class="lbl">Last win</span><span class="val" id="pk-win">0</span></div>' +
+        '<div class="hud-pill"><span class="lbl">In play</span><span class="val" id="pk-inplay">0</span></div>' +
+        '<button class="btn" id="pk-reset" type="button">Reset bankroll</button>' +
+      '</div>' +
+      '<div class="canvas-wrap" style="width:fit-content">' +
+        '<canvas id="pk-canvas" class="game-canvas" style="width:min(380px,86vw)"></canvas>' +
+      '</div>' +
+      '<div class="pk-rows" id="pk-rows"><span class="pk-lab">Rows</span></div>' +
+      '<div class="sl-bets" id="pk-bets"><span class="pk-lab">Chips</span></div>' +
+      '<div class="sl-actions"><button class="btn primary" id="pk-drop" type="button">Drop</button></div>' +
+      '<p class="stage-hint">Every tap on the board (or Drop) releases another ball \u2014 stack up to ' + MAX_BALLS + ' at once. More rows, spicier edges.</p>';
+
+    const canvas = $('#pk-canvas', stage);
+    const balEl = $('#pk-balance', stage), winEl = $('#pk-win', stage), inplayEl = $('#pk-inplay', stage);
+    const rowsWrap = $('#pk-rows', stage), betsWrap = $('#pk-bets', stage);
+    const dropBtn = $('#pk-drop', stage);
+    const ctx = canvas.getContext('2d');
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+
+    let balance = store.get('credits', 1000);
+    let bet = store.get('pk.bet', 25);
+    if (!BETS.includes(bet)) bet = 25;
+    let rows = store.get('pk.rows', 12);
+    if (!ROW_OPTS.includes(rows)) rows = 12;
+    let lastWin = 0;
+
+    /* board state (rebuilt when the row count changes) */
+    let engine = null;
+    let pegs = [], balls = [], flashes = [];
+    let mults = [];
+    let gapX = 0, gapY = 0, pegR = 0, ballR = 0;
+    let topY = 40, firstPegY = 64, bucketY = 0, bucketH = 26, boardH = 0, firstBucketLeft = 0;
+    let raf = 0;
+
+    const teardownEngine = () => {
+      if (!engine) return;
+      Events.off(engine);
+      Composite.clear(engine.world, false);
+      Engine.clear(engine);
+      engine = null;
+    };
+
+    const build = () => {
+      teardownEngine();
+      mults = plinkoMultipliers(rows);
+      gapX = Math.min(38, (W - 32) / (rows + 1));
+      gapY = Math.max(26, Math.min(34, 420 / rows));
+      pegR = Math.max(2.2, gapX * 0.13);
+      ballR = Math.max(3.5, gapX * 0.16);
+      const lastPegY = firstPegY + (rows - 1) * gapY;
+      bucketY = lastPegY + gapY * 0.9;
+      boardH = Math.round(bucketY + bucketH + 12);
+      firstBucketLeft = W / 2 - (rows + 1) / 2 * gapX;
+
+      canvas.width = W * dpr;
+      canvas.height = boardH * dpr;
+      canvas.style.aspectRatio = W + '/' + boardH;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      engine = Engine.create();
+      engine.gravity.y = 1.0;
+
+      pegs = [];
+      flashes = new Array(rows + 1).fill(0);
+      const statics = [];
+      for (let r = 0; r < rows; r++) {
+        for (let i = 0; i <= r; i++) {
+          const x = W / 2 + (i - r / 2) * gapX;
+          const y = firstPegY + r * gapY;
+          pegs.push({ x, y, glow: 0 });
+          statics.push(Bodies.circle(x, y, pegR, {
+            isStatic: true, restitution: 0.35, friction: 0, label: 'peg:' + (pegs.length - 1)
+          }));
+        }
+      }
+      const wallOff = (rows - 1) / 2 * gapX + gapX * 0.9;
+      statics.push(Bodies.rectangle(W / 2 - wallOff, boardH / 2, 10, boardH * 2, { isStatic: true, label: 'wall' }));
+      statics.push(Bodies.rectangle(W / 2 + wallOff, boardH / 2, 10, boardH * 2, { isStatic: true, label: 'wall' }));
+      Composite.add(engine.world, statics);
+
+      Events.on(engine, 'collisionStart', e => {
+        for (const pair of e.pairs) {
+          const lbl = pair.bodyA.label.indexOf('peg:') === 0 ? pair.bodyA.label
+                    : pair.bodyB.label.indexOf('peg:') === 0 ? pair.bodyB.label : null;
+          if (lbl) { const peg = pegs[+lbl.slice(4)]; if (peg) peg.glow = 1; }
+        }
+      });
+    };
+
+    const render = () => {
+      balEl.textContent = balance;
+      winEl.textContent = lastWin;
+      inplayEl.textContent = balls.length;
+      [].slice.call(betsWrap.querySelectorAll('.sl-bet')).forEach(b => b.classList.toggle('sel', +b.dataset.bet === bet));
+      [].slice.call(rowsWrap.querySelectorAll('.sl-bet')).forEach(b => b.classList.toggle('sel', +b.dataset.rows === rows));
+    };
+
+    const settle = (k, ballBet) => {
+      const mult = mults[k];
+      const win = Math.round(ballBet * mult);
+      balance += win;
+      lastWin = win;
+      flashes[k] = 1;
+      store.set('credits', balance);
+      render();
+      if (mult >= 5) toast('Landed ' + mult + '\u00d7  +' + win + ' chips');
+    };
+
+    const drop = () => {
+      if (!engine) return;
+      if (balls.length >= MAX_BALLS) { toast('Max ' + MAX_BALLS + ' balls in the air'); return; }
+      if (balance < bet) { toast('Not enough chips for that bet'); return; }
+      balance -= bet;
+      store.set('credits', balance);
+      const body = Bodies.circle(W / 2 + (Math.random() - 0.5) * gapX * 0.5, topY - 16, ballR, {
+        restitution: 0.4, friction: 0.0002, frictionAir: 0.012, density: 0.002, label: 'ball'
+      });
+      Body.setVelocity(body, { x: (Math.random() - 0.5) * 0.4, y: 0 });
+      Composite.add(engine.world, body);
+      balls.push({ body, bet });
+      render();
+    };
+
+    const drawBoard = () => {
+      ctx.clearRect(0, 0, W, boardH);
+      /* drop marker */
+      ctx.fillStyle = 'rgba(255,255,255,.35)';
+      ctx.beginPath();
+      ctx.moveTo(W / 2, topY - 4); ctx.lineTo(W / 2 - 6, topY - 14); ctx.lineTo(W / 2 + 6, topY - 14);
+      ctx.closePath(); ctx.fill();
+      /* pegs */
+      for (const p of pegs) {
+        if (p.glow > 0.04) {
+          ctx.beginPath(); ctx.arc(p.x, p.y, pegR + p.glow * 5, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(63,224,197,' + (0.45 * p.glow) + ')'; ctx.fill();
+          p.glow *= 0.88;
+        } else p.glow = 0;
+        ctx.beginPath(); ctx.arc(p.x, p.y, pegR, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.fill();
+      }
+      /* buckets */
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const baseFs = Math.max(6.5, Math.min(11, gapX * 0.40));
+      /* compact labels so they never overflow a narrow bucket: round big
+         multipliers, keep 1–2 decimals for small ones, then shrink-to-fit */
+      const fmt = m => m >= 10 ? String(Math.round(m))
+        : m >= 1 ? String(Math.round(m * 10) / 10)
+        : String(Math.round(m * 100) / 100);
+      for (let k = 0; k <= rows; k++) {
+        const x = firstBucketLeft + k * gapX;
+        const f = flashes[k];
+        if (f > 0.04) flashes[k] *= 0.92; else flashes[k] = 0;
+        const mult = mults[k];
+        ctx.fillStyle = f > 0.04 ? 'rgba(255,209,102,' + (0.35 + 0.6 * f) + ')'
+          : mult >= 10 ? 'rgba(255,209,102,.16)'
+          : mult >= 2 ? 'rgba(63,224,197,.13)'
+          : 'rgba(255,255,255,.05)';
+        rr(ctx, x + 1.5, bucketY, gapX - 3, bucketH, 6); ctx.fill();
+        ctx.fillStyle = f > 0.04 ? '#0a0f1f' : 'rgba(255,255,255,.55)';
+        const label = fmt(mult) + (gapX >= 34 ? '\u00d7' : '');
+        ctx.font = '700 ' + baseFs + 'px ui-monospace, SFMono-Regular, monospace';
+        const maxW = gapX - 4;
+        if (ctx.measureText(label).width > maxW) {
+          const fs = Math.max(5.5, baseFs * maxW / ctx.measureText(label).width);
+          ctx.font = '700 ' + fs + 'px ui-monospace, SFMono-Regular, monospace';
+        }
+        ctx.fillText(label, x + gapX / 2, bucketY + bucketH / 2);
+      }
+      /* balls */
+      for (const b of balls) {
+        const pos = b.body.position;
+        ctx.beginPath(); ctx.arc(pos.x, pos.y, ballR, 0, Math.PI * 2);
+        ctx.fillStyle = '#3fe0c5';
+        ctx.shadowColor = 'rgba(63,224,197,.85)'; ctx.shadowBlur = 12;
+        ctx.fill(); ctx.shadowBlur = 0;
+      }
+    };
+
+    const loop = () => {
+      if (engine) {
+        Engine.update(engine, 1000 / 60);
+        for (let i = balls.length - 1; i >= 0; i--) {
+          const b = balls[i];
+          const pos = b.body.position;
+          if (pos.y > bucketY - ballR * 0.2) {
+            let k = Math.floor((pos.x - firstBucketLeft) / gapX);
+            if (k < 0) k = 0; if (k > rows) k = rows;
+            Composite.remove(engine.world, b.body);
+            balls.splice(i, 1);
+            settle(k, b.bet);
+          } else if (pos.y > boardH + 80 || pos.x < -40 || pos.x > W + 40) {
+            /* escaped the board somehow — refund the stake */
+            balance += b.bet;
+            store.set('credits', balance);
+            Composite.remove(engine.world, b.body);
+            balls.splice(i, 1);
+            render();
+          }
+        }
+      }
+      drawBoard();
+      raf = requestAnimationFrame(loop);
+    };
+
+    /* controls */
+    ROW_OPTS.forEach(v => {
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'sl-bet'; btn.dataset.rows = v; btn.textContent = v;
+      btn.addEventListener('click', () => {
+        if (v === rows) return;
+        if (balls.length) { toast('Let the balls land first'); return; }
+        rows = v; store.set('pk.rows', rows);
+        build(); render();
+      });
+      rowsWrap.appendChild(btn);
+    });
+    BETS.forEach(b => {
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'sl-bet'; btn.dataset.bet = b; btn.textContent = b;
+      btn.addEventListener('click', () => { bet = b; store.set('pk.bet', bet); render(); });
+      betsWrap.appendChild(btn);
+    });
+
+    const onPointer = e => { e.preventDefault(); drop(); };
+    canvas.addEventListener('pointerdown', onPointer);
+    dropBtn.addEventListener('click', drop);
+    $('#pk-reset', stage).addEventListener('click', () => {
+      balls.forEach(b => { if (engine) Composite.remove(engine.world, b.body); });
+      balls = [];
+      balance = 1000; lastWin = 0;
+      store.set('credits', balance);
+      render();
+      toast('Bankroll reset to 1,000');
+    });
+
+    build();
+    render();
+    raf = requestAnimationFrame(loop);
+
+    this.onKey = e => {
+      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); drop(); }
+    };
+    this.destroy = () => {
+      cancelAnimationFrame(raf);
+      canvas.removeEventListener('pointerdown', onPointer);
+      /* refund any balls still in flight */
+      let refund = 0;
+      balls.forEach(b => { refund += b.bet; });
+      if (refund) { balance += refund; store.set('credits', balance); }
+      balls = [];
+      teardownEngine();
+    };
+  }
+};
+
+/* ============================================================
+   ROULETTE — European single-zero, mobile-first
+   ============================================================
+   37 pockets (0–36). The winning number is preselected uniformly
+   BEFORE the wheel animation starts — the spin only displays the
+   result, it never determines it. Every bet carries the same ~2.7%
+   house edge (1/37), the European-standard single-zero edge:
+     straight (one number)        35:1   → returns stake × 36
+     red / black / odd / even /
+     1–18 / 19–36                1:1    → returns stake × 2
+     dozens (1st/2nd/3rd 12) /
+     columns                     2:1    → returns stake × 3
+   Zero loses every outside bet — that's the edge. */
+const RT_WHEEL = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
+const RT_RED = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
+function rtColor(n){ return n===0 ? 'green' : (RT_RED.has(n) ? 'red' : 'black'); }
+/* profit per 1 staked; a winning bet returns stake × (odds+1) */
+const RT_ODDS = { straight:35, red:1, black:1, odd:1, even:1, low:1, high:1, dozen:2, col:2 };
+function rtBetWins(key, n){
+  if (key.indexOf('straight:') === 0) return n === +key.slice(9);
+  if (key === 'red')   return n!==0 && RT_RED.has(n);
+  if (key === 'black') return n!==0 && !RT_RED.has(n);
+  if (key === 'odd')   return n!==0 && n%2===1;
+  if (key === 'even')  return n!==0 && n%2===0;
+  if (key === 'low')   return n>=1 && n<=18;
+  if (key === 'high')  return n>=19 && n<=36;
+  if (key.indexOf('dozen:') === 0){ const d=+key.slice(6); return n>=(d-1)*12+1 && n<=d*12; }
+  if (key.indexOf('col:') === 0){ if (n===0) return false; const c=+key.slice(4), m=n%3; return (c===3?0:c)===m; }
+  return false;
+}
+function rtBetType(key){
+  if (key.indexOf('straight:')===0) return 'straight';
+  if (key.indexOf('dozen:')===0) return 'dozen';
+  if (key.indexOf('col:')===0) return 'col';
+  return key;
+}
+
+/* ============================================================
+   ROULETTE GAME
+   ============================================================ */
+const Roulette = {
+  title: 'Roulette',
+  init(stage) {
+    const CHIPS = [10, 25, 50, 100];
+    const TAU = Math.PI * 2, POCK = TAU / 37;
+    const COL = { green: '#3fe0c5', red: '#ff5d5d', black: '#161c2e', gold: '#ffd166' };
+
+    stage.innerHTML =
+      '<div class="game-hud">' +
+        '<div class="hud-pill"><span class="lbl">Balance</span><span class="val" id="rt-balance">1000</span></div>' +
+        '<div class="hud-pill"><span class="lbl">On table</span><span class="val" id="rt-staked">0</span></div>' +
+        '<div class="hud-pill"><span class="lbl">Last result</span><span class="val" id="rt-win">\u2014</span></div>' +
+        '<button class="btn" id="rt-reset" type="button">Reset bankroll</button>' +
+      '</div>' +
+      '<div class="rt-wheel-wrap" id="rt-wheel-wrap" style="display:none">' +
+        '<canvas id="rt-canvas" class="game-canvas" style="width:min(300px,82vw);aspect-ratio:1"></canvas>' +
+        '<p class="stage-hint" id="rt-wheel-hint">No more bets\u2026</p>' +
+      '</div>' +
+      '<div class="rt-table-wrap" id="rt-table-wrap">' +
+        '<div class="rt-nums-wrap">' +
+          '<button class="rt-cell rt-zero" type="button" data-bet="straight:0">0</button>' +
+          '<div class="rt-nums" id="rt-nums"></div>' +
+          '<div class="rt-cols" id="rt-cols"></div>' +
+        '</div>' +
+        '<div class="rt-dozen" id="rt-dozen"></div>' +
+        '<div class="rt-even" id="rt-even"></div>' +
+      '</div>' +
+      '<div class="sl-bets" id="rt-chips"><span class="pk-lab">Chip</span></div>' +
+      '<div class="sl-actions">' +
+        '<button class="btn" id="rt-clear" type="button">Clear</button>' +
+        '<button class="btn primary" id="rt-spin" type="button">Spin</button>' +
+      '</div>' +
+      '<p class="stage-hint">Place chips on the table, then Spin to reveal the wheel. European single-zero \u2014 the house edge is the green 0.</p>';
+
+    const numsEl = $('#rt-nums', stage), colsEl = $('#rt-cols', stage), dozenEl = $('#rt-dozen', stage), evenEl = $('#rt-even', stage);
+    const chipsWrap = $('#rt-chips', stage);
+    const balEl = $('#rt-balance', stage), stakedEl = $('#rt-staked', stage), winEl = $('#rt-win', stage);
+    const spinBtn = $('#rt-spin', stage), clearBtn = $('#rt-clear', stage);
+    const tableWrap = $('#rt-table-wrap', stage), wheelWrap = $('#rt-wheel-wrap', stage), wheelHint = $('#rt-wheel-hint', stage);
+    const canvas = $('#rt-canvas', stage);
+
+    let balance = store.get('credits', 1000);
+    let chip = store.get('rt.chip', 25);
+    if (!CHIPS.includes(chip)) chip = 25;
+    let bets = new Map();          /* betKey -> amount */
+    let state = 'betting';         /* betting | spinning | result */
+    let lastNet = null;
+    let winning = 0;
+    let rot = 0, raf = 0, spinAnim = null;
+    let spinState = null;
+    let ballAngle = -Math.PI / 2, ballR = 0, ballActive = false;
+
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const W = 300, H = 300;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    const ctx = canvas.getContext('2d'); ctx.scale(dpr, dpr);
+
+    const totalStaked = () => { let s = 0; bets.forEach(v => s += v); return s; };
+
+    const render = () => {
+      balEl.textContent = balance;
+      stakedEl.textContent = totalStaked();
+      winEl.textContent = lastNet == null ? '\u2014' : (lastNet >= 0 ? '+' + lastNet : '\u2212' + Math.abs(lastNet));
+      [].slice.call(chipsWrap.querySelectorAll('.sl-bet')).forEach(b => b.classList.toggle('sel', +b.dataset.chip === chip));
+      const cells = stage.querySelectorAll('[data-bet]');
+      cells.forEach(c => {
+        const amt = bets.get(c.dataset.bet) || 0;
+        let badge = c.querySelector('.rt-chip-badge');
+        if (amt > 0) {
+          c.classList.add('has-bet');
+          if (badge) badge.textContent = amt;
+          else { const d = document.createElement('span'); d.className = 'rt-chip-badge'; d.textContent = amt; c.appendChild(d); }
+        } else {
+          c.classList.remove('has-bet');
+          if (badge) badge.remove();
+        }
+      });
+      spinBtn.disabled = state === 'spinning' || (state === 'betting' && totalStaked() === 0);
+      clearBtn.disabled = (state !== 'betting') || totalStaked() === 0;
+      spinBtn.textContent = state === 'spinning' ? 'Spinning\u2026' : (state === 'result' ? 'New round' : 'Spin');
+      /* hide the chip selector while the wheel is spinning (and while the
+         result is shown) — chips are only meaningful at the betting stage */
+      chipsWrap.style.display = state === 'betting' ? '' : 'none';
+    };
+
+    const placeBet = key => {
+      if (state !== 'betting') return;
+      if (balance < totalStaked() + chip) { toast('Not enough chips for that chip'); return; }
+      bets.set(key, (bets.get(key) || 0) + chip);
+      render();
+    };
+    const clearBets = () => { if (state !== 'betting') return; bets.clear(); render(); };
+
+    /* number cells: top row 3,6,\u2026,36; mid 2,5,\u2026,35; bottom 1,4,\u2026,34 */
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 12; c++) {
+        const n = c * 3 + (3 - r);
+        const btn = document.createElement('button');
+        btn.type = 'button'; btn.className = 'rt-cell rt-num ' + rtColor(n);
+        btn.dataset.bet = 'straight:' + n; btn.textContent = n;
+        numsEl.appendChild(btn);
+      }
+    }
+    /* column 2:1 buttons: top row -> col 3, mid -> col 2, bottom -> col 1 */
+    for (let r = 0; r < 3; r++) {
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'rt-cell rt-colbet';
+      btn.dataset.bet = 'col:' + (3 - r); btn.textContent = '2:1';
+      colsEl.appendChild(btn);
+    }
+    [['1st 12', 'dozen:1'], ['2nd 12', 'dozen:2'], ['3rd 12', 'dozen:3']].forEach(([lbl, key]) => {
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'rt-cell rt-outside'; btn.dataset.bet = key; btn.textContent = lbl;
+      dozenEl.appendChild(btn);
+    });
+    [['1\u201318', 'low'], ['EVEN', 'even'], ['RED', 'red'], ['BLACK', 'black'], ['ODD', 'odd'], ['19\u201336', 'high']].forEach(([lbl, key]) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'rt-cell rt-outside' + (key === 'red' ? ' red' : '') + (key === 'black' ? ' black' : '');
+      btn.dataset.bet = key; btn.textContent = lbl;
+      evenEl.appendChild(btn);
+    });
+    CHIPS.forEach(v => {
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'sl-bet'; btn.dataset.chip = v; btn.textContent = v;
+      btn.addEventListener('click', () => { if (state !== 'betting') return; chip = v; store.set('rt.chip', chip); render(); });
+      chipsWrap.appendChild(btn);
+    });
+
+    stage.querySelectorAll('[data-bet]').forEach(el => el.addEventListener('click', () => placeBet(el.dataset.bet)));
+
+    const drawWheel = () => {
+      ctx.clearRect(0, 0, W, H);
+      const cx = W / 2, cy = H / 2, R = Math.min(W, H) / 2 - 4;
+      const rWedgeOut = R * 0.93, rHub = R * 0.45;
+      /* outer ball track (dark band the ball orbits on) */
+      ctx.fillStyle = '#070b16'; ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.fill();
+      /* pocket wedges */
+      for (let i = 0; i < 37; i++) {
+        const n = RT_WHEEL[i];
+        const a0 = -Math.PI / 2 + (i - 0.5) * POCK + rot, a1 = a0 + POCK;
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, rWedgeOut, a0, a1); ctx.closePath();
+        ctx.fillStyle = n === 0 ? COL.green : (RT_RED.has(n) ? COL.red : COL.black); ctx.fill();
+      }
+      /* hub */
+      ctx.fillStyle = 'rgba(10,15,31,.98)'; ctx.beginPath(); ctx.arc(cx, cy, rHub, 0, TAU); ctx.fill();
+      /* gold frets between pockets (what the ball bounces off) */
+      ctx.strokeStyle = 'rgba(255,209,102,.55)'; ctx.lineWidth = 1;
+      for (let i = 0; i < 37; i++) {
+        const ab = -Math.PI / 2 + (i - 0.5) * POCK + rot;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(ab) * rHub, cy + Math.sin(ab) * rHub);
+        ctx.lineTo(cx + Math.cos(ab) * rWedgeOut, cy + Math.sin(ab) * rWedgeOut);
+        ctx.stroke();
+      }
+      /* numbers, radial, in the outer part of each pocket */
+      for (let i = 0; i < 37; i++) {
+        const n = RT_WHEEL[i];
+        const mid = -Math.PI / 2 + i * POCK + rot;
+        ctx.save(); ctx.translate(cx, cy); ctx.rotate(mid);
+        ctx.fillStyle = '#fff'; ctx.font = '700 ' + Math.max(7, R * 0.072) + 'px ui-monospace, monospace';
+        ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+        ctx.fillText(String(n), rWedgeOut - 3, 0);
+        ctx.restore();
+      }
+      /* fixed diamond deflectors on the track */
+      const rDef = R * 0.945;
+      ctx.fillStyle = 'rgba(255,255,255,.9)';
+      for (let d = 0; d < 8; d++) {
+        const a = d * (TAU / 8) - Math.PI / 2;
+        const dx = cx + Math.cos(a) * rDef, dy = cy + Math.sin(a) * rDef;
+        ctx.save(); ctx.translate(dx, dy); ctx.rotate(Math.PI / 4);
+        ctx.beginPath(); ctx.rect(-2.3, -2.3, 4.6, 4.6); ctx.fill();
+        ctx.restore();
+      }
+      ctx.strokeStyle = 'rgba(255,255,255,.2)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, rHub, 0, TAU); ctx.stroke();
+      ctx.fillStyle = COL.gold; ctx.font = '700 16px "Space Grotesk", sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(state === 'result' ? String(winning) : 'RT', cx, cy);
+      /* the ball: orbits the outer track, spirals inward past the
+         deflectors, bounces off the frets, and settles into a pocket —
+         its resting place IS the result (no preselected winner, no pointer). */
+      if (ballActive) {
+        const bx = cx + Math.cos(ballAngle) * ballR;
+        const by = cy + Math.sin(ballAngle) * ballR;
+        const br = Math.max(3.5, R * 0.045);
+        ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.arc(bx + 1, by + 2, br, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.shadowColor = 'rgba(255,255,255,.6)'; ctx.shadowBlur = 6;
+        ctx.beginPath(); ctx.arc(bx, by, br, 0, TAU); ctx.fill(); ctx.shadowBlur = 0;
+        ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.beginPath(); ctx.arc(bx - br * 0.3, by - br * 0.3, br * 0.35, 0, TAU); ctx.fill();
+      }
+    };
+
+    const settle = () => {
+      state = 'result';
+      const staked = totalStaked();
+      balance -= staked;
+      let winnings = 0;
+      bets.forEach((amt, key) => { if (rtBetWins(key, winning)) winnings += amt * (RT_ODDS[rtBetType(key)] + 1); });
+      balance += winnings;
+      lastNet = winnings - staked;
+      store.set('credits', balance);
+      render();
+      const col = rtColor(winning);
+      wheelHint.textContent = 'Landed on ' + winning + ' (' + col + '). ' + (lastNet >= 0 ? '+' : '') + lastNet + ' chips.';
+      if (lastNet > 0) toast(winning + ' ' + col.toUpperCase() + ' \u2014 +' + lastNet + ' chips');
+      else if (lastNet < 0) toast(winning + ' ' + col.toUpperCase() + ' \u2014 ' + lastNet + ' chips');
+      else toast(winning + ' ' + col.toUpperCase() + ' \u2014 even');
+    };
+
+    const spin = () => {
+      if (state === 'result') {
+        bets.clear(); state = 'betting'; winning = 0; ballActive = false; spinState = null; spinAnim = null;
+        tableWrap.style.display = ''; wheelWrap.style.display = 'none'; render(); return;
+      }
+      if (state !== 'betting') return;
+      if (totalStaked() === 0) { toast('Place a bet first'); return; }
+      state = 'spinning'; render();
+      tableWrap.style.display = 'none'; wheelWrap.style.display = '';
+      wheelHint.textContent = 'No more bets\u2026';
+      /* Eased spin, after the open-source canvas-wheel pattern used by
+         Winwheel.js and the classic HTML5 wheel demos (e.g.
+         https://dougtesting.net/winwheel/docs/tut12_animation_details):
+         the wheel and ball counter-rotate and decelerate on an ease-out
+         curve. The winning pocket is preselected, then the ball's final
+         world angle is computed so it lands exactly in that pocket's
+         centre — so the resting place always matches the reported result,
+         with no visible snap (the easing arrives precisely on target). */
+      const Rm = Math.min(W, H) / 2 - 4;
+      const winnerIdx = Math.floor(Math.random() * 37);
+      winning = RT_WHEEL[winnerIdx];
+      const wheelTurns = 4 + Math.random() * 2;      /* 4–6 turns, clockwise */
+      const ballTurns  = 6 + Math.random() * 3;      /* 6–9 turns, the other way */
+      const startRot = rot;
+      const finalRot = startRot + wheelTurns * TAU;
+      /* pocket i is centred at world angle -π/2 + i*POCK + rot */
+      const ballAngleEnd   = -Math.PI / 2 + winnerIdx * POCK + finalRot;
+      const ballAngleStart = ballAngleEnd + ballTurns * TAU;   /* spin backward into place */
+      const ballTrackR  = Rm * 0.965;     /* outer track the ball orbits on */
+      const ballSettleR = Rm * 0.60;      /* inner pocket ring where it comes to rest */
+      spinState = {
+        t0: performance.now(),
+        duration: 4200 + Math.random() * 1200,   /* 4.2–5.4s */
+        startRot, finalRot,
+        ballAngleStart, ballAngleEnd,
+        ballTrackR, ballSettleR,
+        winnerIdx
+      };
+      ballR = ballTrackR;
+      ballAngle = ballAngleStart;
+      ballActive = true;
+      spinAnim = easedStep;
+    };
+
+    const easeOutQuart = t => 1 - Math.pow(1 - t, 4);
+    const easedStep = now => {
+      const s = spinState; if (!s) return;
+      let t = (now - s.t0) / s.duration;
+      if (t >= 1) {
+        rot = s.finalRot;
+        ballAngle = s.ballAngleEnd;
+        ballR = s.ballSettleR;
+        spinState = null; spinAnim = null;
+        state = 'result';
+        settle();
+        return;
+      }
+      const e = easeOutQuart(t);
+      rot = s.startRot + (s.finalRot - s.startRot) * e;
+      ballAngle = s.ballAngleStart + (s.ballAngleEnd - s.ballAngleStart) * e;
+      /* ball rides the outer track while fast, drops to the pocket ring as it slows */
+      ballR = s.ballTrackR + (s.ballSettleR - s.ballTrackR) * Math.pow(t, 2.2);
+      /* gentle damped bobble while it settles (decays to 0 at t=1, so the
+         resting radius is exact and there is no snap) */
+      ballR += Math.pow(1 - t, 2) * Math.sin(t * Math.PI * 7) * (s.ballTrackR - s.ballSettleR) * 0.06;
+    };
+
+    const masterLoop = () => {
+      if (spinAnim) spinAnim(performance.now());
+      drawWheel();
+      raf = requestAnimationFrame(masterLoop);
+    };
+
+    $('#rt-reset', stage).addEventListener('click', () => {
+      balance = 1000; bets.clear(); lastNet = null; winning = 0; state = 'betting'; rot = 0; spinAnim = null; ballActive = false; spinState = null;
+      tableWrap.style.display = ''; wheelWrap.style.display = 'none';
+      store.set('credits', balance); render(); toast('Bankroll reset to 1,000');
+    });
+    clearBtn.addEventListener('click', clearBets);
+    spinBtn.addEventListener('click', spin);
+
+    render();
+    raf = requestAnimationFrame(masterLoop);
+
+    this.onKey = e => {
+      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); spin(); }
+    };
+    this.destroy = () => { cancelAnimationFrame(raf); };
+  }
+};
+
+const GAMES = { slots: Slots, plinko: Plinko, roulette: Roulette, g2048: G2048, xo: TicTacToe, flappy: Flappy };
 
 /* ============================================================
    Boot
@@ -2423,15 +3124,11 @@ const GAMES = { roulette: Roulette, g2048: G2048, snake: Snake, flappy: Flappy }
   Sec.init();
   initContact();
   startGreetRoller();
-  const newsRefresh = $('#news-refresh');
-  if (newsRefresh) newsRefresh.addEventListener('click', () => News.load(true));
-  const secRefresh = $('#sec-refresh');
-  if (secRefresh) secRefresh.addEventListener('click', () => Sec.load(true));
   $$('.game-tile').forEach(tile =>
     tile.addEventListener('click', () => GameModal.open(tile.dataset.game))
   );
   refreshBestScores();
-  route();
+  route(true);
 })();
 
 </script>

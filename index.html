@@ -3,21 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Valency Colaco — colaco.se</title>
-<meta name="description" content="Valency Colaco — AI/ML and cybersecurity researcher. World news, security intel, arcade games, and a direct line to my inbox.">
+<title>Valency Colaco — valencycolaco.com</title>
+<meta name="description" content="Valency Colaco — English educator and cybersecurity researcher. World news, security intel, arcade games, and a direct line to my inbox.">
 <meta property="og:title" content="Valency Colaco">
 <meta property="og:description" content="News · Cybersecurity intel · Games · Say hello.">
-<meta property="og:url" content="https://colaco.se/">
+<meta property="og:url" content="https://valencycolaco.com/">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#05070d">
-<link rel="canonical" href="https://colaco.se/">
+<link rel="canonical" href="https://valencycolaco.com/">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%236ab7ff'/%3E%3Cstop offset='1' stop-color='%23a679ff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='%230a0f1f'/%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)' opacity='.22'/%3E%3Ctext x='32' y='43' font-family='Arial,Helvetica,sans-serif' font-size='32' font-weight='700' text-anchor='middle' fill='url(%23g)'%3EV%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
-   COLACO.SE — Liquid Glass
+   VALENCYCOLACO.COM — Liquid Glass
    Tokens
    ============================================================ */
 :root{
@@ -192,6 +192,47 @@ main{max-width:1100px;margin:0 auto;padding:0 20px}
 .card[data-accent="violet"]{--accent:var(--violet)}
 
 /* ============================================================
+   Research papers + Ponytail
+   ============================================================ */
+.papers{display:flex;flex-direction:column;gap:1.1rem}
+.paper-card{padding:1.5rem 1.6rem;border-radius:var(--r-lg);display:flex;flex-direction:column;gap:.6rem;transition:transform .25s,border-color .25s}
+.paper-card:hover{transform:translateY(-2px);border-color:var(--stroke-2)}
+.paper-meta{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+.paper-year{font-family:var(--font-mono);font-weight:700;font-size:.78rem;color:var(--ink);padding:.18rem .6rem;border-radius:999px;border:1px solid var(--stroke);background:rgba(255,255,255,.06)}
+.paper-type{font-size:.74rem;letter-spacing:.04em;text-transform:uppercase;color:var(--ink3);font-weight:700}
+.paper-card h3{font-family:var(--font-display);font-size:1.2rem;font-weight:700;line-height:1.35;letter-spacing:-.01em}
+.paper-card h3 a{text-decoration:none}
+.paper-card h3 a:hover{text-decoration:underline;text-underline-offset:3px}
+.paper-authors{color:var(--ink2);font-size:.9rem;font-weight:600}
+.paper-abstract{color:var(--ink3);font-size:.9rem;line-height:1.6}
+.paper-link{align-self:flex-start;margin-top:.2rem;display:inline-flex;align-items:center;gap:.35rem;font-weight:600;font-size:.88rem;text-decoration:none;color:var(--blue)}
+.paper-link:hover{text-decoration:underline;text-underline-offset:3px}
+
+.ponytail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.1rem}
+@media (max-width:760px){.ponytail-grid{grid-template-columns:1fr}}
+.ponytail-grid .card{padding:1.7rem 1.6rem 1.5rem}
+.ladder{list-style:none;padding:0;margin:.4rem 0 0;display:flex;flex-direction:column;gap:.45rem}
+.ladder li{color:var(--ink2);font-size:.92rem;line-height:1.45;padding-left:.2rem}
+.ladder li b{color:var(--ink);font-family:var(--font-mono);margin-right:.35rem}
+.benchmark{color:var(--ink3);font-size:.82rem;font-family:var(--font-mono);margin-top:.4rem}
+
+/* Ponytail modal */
+.ponytail-panel{width:min(720px,100%)}
+.ponytail-body{display:flex;flex-direction:column;gap:.85rem}
+.ponytail-body h4{font-family:var(--font-display);font-size:1.02rem;font-weight:700;margin-top:.4rem}
+.pt-lead{color:var(--ink2);font-size:.94rem}
+.pt-hint{color:var(--ink3);font-size:.82rem;margin:-.2rem 0 .1rem}
+.pt-hint code,.pt-foot code{font-family:var(--font-mono);background:rgba(255,255,255,.08);padding:.05rem .35rem;border-radius:5px;font-size:.85em}
+.pt-foot{margin-top:.5rem}
+.code-block{position:relative;background:rgba(3,6,14,.66);border:1px solid var(--stroke);border-radius:var(--r-sm);padding:.95rem 1.05rem;overflow:auto;margin:0;font-family:var(--font-mono);font-size:.82rem;line-height:1.6;color:var(--ink2)}
+.code-block code{font-family:inherit;color:inherit;white-space:pre}
+.prompt-wrap{position:relative}
+.prompt-block{max-height:340px}
+.prompt-block code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere}
+.copy-btn{align-self:flex-start;margin-top:.55rem}
+.copy-btn.copied{background:var(--teal);border-color:var(--teal)}
+
+/* ============================================================
    Feed items (news + security)
    ============================================================ */
 .feed{display:flex;flex-direction:column;gap:.9rem}
@@ -355,7 +396,7 @@ noscript div{position:fixed;inset:0;background:var(--bg0);color:var(--ink);displ
 </style>
 </head>
 <body>
-<noscript><div><p>colaco.se needs JavaScript for the live feeds and games. Please enable it and reload.</p></div></noscript>
+<noscript><div><p>valencycolaco.com needs JavaScript for the live feeds and games. Please enable it and reload.</p></div></noscript>
 
 <div class="aurora" aria-hidden="true"></div>
 <div class="blob blob-1" aria-hidden="true"></div>
@@ -371,6 +412,8 @@ noscript div{position:fixed;inset:0;background:var(--bg0);color:var(--ink);displ
     <a href="#news" data-nav="news"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.7 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.7-3.8-9S9.5 5.6 12 3Z"/></svg><span>News</span></a>
     <a href="#security" data-nav="security"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3Z"/></svg><span>Security</span></a>
     <a href="#games" data-nav="games"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="11" rx="5.5"/><path d="M8 11v3M6.5 12.5h3"/><circle cx="16" cy="11.4" r="0.9" fill="currentColor" stroke="none"/><circle cx="18.2" cy="13.6" r="0.9" fill="currentColor" stroke="none"/></svg><span>Games</span></a>
+    <a href="#research" data-nav="research"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v14"/><path d="M3 19h18M17 8h2a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2"/></svg><span>Research</span></a>
+    <a href="#ponytail" data-nav="ponytail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3Z"/></svg><span>Ponytail</span></a>
     <a href="#contact" data-nav="contact"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m3.5 7 8.5 6 8.5-6"/></svg><span>Contact</span></a>
   </nav>
 </header>
@@ -382,8 +425,8 @@ noscript div{position:fixed;inset:0;background:var(--bg0);color:var(--ink);displ
     <div class="hero">
       <span class="monogram" aria-hidden="true">VC</span>
       <h1>Valency Colaco</h1>
-      <p class="tag">Cybersecurity &amp; AI/ML researcher</p>
-      <span class="loc"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 21s-7-5.6-7-11a7 7 0 1 1 14 0c0 5.4-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>Sweden</span>
+      <p class="tag">English educator &middot; Cybersecurity &amp; ML researcher</p>
+      <span class="loc"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 21s-7-5.6-7-11a7 7 0 1 1 14 0c0 5.4-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>Link&ouml;ping, Sweden</span>
       <div class="cta-row">
         <a class="btn primary" href="#options" data-scroll>Explore ↓</a>
         <a class="btn" href="#contact">Say hello</a>
@@ -504,6 +547,109 @@ noscript div{position:fixed;inset:0;background:var(--bg0);color:var(--ink);displ
     </div>
   </section>
 
+  <!-- ============================ RESEARCH ============================ -->
+  <section class="view" id="view-research" aria-label="Research">
+    <div class="view-head">
+      <div>
+        <span class="eyebrow"><span class="dot" style="background:var(--blue)"></span>Publications</span>
+        <h2>Selected research</h2>
+        <p>Formal verification of tree ensembles, real-time evasion detection, and ML security in safety-critical systems. From my <a href="https://scholar.google.com/citations?user=xMG8t8oAAAAJ&amp;hl=en" target="_blank" rel="noopener">Google Scholar profile</a>.</p>
+      </div>
+    </div>
+
+    <div class="papers">
+      <article class="paper-card glass">
+        <div class="paper-meta">
+          <span class="paper-year">2025</span>
+          <span class="paper-type">Licentiate thesis</span>
+        </div>
+        <h3><a href="https://scholar.google.com/citations?view_op=view_citation&amp;hl=en&amp;user=xMG8t8oAAAAJ&amp;citation_for_view=xMG8t8oAAAAJ:zYLM7Y9cAGgC" target="_blank" rel="noopener">Hardening Tree Ensembles: Real-Time and Effective Evasion Defences Beyond Adversarial Re-Training</a></h3>
+        <p class="paper-authors">Valency Oscar Colaco &middot; Link&ouml;ping University</p>
+        <p class="paper-abstract">Tree ensembles like random forests and gradient boosting machines are widely used machine learning (ML) models, often outperforming advanced techniques like deep neural networks on structured tabular data tasks. These models also have interpretable (human-understandable) structures that enable stakeholders to trace the decision-making process, making them particularly suitable for use in safety- and security-critical applications where trust in the model&rsquo;s behaviour is paramount. Despite these advantages, recent work has shown that they are highly vulnerable to adversarial examples: carefully perturbed inputs that elicit misclassifications. These vulnerabilities are especially concerning as ML continues to permeate domains that are critical to societal functioning. Their seriousness is underscored by legislation such as the recently passed European Union Artificial Intelligence (AI) Act. This act mandates resilience against AI-specific vulnerabilities like evasion attacks caused by adversarial examples targeting ML models at inference time. Measures intended to improve resilience against such evasions, often referred to as hardening, generally involve two strategies: proactive defences, which aim to make models robust (e.g., adversarial re-training), and reactive defences, which focus on detecting and mitigating evasions at inference time. This thesis examines both strategies; it shows that proactive methods like model re-training are ineffective for tree ensembles and consequently advances the state-of-the-art in reactive defences. In the context of re-training, doubling the training set through targeted data augmentation steps left accuracy largely unchanged. However, robustness, when quantified using formal verification techniques, dropped by 28&ndash;82% across two case studies. This indicates that model re-training alone is ineffective for tree ensembles. To address this, we leveraged formal methods to develop Iceman, a prototype system that uses counterexample regions which violate the robustness property to detect evasion attempts. Iceman can detect evasion attacks regardless of the attack generation process without modifying the underlying tree ensemble. It outperforms the current state-of-the-art methods in evasion detection, OC-Score and GROOT. Across four case studies, it improves Matthews Correlation Coefficient scores by 0.20&ndash;0.91 and achieves detection speeds 5&ndash;115x faster than OC-Score. In addition, it provides alert filtering and prioritisation capabilities with over 98% accuracy to address alert fatigue in intrusion detection systems. However, Iceman&rsquo;s applicability is limited to scenarios with fixed attacker perturbation budgets, characterised by pre-defined constraints on the input manipulations that an attacker can apply. To expand this applicability to unconstrained attacker perturbation budgets, we developed an additional system, called Maverick, designed to complement Iceman for a better defensive strategy. Just like Iceman, Maverick does not modify the underlying tree ensemble and can detect evasion attacks regardless of the attack generation process. We prove that Maverick&rsquo;s core detection mechanism is mathematically equivalent to OC-Score, and present enhancements that achieve 85&ndash;563x speedups over OC-Score while maintaining identical detection performance and supporting evasion attack diagnostics with over 93% accuracy.</p>
+        <a class="paper-link" href="https://www.diva-portal.org/smash/get/diva2:2013682/FULLTEXT01.pdf" target="_blank" rel="noopener">Read full thesis ↗</a>
+      </article>
+
+      <article class="paper-card glass">
+        <div class="paper-meta">
+          <span class="paper-year">2025</span>
+          <span class="paper-type">Conference paper</span>
+        </div>
+        <h3><a href="https://scholar.google.com/citations?view_op=view_citation&amp;hl=en&amp;user=xMG8t8oAAAAJ&amp;citation_for_view=xMG8t8oAAAAJ:qjMakFHDy7sC" target="_blank" rel="noopener">Real-Time Evasion Detection in Tree Ensemble Automotive Intrusion Detection Systems</a></h3>
+        <p class="paper-authors">Valency Oscar Colaco &middot; Simin Nadjm-Tehrani</p>
+        <p class="paper-abstract">Safety-critical functions in modern vehicles rely on electronic control units that communicate using the controller area network (CAN) protocol, which lacks vital security features. In this context, machine learning (ML) based intrusion detection systems (IDSs) were proposed as a solution to improve cyber resilience through real-time attack detection. However, these ML-IDSs must also withstand evasion attacks that could compromise vehicular safety. To this end, this paper addresses such attacks in misuse-based tree ensemble IDSs and proposes a method that detects evasion attempts. It uses the ordered set of reached leaf nodes activated by correctly classified training samples as a normality baseline. An autoencoder-based detector then identifies deviations as likely evasion attempts. Our approach does not modify the protected tree ensemble IDS, assumes no knowledge of the process for generating adversarial examples (ensuring generalisability), and works with any additive tree ensemble. We also prove that it is mathematically equivalent to the state-of-the-art, which we advance in terms of detection speed by replacing its Hamming distance-based deviation search with an autoencoder-based model of typical predictive behavior trained using our custom loss function. This enhancement results in a detection process that is orders of magnitude faster. Additionally, our method offers nuanced insights regarding the pre-evasion attack signature prior to the adversarial perturbation, thereby enriching the security analysis of the features targeted during evasion attempts. The prototype system we present, called Maverick, has a very low prediction latency, making it 85-563x faster than the current state-of-the-art while maintaining identical detection accuracy. Finally, Maverick predicts the pre-evasion attack signatures of the evasion samples with an accuracy of more than 93% and has an average prediction time well below the message transmission rate for CAN 2.0 and CAN FD, thereby satisfying the criteria for an evasion-hardened &amp; real-time automotive IDS.</p>
+        <a class="paper-link" href="https://www.ida.liu.se/labs/rtslab/publications/2025/maverick.pdf" target="_blank" rel="noopener">Read paper ↗</a>
+      </article>
+
+      <article class="paper-card glass">
+        <div class="paper-meta">
+          <span class="paper-year">2024</span>
+          <span class="paper-type">Conference paper</span>
+        </div>
+        <h3>Fast Evasion Detection &amp; Alert Management in Tree-Ensemble-Based Intrusion Detection Systems</h3>
+        <p class="paper-authors">Valency Oscar Colaco &middot; Simin Nadjm-Tehrani</p>
+        <p class="paper-abstract">Intrusion Detection Systems (IDSs) can help bolster cyber resilience in high-risk systems by promptly detecting anomalies and thwarting security threats which could have catastrophic consequences. While Machine Learning (ML) techniques like Tree Ensembles are well suited for tasks like detecting anomalies, the widespread adoption of these techniques in IDSs faces barriers due to the threat of evasion attacks. Moreover, ML-based IDSs are susceptible to producing a high rate of false positive alerts during detection, causing alert fatigue. To alleviate these problems, we present a method that uses counterexample regions to detect evasion attacks in tree-ensemble-based IDSs. We generate these counterexample regions by defining a modified mapping checker in VoTE, a fast &amp; scalable formal verification tool specialized for tree ensembles. Our method also provides quaternary annotations, empowering security managers with nuanced insights to better handle alerts in the triage queue. Our approach does not require training a separate model and displays good detection performance (&ge;98%) in both adversarial &amp; non-adversarial scenarios in four real-world case studies when compared to several approaches in the literature. The prototype system we implement based on our method called Iceman has a very low prediction latency, making it 5-115x faster than the current state-of-the-art in evasion detection for tree ensembles. Finally, empirical evaluations show that Iceman can correctly re-annotate the samples in the presence of evasion attacks for alert management purposes with an accuracy of more than 98%.</p>
+        <a class="paper-link" href="https://www.ida.liu.se/labs/rtslab/publications/2024/Iceman_IEEE.pdf" target="_blank" rel="noopener">Read paper ↗</a>
+      </article>
+
+      <article class="paper-card glass">
+        <div class="paper-meta">
+          <span class="paper-year">2023</span>
+          <span class="paper-type">Conference paper</span>
+        </div>
+        <h3><a href="https://scholar.google.com/citations?view_op=view_citation&amp;hl=en&amp;user=xMG8t8oAAAAJ&amp;citation_for_view=xMG8t8oAAAAJ:d1gkVwhDpl0C" target="_blank" rel="noopener">Formal Verification of Tree Ensembles against Real-World Composite Geometric Perturbations</a></h3>
+        <p class="paper-authors">Valency Oscar Colaco &middot; Simin Nadjm-Tehrani</p>
+        <p class="paper-abstract">Since machine learning components are now being considered for integration in safety-critical systems, safety stakeholders should be able to provide convincing arguments that the systems are safe for use in realistic deployment settings. In the case of vision-based systems, the use of tree ensembles calls for formal stability verification against a host of composite geometric perturbations that the system may encounter. Such perturbations are a combination of an affine transformation like rotation, scaling, or translation and a pixel-wise transformation like changes in lighting. However, existing verification approaches mostly target small norm-based perturbations, and do not account for composite geometric perturbations. In this work, we present a novel method to precisely define the desired stability regions for these types of perturbations. We propose a feature space modelling process that generates abstract intervals which can be passed to VoTE, an efficient formal verification engine that is specialised for tree ensembles. Our method is implemented as an extension to VoTE by defining a new property checker. The applicability of the method is demonstrated by verifying classifier stability and computing metrics associated with stability and correctness, i.e., robustness, fragility, vulnerability, and breakage, in two case studies. In both case studies, targeted data augmentation pre-processing steps were applied for robust model training. Our results show that even models trained with augmented data are unable to handle these types of perturbations, thereby emphasising the need for certified robust training for tree ensembles.</p>
+        <a class="paper-link" href="https://www.ida.liu.se/labs/rtslab/publications/2023/SafeAI2023_Valency.pdf" target="_blank" rel="noopener">Read paper ↗</a>
+      </article>
+
+      <article class="paper-card glass">
+        <div class="paper-meta">
+          <span class="paper-year">2025</span>
+          <span class="paper-type">Conference paper</span>
+        </div>
+        <h3>Improving SIEM Rules using Transformer-Based Rule Evasion Detection and Attribution</h3>
+        <p class="paper-authors">Erik Nordstr&ouml;m &middot; Hannes Wid&eacute;n &middot; Valency Oscar Colaco &middot; Simin Nadjm-Tehrani</p>
+        <p class="paper-abstract">Enterprise networks are being increasingly targeted by sophisticated cyber threats, making the rapid detection of intrusions critical to limiting their impact. To this end, organisations deploy Security Information and Event Management (SIEM) systems, which monitor network and/or host activity to flag potential attacks using expert-written detection rules. In this context, one of the most widely adopted rule formats is SIGMA, which provides a standardised, publicly available specification for describing detection logic across different SIEM platforms. In this paper, we first analyse a representative subset of these SIGMA rules and show that a quarter of them can be easily evaded using straightforward techniques that modify commands syntactically while preserving their semantic meaning, causing traditional rule-matching approaches to fail. To address this limitation, we propose a transformer-based approach that captures the semantic relationship between commands and SIEM rules to identify potential evasion attempts. We then move on from detection to rule attribution, i.e., pinpointing which specific rule(s) an adversary attempted to bypass, thereby supporting attack diagnostics. Furthermore, our approach generates actionable recommendations to improve the evadable SIEM rules. Experimental evaluations show that our approach detects SIEM rule evasions with an accuracy of 71% and a false positive rate of 0.9%, while correctly attributing 98% of detected evasions to their corresponding SIEM rules. Performing an expert evaluation, security analysts, when presented with recommendations generated by our approach, reported that 31% could replace existing rules with minor adjustments, while 47% offered key insights for manual refinement. Finally, to demonstrate real-world impact, a subset of these recommendations were submitted to the SIGMA repository maintainers, resulting in several SIEM rules being fixed through our feedback.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ============================ PONYTAIL ============================ -->
+  <section class="view" id="view-ponytail" aria-label="Configure AI agents">
+    <div class="view-head">
+      <div>
+        <span class="eyebrow"><span class="dot" style="background:var(--pink)"></span>Write less, ship better</span>
+        <h2>Configure AI Agents to Write Code Efficiently</h2>
+        <p>An integration guide for <a href="https://github.com/DietrichGebert/ponytail" target="_blank" rel="noopener">ponytail</a> &mdash; a lightweight ruleset that makes your LLM coding agent lazy about the solution and never about the reading.</p>
+      </div>
+    </div>
+
+    <div class="ponytail-grid">
+      <div class="card glass" data-accent="pink">
+        <span class="eyebrow"><span class="dot" style="background:var(--pink)"></span>What it is</span>
+        <h3>A ladder of seven questions</h3>
+        <p>Before writing any new code, ponytail makes the agent climb a ladder &mdash; each rung asks whether the task can be solved with something that already exists. It writes the absolute minimum, only when nothing else fits.</p>
+        <ul class="ladder">
+          <li><b>1.</b> Does this need to exist? &rarr; YAGNI</li>
+          <li><b>2.</b> Already in the codebase? &rarr; reuse it</li>
+          <li><b>3.</b> In the stdlib? &rarr; use it</li>
+          <li><b>4.</b> A native platform feature? &rarr; use it</li>
+          <li><b>5.</b> An installed dependency? &rarr; use it</li>
+          <li><b>6.</b> Solvable in one line? &rarr; one line</li>
+          <li><b>7.</b> Only then: the minimum that works</li>
+        </ul>
+      </div>
+
+      <div class="card glass" data-accent="teal">
+        <span class="eyebrow"><span class="dot" style="background:var(--teal)"></span>Why it works</span>
+        <h3>Lazy, not negligent</h3>
+        <p>The agent is lazy about the solution but never about the reading &mdash; it scans the existing code and dependencies thoroughly before suggesting anything new. Trust-boundary validation, data-loss handling, security, and accessibility are never on the chopping block.</p>
+        <p class="benchmark"><b>Benchmark:</b> &minus;54% LOC &middot; &minus;22% tokens &middot; &minus;20% cost &middot; &minus;27% time &middot; 100% safe.</p>
+        <button class="btn primary" id="ponytail-open">Show me how to integrate it <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button>
+      </div>
+    </div>
+  </section>
+
   <!-- ============================ CONTACT ============================ -->
   <section class="view" id="view-contact" aria-label="Contact">
     <div class="view-head">
@@ -516,10 +662,10 @@ noscript div{position:fixed;inset:0;background:var(--bg0);color:var(--ink);displ
     <div class="contact-grid">
       <div class="sent-banner" id="sent-banner">✓ Message sent — thanks! I'll get back to you soon.</div>
       <form class="form-card glass" id="contact-form" action="https://formsubmit.co/valency007@gmail.com" method="POST">
-        <input type="hidden" name="_subject" value="New message via colaco.se">
+        <input type="hidden" name="_subject" value="New message via valencycolaco.com">
         <input type="hidden" name="_template" value="table">
         <input type="hidden" name="_captcha" value="true">
-        <input type="hidden" name="_next" id="next-url" value="https://colaco.se/?sent=1#contact">
+        <input type="hidden" name="_next" id="next-url" value="https://valencycolaco.com/?sent=1#contact">
         <div class="hp-field" aria-hidden="true"><input type="text" name="_honey" tabindex="-1" autocomplete="off"></div>
         <div class="form-row">
           <div class="field">
@@ -562,16 +708,69 @@ noscript div{position:fixed;inset:0;background:var(--bg0);color:var(--ink);displ
   </div>
 </div>
 
+<!-- ============================ PONYTAIL MODAL ============================ -->
+<div class="modal" id="ponytail-modal" role="dialog" aria-modal="true" aria-labelledby="ponytail-title">
+  <div class="modal-panel glass ponytail-panel" tabindex="-1">
+    <div class="modal-top">
+      <h3 id="ponytail-title">Integrate ponytail with your LLM</h3>
+      <button class="close-btn" id="ponytail-close" aria-label="Close">&#10005;</button>
+    </div>
+    <div class="ponytail-body">
+      <p class="pt-lead">Three ways to wire ponytail into a coding agent. The fastest is the plugin; the most portable is pasting the prompt.</p>
+
+      <h4>1. Install as a plugin (Claude Code)</h4>
+      <pre class="code-block"><code>/plugin marketplace add DietrichGebert/ponytail
+/plugin install ponytail@ponytail</code></pre>
+      <p class="pt-hint">Run the two commands above as separate prompts. For Codex, swap <code>/plugin</code> for <code>codex plugin</code>.</p>
+
+      <h4>2. Toggle it on the fly</h4>
+      <pre class="code-block"><code>/ponytail            # default mode (full)
+/ponytail lite        # lighter guardrails
+/ponytail ultra       # strictest
+/ponytail off
+/ponytail-review      # review code against the ladder
+/ponytail-audit       # audit a path for over-engineering
+/ponytail-debt        # flag unnecessary complexity
+/ponytail-gain        # show savings vs. baseline
+/ponytail-help</code></pre>
+
+      <h4>3. Or paste this prompt into any LLM</h4>
+      <p class="pt-hint">No plugin support? Drop this into your system prompt, a <code>.cursorrules</code> / <code>AGENTS.md</code> file, or the first message of a chat.</p>
+      <div class="prompt-wrap">
+        <pre class="code-block prompt-block" id="ponytail-prompt"><code>Before writing any new code, you MUST climb this ladder in order and stop at the first rung that applies:
+
+1. Does this need to exist? If not, write nothing. (YAGNI)
+2. Is it already in the codebase? Reuse it. Do not duplicate.
+3. Is it in the standard library? Use that.
+4. Is it a native platform/language feature? Use that.
+5. Is there an already-installed dependency that does it? Use that.
+6. Can it be done in one line of existing code? Write one line.
+7. Only then: write the absolute minimum new code that works.
+
+Rules:
+- Be lazy about the solution, never about the reading. Always read the relevant existing code, dependencies, and docs before proposing anything new.
+- Prefer deleting over adding. Prefer composing over creating.
+- Lazy, not negligent: trust-boundary validation, data-loss handling, security, and accessibility are NEVER cut to save lines.
+- When you do add code, state which rung of the ladder you reached and why no earlier rung applied.
+- Default to the smallest change that solves the problem correctly.</code></pre>
+        <button class="btn primary copy-btn" id="ponytail-copy">Copy prompt</button>
+      </div>
+
+      <p class="benchmark pt-foot">Benchmark vs. unguarded agent: &minus;54% LOC &middot; &minus;22% tokens &middot; &minus;20% cost &middot; &minus;27% time &middot; 100% safe. <a href="https://github.com/DietrichGebert/ponytail" target="_blank" rel="noopener">View the repo &#8599;</a></p>
+    </div>
+  </div>
+</div>
+
 <div class="toast glass" id="toast" role="status"></div>
 
 <footer>
-  <p>© 2026 Valency Colaco · <a href="https://colaco.se">colaco.se</a> · Built with liquid glass, live feeds &amp; far too many roulette spins.</p>
+  <p>© 2026 Valency Colaco · <a href="https://valencycolaco.com">valencycolaco.com</a> · Built with liquid glass, live feeds &amp; far too many roulette spins.</p>
 </footer>
 
 <script>
 'use strict';
 /* ============================================================
-   colaco.se  — core
+   valencycolaco.com — core
    ============================================================ */
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -622,7 +821,7 @@ function toast(msg) {
 /* ============================================================
    Router
    ============================================================ */
-const VIEWS = ['home', 'news', 'security', 'games', 'contact'];
+const VIEWS = ['home', 'news', 'security', 'games', 'research', 'ponytail', 'contact'];
 
 function route() {
   let h = (location.hash || '#home').slice(1);
@@ -657,16 +856,20 @@ window.addEventListener('hashchange', route);
    Feed engine — fetches RSS/Atom/JSON through CORS-friendly relays
    ============================================================ */
 const RELAYS = [
-  u => u, /* direct first: works for CORS-enabled endpoints */
-  u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
-  u => 'https://corsproxy.io/?url=' + encodeURIComponent(u),
-  u => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u)
+  /* raw: true = the relay returns the original bytes verbatim (good for any
+     content, including the CISA KEV JSON). raw: false = it transforms the
+     response into its own format and needs a dedicated parser. */
+  { name: 'direct',     raw: true,  build: u => u,                                                                 parse: parseFeed },
+  { name: 'rss2json',   raw: false, build: u => 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(u), parse: parseJsonFeed },
+  { name: 'corsproxy',  raw: true,  build: u => 'https://corsproxy.io/?url=' + encodeURIComponent(u),                  parse: parseFeed },
+  { name: 'corssh',     raw: true,  build: u => 'https://proxy.cors.sh/' + u,                                            parse: parseFeed },
+  { name: 'allorigins', raw: true,  build: u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),           parse: parseFeed }
 ];
 
 /* Fetch one URL through a single relay, with its own timeout. An external
    AbortSignal lets a winning racer cancel the losers so the browser stops
    doing work that's no longer needed. */
-async function relayFetch(relay, url, externalSignal, timeoutMs) {
+async function relayFetch(build, url, externalSignal, timeoutMs) {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), timeoutMs);
   const onAbort = () => ctrl.abort();
@@ -675,7 +878,7 @@ async function relayFetch(relay, url, externalSignal, timeoutMs) {
     else externalSignal.addEventListener('abort', onAbort, { once: true });
   }
   try {
-    const res = await fetch(relay(url), { signal: ctrl.signal, redirect: 'follow' });
+    const res = await fetch(build(url), { signal: ctrl.signal, redirect: 'follow' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const text = await res.text();
     if (!text || text.length < 40) throw new Error('Empty response');
@@ -686,12 +889,12 @@ async function relayFetch(relay, url, externalSignal, timeoutMs) {
   }
 }
 
-/* Race every relay at once; first valid text wins, the rest are aborted.
-   This turns a worst-case of (relays x timeout) into roughly one timeout. */
+/* Race every raw relay at once; first valid text wins, the rest are aborted.
+   Used for the CISA KEV JSON (which isn't a feed, so rss2json can't parse it). */
 async function fetchText(url, timeoutMs) {
   timeoutMs = timeoutMs || 8000;
   const race = new AbortController();
-  const attempts = RELAYS.map(relay => relayFetch(relay, url, race.signal, timeoutMs));
+  const attempts = RELAYS.filter(r => r.raw).map(r => relayFetch(r.build, url, race.signal, timeoutMs));
   try {
     const text = await Promise.any(attempts);
     race.abort(); /* cancel the losers */
@@ -779,6 +982,39 @@ function parseFeed(xmlText, source) {
   }).filter(it => it.title && it.link);
 }
 
+/* Parse the JSON envelope returned by api.rss2json.com — a dedicated
+   RSS-to-JSON service that fetches the feed server-side, so it sails past
+   Cloudflare/anti-bot blocks that defeat the generic CORS proxies. */
+function parseJsonFeed(jsonText, source) {
+  let data;
+  try { data = JSON.parse(jsonText); }
+  catch (e) { throw new Error('Bad JSON from ' + source.name); }
+  if (!data || data.status !== 'ok' || !Array.isArray(data.items)) {
+    throw new Error('rss2json error for ' + source.name);
+  }
+  const feedImg = (data.feed && data.feed.image) || '';
+  return data.items.map(it => {
+    const base = it.link || source.url;
+    let img = resolveImgUrl(it.thumbnail || '', base);
+    if (!img && it.enclosure && it.enclosure.link) img = resolveImgUrl(it.enclosure.link, base);
+    if (!img) {
+      const m = String(it.description || '').match(/<img[^>]+src=["']([^"']+)["']/i);
+      if (m && m[1]) img = resolveImgUrl(m[1], base);
+    }
+    if (!img && feedImg) img = resolveImgUrl(feedImg, source.url);
+    const dateStr = it.pubDate || it.isoDate || '';
+    return {
+      title: stripHtml(it.title || ''),
+      link: (it.link || '').trim(),
+      date: dateStr ? new Date(dateStr) : new Date(0),
+      desc: stripHtml(it.description || it.content || '').slice(0, 260),
+      img: img,
+      source: source.name,
+      color: source.color
+    };
+  }).filter(it => it.title && it.link);
+}
+
 /* Fetch + parse one source, racing relays so the first VALID feed wins
    (a fast relay returning an HTML error page can't beat a slower good one,
    because parsing/item-count is part of the race). */
@@ -786,8 +1022,8 @@ async function loadSource(src, perSource, timeoutMs) {
   timeoutMs = timeoutMs || 8000;
   const race = new AbortController();
   const attempts = RELAYS.map(relay =>
-    relayFetch(relay, src.url, race.signal, timeoutMs).then(txt => {
-      const items = parseFeed(txt, src).slice(0, perSource);
+    relayFetch(relay.build, src.url, race.signal, timeoutMs).then(txt => {
+      const items = relay.parse(txt, src).slice(0, perSource);
       if (!items.length) throw new Error('No items from ' + src.name);
       return items;
     })
@@ -1146,6 +1382,50 @@ const GameModal = {
     }
     document.body.classList.remove('modal-open');
     refreshBestScores();
+  }
+};
+
+
+const PonytailModal = {
+  init() {
+    this.overlay = $('#ponytail-modal');
+    this.panel = $('.ponytail-panel');
+    if (!this.overlay) return;
+    $('#ponytail-open').addEventListener('click', () => this.open());
+    $('#ponytail-close').addEventListener('click', () => this.close());
+    this.overlay.addEventListener('click', e => { if (e.target === this.overlay) this.close(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && this.overlay.classList.contains('show')) this.close(); });
+    const copyBtn = $('#ponytail-copy');
+    copyBtn.addEventListener('click', () => this.copyPrompt(copyBtn));
+  },
+  open() {
+    this.overlay.classList.add('show');
+    document.body.classList.add('modal-open');
+    if (this.panel) this.panel.focus({ preventScroll: true });
+  },
+  close() {
+    if (this.overlay) this.overlay.classList.remove('show');
+    document.body.classList.remove('modal-open');
+  },
+  copyPrompt(btn) {
+    const code = $('#ponytail-prompt');
+    const text = code ? code.textContent : '';
+    const done = () => { btn.textContent = 'Copied ✓'; btn.classList.add('copied'); showToast('Prompt copied to clipboard'); setTimeout(() => { btn.textContent = 'Copy prompt'; btn.classList.remove('copied'); }, 2200); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(() => this.fallbackCopy(text, done));
+    } else {
+      this.fallbackCopy(text, done);
+    }
+  },
+  fallbackCopy(text, done) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      done();
+    } catch (e) { showToast('Copy failed — select the text manually'); }
   }
 };
 
@@ -1931,8 +2211,13 @@ const GAMES = { roulette: Roulette, g2048: G2048, snake: Snake, flappy: Flappy }
    ============================================================ */
 (function boot() {
   GameModal.init();
+  PonytailModal.init();
   Sec.init();
   initContact();
+  const newsRefresh = $('#news-refresh');
+  if (newsRefresh) newsRefresh.addEventListener('click', () => News.load(true));
+  const secRefresh = $('#sec-refresh');
+  if (secRefresh) secRefresh.addEventListener('click', () => Sec.load(true));
   $$('.game-tile').forEach(tile =>
     tile.addEventListener('click', () => GameModal.open(tile.dataset.game))
   );

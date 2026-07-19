@@ -90,19 +90,19 @@ button{font-family:inherit;color:inherit;cursor:pointer}
 -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 22%,#000 56%,transparent 92%);
 mask-image:linear-gradient(180deg,transparent 0,#000 22%,#000 56%,transparent 92%);}
 
-.ribbon{position:absolute;top:-16%;bottom:-16%;left:-45%;width:190%;mix-blend-mode:screen;pointer-events:none;will-change:transform;filter:blur(32px)}
-.ribbon.r1{opacity:.26;animation:ribbonFlow 11s linear infinite;
-  background:repeating-linear-gradient(90deg, rgba(63,224,197,0) 0 3.5%, rgba(63,224,197,.55) 5% 6.5%, rgba(63,224,197,0) 8%, rgba(106,183,255,0) 9.5%, rgba(106,183,255,.5) 11% 12.5%, rgba(106,183,255,0) 14%, rgba(166,121,255,0) 15.5%, rgba(166,121,255,.5) 17% 18.5%, rgba(166,121,255,0) 19.5% 20%);}
-.ribbon.r2{opacity:.18;filter:blur(48px);animation:ribbonFlow 19s linear infinite;
-  background:repeating-linear-gradient(90deg, rgba(106,183,255,0) 0 4%, rgba(106,183,255,.5) 6.5% 8.5%, rgba(106,183,255,0) 11%, rgba(63,224,197,0) 14%, rgba(63,224,197,.42) 16% 17.5%, rgba(63,224,197,0) 19.5% 20%);}
-.ribbon.r3{opacity:.15;filter:blur(24px);animation:ribbonFlow 14s linear infinite;
-  background:repeating-linear-gradient(90deg, rgba(166,121,255,0) 0 6%, rgba(166,121,255,.42) 8% 9%, rgba(166,121,255,0) 11%, rgba(255,107,157,0) 15%, rgba(255,107,157,.25) 16.5% 17.5%, rgba(255,107,157,0) 19.5% 20%);}
+.ribbon{position:absolute;top:-16%;bottom:-16%;left:-45%;width:190%;mix-blend-mode:screen;pointer-events:none;will-change:transform}
+.ribbon.r1{opacity:.22;animation:ribbonFlow 11s linear infinite;
+  background:repeating-linear-gradient(90deg, rgba(63,224,197,0) 0%, rgba(63,224,197,.5) 4.5%, rgba(106,183,255,.14) 8%, rgba(106,183,255,.5) 11%, rgba(166,121,255,.16) 14.5%, rgba(166,121,255,.5) 17.5%, rgba(63,224,197,0) 20%);}
+.ribbon.r2{opacity:.16;animation:ribbonFlow 19s linear infinite;
+  background:repeating-linear-gradient(90deg, rgba(106,183,255,0) 0%, rgba(106,183,255,.42) 5.5%, rgba(63,224,197,.1) 10.5%, rgba(63,224,197,.4) 15%, rgba(106,183,255,0) 20%);}
+.ribbon.r3{opacity:.13;animation:ribbonFlow 14s linear infinite;
+  background:repeating-linear-gradient(90deg, rgba(166,121,255,0) 0% 3%, rgba(166,121,255,.35) 7%, rgba(255,107,157,0) 10.5% 13%, rgba(255,107,157,.28) 16%, rgba(166,121,255,0) 19% 20%);}
    
 @keyframes ribbonFlow{from{transform:translateX(0)}to{transform:translateX(20%)}}
 @keyframes skyPulse{from{opacity:.8}to{opacity:1}}
 @keyframes skyBreathe{from{transform:skewY(-7deg) scaleY(1)}to{transform:skewY(-7deg) scaleY(1.06)}}
 
-@media (max-width:720px){.ribbon{filter:blur(20px)}.ribbon.r2{filter:blur(32px)}.ribbon.r3{display:none}}
+@media (max-width:720px){.ribbon.r3{display:none}}
 
 /* Starfield canvas — twinkle, drift, flares, shooting stars (script at end of body) */
 #bg-stars{position:fixed;inset:0;z-index:-1;pointer-events:none}

@@ -85,18 +85,22 @@ button{font-family:inherit;color:inherit;cursor:pointer}
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
 
 /* Aurora curtains — dancing bands of light across the upper sky */
-.aurora-ribbons{position:fixed;left:-12%;right:-12%;top:-14%;height:72vh;z-index:-1;pointer-events:none;overflow:hidden;transform:skewY(-7deg);animation:skyPulse 9s ease-in-out infinite alternate;
-  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 20%,#000 58%,transparent 96%);
+.aurora-ribbons{position:fixed;left:-12%;right:-12%;top:-14%;height:72vh;z-index:-1;pointer-events:none;overflow:hidden;transform:skewY(-7deg);animation:skyPulse 9s ease-in-out infinite alternate, skyBreathe 13s ease-in-out infinite alternate;
+      -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 20%,#000 58%,transparent 96%);
   mask-image:linear-gradient(180deg,transparent 0,#000 20%,#000 58%,transparent 96%);}
-.ribbon{position:absolute;top:-12%;bottom:-12%;left:-25%;width:150%;mix-blend-mode:screen;pointer-events:none;will-change:transform;filter:blur(32px)}
-.ribbon.r1{opacity:.26;animation:ribbonSway 11s ease-in-out infinite alternate;
-  background:repeating-linear-gradient(97deg, transparent 0 5%, rgba(63,224,197,.55) 8% 10%, transparent 13% 21%, rgba(106,183,255,.5) 25% 27%, transparent 30% 39%, rgba(166,121,255,.5) 43% 45%, transparent 48% 57%);}
-.ribbon.r2{opacity:.18;filter:blur(48px);animation:ribbonSway 17s ease-in-out infinite alternate-reverse;
-  background:repeating-linear-gradient(92deg, transparent 0 7%, rgba(106,183,255,.5) 11% 13%, transparent 17% 28%, rgba(63,224,197,.42) 32% 34%, transparent 38% 49%);}
-.ribbon.r3{opacity:.15;filter:blur(24px);animation:ribbonSway 14s ease-in-out -5s infinite alternate;
-  background:repeating-linear-gradient(101deg, transparent 0 9%, rgba(166,121,255,.42) 13% 14.5%, transparent 18% 31%, rgba(255,107,157,.25) 35% 36.5%, transparent 40% 53%);}
-@keyframes ribbonSway{from{transform:translateX(-7%) rotate(-.4deg) scaleY(1)}50%{transform:translateX(2%) rotate(.1deg) scaleY(1.1)}to{transform:translateX(7%) rotate(.4deg) scaleY(.94)}}
+
+.ribbon{position:absolute;top:-12%;bottom:-12%;left:-45%;width:190%;mix-blend-mode:screen;pointer-events:none;will-change:transform;filter:blur(32px)}
+.ribbon.r1{opacity:.26;animation:ribbonFlow 11s linear infinite;
+  background:repeating-linear-gradient(90deg, transparent 0 3.5%, rgba(63,224,197,.55) 5% 6.5%, transparent 8% 9.5%, rgba(106,183,255,.5) 11% 12.5%, transparent 14% 15.5%, rgba(166,121,255,.5) 17% 18.5%, transparent 19.5% 20%);}
+.ribbon.r2{opacity:.18;filter:blur(48px);animation:ribbonFlow 19s linear infinite;
+  background:repeating-linear-gradient(90deg, transparent 0 4%, rgba(106,183,255,.5) 6.5% 8.5%, transparent 11% 14%, rgba(63,224,197,.42) 16% 17.5%, transparent 19.5% 20%);}
+.ribbon.r3{opacity:.15;filter:blur(24px);animation:ribbonFlow 14s linear infinite;
+  background:repeating-linear-gradient(90deg, transparent 0 6%, rgba(166,121,255,.42) 8% 9%, transparent 11% 15%, rgba(255,107,157,.25) 16.5% 17.5%, transparent 19.5% 20%);}
+@keyframes ribbonFlow{from{transform:translateX(0)}to{transform:translateX(20%)}}
+   
 @keyframes skyPulse{from{opacity:.8}to{opacity:1}}
+@keyframes skyBreathe{from{transform:skewY(-7deg) scaleY(1)}to{transform:skewY(-7deg) scaleY(1.06)}}
+
 @media (max-width:720px){.ribbon{filter:blur(20px)}.ribbon.r2{filter:blur(32px)}.ribbon.r3{display:none}}
 
 /* Starfield canvas — twinkle, drift, flares, shooting stars (script at end of body) */
@@ -3169,7 +3173,7 @@ const GAMES = { slots: Slots, plinko: Plinko, roulette: Roulette, g2048: G2048, 
 <script>
 /* ============================================================
    bg-stars — living night sky: twinkling stars with random
-   flares, slow drift, pointer parallax, frequent shooting
+   flares, continuous left-to-right drift, frequent shooting
    stars. Pauses when the tab is hidden; renders a static sky
    under prefers-reduced-motion.
    ============================================================ */
@@ -3178,7 +3182,6 @@ const GAMES = { slots: Slots, plinko: Plinko, roulette: Roulette, g2048: G2048, 
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const finePointer = window.matchMedia('(pointer: fine)').matches;
 
   const PALETTE = ['255,255,255', '176,215,255', '158,240,222', '208,182,255'];
 
@@ -3197,7 +3200,6 @@ const GAMES = { slots: Slots, plinko: Plinko, roulette: Roulette, g2048: G2048, 
 
   let W = 0, H = 0, lastW = 0, lastH = 0;
   let stars = [], shots = [];
-  let px = 0, py = 0, tx = 0, ty = 0;          // parallax current / target
   let nextShot = 0, raf = null, last = 0;
 
   function seed() {
@@ -3234,11 +3236,12 @@ const GAMES = { slots: Slots, plinko: Plinko, roulette: Roulette, g2048: G2048, 
   }
 
   function spawnShot(now) {
-    const dir = Math.random() < 0.5 ? -1 : 1;
+     
+    const dir = 1;                             // always left-to-right
     const speed = 420 + Math.random() * 320;   // px/s
     const angle = (18 + Math.random() * 14) * Math.PI / 180;
     shots.push({
-      x: Math.random() * W * 0.7 + W * 0.15,
+      x: Math.random() * W * 0.5,
       y: Math.random() * H * 0.3,
       vx: Math.cos(angle) * speed * dir,
       vy: Math.sin(angle) * speed,
@@ -3254,10 +3257,8 @@ const GAMES = { slots: Slots, plinko: Plinko, roulette: Roulette, g2048: G2048, 
     last = now;
     const t = now / 1000;
 
-    px += (tx - px) * 0.045;
-    py += (ty - py) * 0.045;
-
     ctx.clearRect(0, 0, W, H);
+     
     ctx.globalCompositeOperation = 'lighter';
 
     // Roughly once a second, a random star flares up for a moment.
@@ -3266,10 +3267,8 @@ const GAMES = { slots: Slots, plinko: Plinko, roulette: Roulette, g2048: G2048, 
     }
 
     for (const s of stars) {
-      s.y -= s.z * 7 * dt;                     // slow rise
-      s.x += s.z * 2.2 * dt;
-      if (s.y < -4) { s.y = H + 4; s.x = Math.random() * W; }
-      if (s.x > W + 4) s.x = -4;
+      s.x += s.z * 26 * dt;                    // continuous left-to-right; near stars move faster
+      if (s.x > W + 6) { s.x = -6; s.y = Math.random() * H; }
 
       let a = 0.3 + 0.55 * s.z * (0.5 + 0.5 * Math.sin(s.tw + t * s.ts));
       let d = s.r * 7;
@@ -3278,7 +3277,9 @@ const GAMES = { slots: Slots, plinko: Plinko, roulette: Roulette, g2048: G2048, 
         d *= 1 + s.flare * 1.7;
         s.flare = Math.max(0, s.flare - dt * 1.5);
       }
-      const ox = s.x + px * 22 * s.z, oy = s.y + py * 14 * s.z;
+       
+      const ox = s.x, oy = s.y;
+       
       ctx.globalAlpha = a;
       ctx.drawImage(sprite, ox - d / 2, oy - d / 2, d, d);
       ctx.fillStyle = 'rgba(' + s.c + ',' + Math.min(1, a + 0.15) + ')';
@@ -3339,12 +3340,6 @@ const GAMES = { slots: Slots, plinko: Plinko, roulette: Roulette, g2048: G2048, 
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) { stop(); } else { start(); }
   });
-  if (finePointer && !reduceMotion) {
-    window.addEventListener('pointermove', function (e) {
-      tx = e.clientX / W - 0.5;
-      ty = e.clientY / H - 0.5;
-    }, { passive: true });
-  }
 
   resize();
   start();

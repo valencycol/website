@@ -362,6 +362,8 @@ canvas.game-canvas{display:block;margin:0 auto;max-width:100%;border-radius:var(
 .sl-actions{display:flex;justify-content:center;gap:.7rem;margin-top:1rem}
 .pk-rows{display:flex;gap:.45rem;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:.9rem}
 .pk-rows .pk-lab,.sl-bets .pk-lab{font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3);font-weight:700;margin-right:.15rem}
+#pk-drop{font-size:1.1rem;font-weight:700;padding:1rem 2.6rem;min-height:58px;min-width:220px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none}
+#plinko-stage .game-canvas{touch-action:manipulation}
 
 /* Video slots */
 .news-fresh{font-size:.7rem;color:var(--ink3);font-family:var(--font-mono);white-space:nowrap}
@@ -594,7 +596,7 @@ noscript div{position:fixed;inset:0;background:var(--bg0);color:var(--ink);displ
         <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4" r="1.1" fill="currentColor" stroke="none"/><circle cx="9" cy="9" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="9" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="14" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="14" r="1" fill="currentColor" stroke="none"/><circle cx="18" cy="14" r="1" fill="currentColor" stroke="none"/><path d="M3 20h18"/></svg></span>
         <span>
           <h3>Plinko</h3>
-          <p>Real Matter.js physics. Pick 8&ndash;16 rows &mdash; and every tap rains another ball.</p>
+          <p>Real Matter.js physics. Pick 5&ndash;8 rows &mdash; and every tap rains another ball.</p>
           <span class="best" data-best="plinko"></span>
         </span>
       </button>
@@ -2467,7 +2469,7 @@ const Flappy = {
    are placed in the CENTRE (the rarer landing zone) and decay toward the
    edges. Payouts follow an exponential curve peaking at the centre, get a
    0.3x edge floor, then are normalised so the expected return is ~97% of
-   stake. Works for any row count, so the rows selector can offer 8–16
+   stake. Works for any row count, so the rows selector can offer 5–8
    without hand-made tables. */
 function plinkoProbs(n) {
   const c = [1];
@@ -2512,7 +2514,7 @@ const Plinko = {
     }
     const { Engine, Bodies, Body, Composite, Events } = Matter;
 
-    const ROW_OPTS = [8, 10, 12, 14, 16];
+    const ROW_OPTS = [5, 6, 7, 8];
     const BETS = [10, 25, 50, 100];
     const MAX_BALLS = 15;
     const W = 380;
@@ -2542,8 +2544,8 @@ const Plinko = {
     let balance = store.get('credits', 1000);
     let bet = store.get('pk.bet', 25);
     if (!BETS.includes(bet)) bet = 25;
-    let rows = store.get('pk.rows', 12);
-    if (!ROW_OPTS.includes(rows)) rows = 12;
+    let rows = store.get('pk.rows', 6);
+    if (!ROW_OPTS.includes(rows)) rows = 6;
     let lastWin = 0;
 
     /* board state (rebuilt when the row count changes) */

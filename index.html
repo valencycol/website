@@ -3,22 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Valency Colaco — valencycolaco.com</title>
-<meta name="description" content="Valency Colaco — English educator and cybersecurity researcher. World news, security intel, arcade games, and a direct line to my inbox.">
+<title>Valency Colaco — colaco.se</title>
+<meta name="description" content="Valency Colaco — Cybersecurity & AI/ML Researcher based in Sweden. Ground News top stories with media-bias breakdown, security intel, arcade games, and a direct line to my inbox.">
 <meta property="og:title" content="Valency Colaco">
 <meta property="og:description" content="News · Cybersecurity intel · Games · Say hello.">
-<meta property="og:url" content="https://valencycolaco.com/">
+<meta property="og:url" content="https://colaco.se/">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#05070d">
-<link rel="canonical" href="https://valencycolaco.com/">
+<link rel="canonical" href="https://colaco.se/">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%236ab7ff'/%3E%3Cstop offset='1' stop-color='%23a679ff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='%230a0f1f'/%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)' opacity='.22'/%3E%3Ctext x='32' y='43' font-family='Arial,Helvetica,sans-serif' font-size='32' font-weight='700' text-anchor='middle' fill='url(%23g)'%3EV%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
-   VALENCYCOLACO.COM — Liquid Glass
-   Tokens
+   colaco.se — Liquid Glass Tokens
    ============================================================ */
 :root{
   --bg0:#05070d;
@@ -31,6 +30,7 @@
   --teal:#3fe0c5;
   --pink:#ff6b9d;
   --gold:#ffd166;
+  --lime:#9be85b;
   --red:#ff5d5d;
   --glass:rgba(255,255,255,.06);
   --glass-2:rgba(255,255,255,.10);
@@ -142,6 +142,10 @@ main{max-width:1100px;margin:0 auto;padding:0 20px}
 @keyframes viewIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 .view-head{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.6rem}
 .view-head h2{font-family:var(--font-display);font-size:clamp(1.7rem,4vw,2.5rem);font-weight:700;letter-spacing:-.02em}
+.greet-roller{display:inline-block;overflow:hidden;vertical-align:bottom;height:1.15em;line-height:1.15em;position:relative}
+.greet-roller .greet{display:inline-block;color:var(--violet);will-change:transform,opacity;line-height:inherit;white-space:nowrap}
+.greet-roller .greet.roll{animation:greetRoll .55s cubic-bezier(.45,0,.2,1) both}
+@keyframes greetRoll{0%{transform:translateY(105%);opacity:0}55%{opacity:1}100%{transform:translateY(0);opacity:1}}
 .view-head p{color:var(--ink2);max-width:52ch;margin-top:.3rem}
 .eyebrow{font-size:.72rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--ink3)}
 .eyebrow .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:.5rem;vertical-align:1px}
@@ -154,12 +158,15 @@ main{max-width:1100px;margin:0 auto;padding:0 20px}
 .hero{min-height:calc(100vh - 110px);display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:1.4rem;padding-bottom:2rem}
 .hero .monogram{width:88px;height:88px;border-radius:28px;font-size:2rem;animation:float 6s ease-in-out infinite}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-.hero h1{font-family:var(--font-display);font-weight:700;font-size:clamp(2.7rem,8vw,5rem);letter-spacing:-.03em;line-height:1.04;
+.hero h1{font-family:var(--font-display);font-weight:700;font-size:clamp(2.08rem,6.4vw,3.68rem);letter-spacing:-.03em;line-height:1.04;
   background:linear-gradient(115deg,#fff 30%, var(--blue) 55%, var(--violet) 80%);
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
 .hero .tag{font-size:clamp(1rem,2.4vw,1.2rem);color:var(--ink2);font-weight:500}
 .hero .loc{display:inline-flex;align-items:center;gap:.45rem;font-size:.85rem;color:var(--ink3);padding:.4rem 1rem;border-radius:999px;border:1px solid var(--stroke);background:rgba(255,255,255,.04)}
 .hero .cta-row{display:flex;gap:.8rem;flex-wrap:wrap;justify-content:center;margin-top:.4rem}
+.hero .greet-line{display:flex;align-items:center;justify-content:center;min-height:1.3em;font-family:var(--font-display);font-weight:700;font-size:clamp(2.6rem,8vw,4.6rem);letter-spacing:-.03em;line-height:1.04}
+.hero .greet-line .greet-roller{height:1.3em;line-height:1.3em;vertical-align:baseline}
+.hero .greet-line .greet{line-height:1.3em;background:linear-gradient(115deg,#fff 30%, var(--blue) 55%, var(--violet) 80%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
 .scroll-hint{margin-top:1.6rem;color:var(--ink3);font-size:1.4rem;animation:bounce 2.2s infinite}
 @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(8px)}}
 
@@ -190,6 +197,8 @@ main{max-width:1100px;margin:0 auto;padding:0 20px}
 .card[data-accent="teal"]{--accent:var(--teal)}
 .card[data-accent="pink"]{--accent:var(--pink)}
 .card[data-accent="violet"]{--accent:var(--violet)}
+.card[data-accent="gold"]{--accent:var(--gold)}
+.card[data-accent="lime"]{--accent:var(--lime)}
 
 /* ============================================================
    Research papers + Ponytail
@@ -249,6 +258,20 @@ main{max-width:1100px;margin:0 auto;padding:0 20px}
 .feed-thumb-wrap{width:100%;height:clamp(150px,28vw,210px);margin-bottom:.6rem;overflow:hidden;border-radius:calc(var(--r-md) - 6px);background:linear-gradient(135deg,rgba(255,255,255,.06),rgba(255,255,255,.02));border:1px solid var(--stroke)}
 .feed-thumb{width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .35s ease}
 .feed-thumb.loaded{opacity:1}
+.bias-bar{display:flex;height:1.55rem;margin-top:.25rem;border-radius:999px;overflow:hidden;border:1px solid var(--stroke);background:rgba(255,255,255,.04)}
+.bias-seg{display:flex;align-items:center;justify-content:center;font-size:.67rem;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;min-width:0;letter-spacing:.02em}
+.bias-seg span{padding:0 .3rem;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+.bias-left{background:linear-gradient(180deg,#5b8cff,#2f6bd6)}
+.bias-center{background:linear-gradient(180deg,#9aa3b2,#6b7280)}
+.bias-right{background:linear-gradient(180deg,#ff7a8a,#d63a4d)}
+.bias-legend{display:flex;gap:.85rem;flex-wrap:wrap;align-items:center;font-size:.73rem;color:var(--ink3);margin-top:.4rem}
+.bias-legend .bl{display:inline-flex;align-items:center;gap:.32rem}
+.bias-legend .bl::before{content:"";width:.55rem;height:.55rem;border-radius:50%;display:inline-block}
+.bias-legend .bl-left::before{background:#4a7dff}
+.bias-legend .bl-center::before{background:#7c8694}
+.bias-legend .bl-right::before{background:#e8485a}
+.bias-legend .bl-total{margin-left:auto;color:var(--ink2);font-weight:600}
+.blindspot-badge{display:inline-flex;align-items:center;gap:.3rem;font-size:.68rem;font-weight:700;padding:.2rem .55rem;border-radius:999px;background:rgba(255,209,102,.14);color:var(--gold);border:1px solid rgba(255,209,102,.38)}
 .feed-note{color:var(--ink3);font-size:.8rem;margin-top:1rem;text-align:center}
 .skeleton{height:104px;border-radius:var(--r-md);background:linear-gradient(100deg, rgba(255,255,255,.05) 40%, rgba(255,255,255,.11) 50%, rgba(255,255,255,.05) 60%);background-size:220% 100%;animation:shimmer 1.4s linear infinite;border:1px solid var(--stroke)}
 @keyframes shimmer{to{background-position:-120% 0}}
@@ -396,7 +419,7 @@ noscript div{position:fixed;inset:0;background:var(--bg0);color:var(--ink);displ
 </style>
 </head>
 <body>
-<noscript><div><p>valencycolaco.com needs JavaScript for the live feeds and games. Please enable it and reload.</p></div></noscript>
+<noscript><div><p>colaco.se needs JavaScript for the live feeds and games. Please enable it and reload.</p></div></noscript>
 
 <div class="aurora" aria-hidden="true"></div>
 <div class="blob blob-1" aria-hidden="true"></div>
@@ -423,10 +446,12 @@ noscript div{position:fixed;inset:0;background:var(--bg0);color:var(--ink);displ
   <!-- ============================ HOME ============================ -->
   <section class="view" id="view-home" aria-label="Home">
     <div class="hero">
-      <span class="monogram" aria-hidden="true">VC</span>
-      <h1>Valency Colaco</h1>
-      <p class="tag">English educator &middot; Cybersecurity &amp; ML researcher</p>
-      <span class="loc"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 21s-7-5.6-7-11a7 7 0 1 1 14 0c0 5.4-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>Link&ouml;ping, Sweden</span>
+      <div class="greet-line" aria-label="Greeting">
+        <span class="greet-roller"><span class="greet" id="greet">Hello</span></span>
+      </div>
+      <h1>I&rsquo;m Valency Colaco</h1>
+      <p class="tag">Cybersecurity &amp; AI/ML Researcher &middot; Sweden</p>
+      <span class="loc"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 21s-7-5.6-7-11a7 7 0 1 1 14 0c0 5.4-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>Sweden</span>
       <div class="cta-row">
         <a class="btn primary" href="#options" data-scroll>Explore ↓</a>
         <a class="btn" href="#contact">Say hello</a>
@@ -439,7 +464,7 @@ noscript div{position:fixed;inset:0;background:var(--bg0);color:var(--ink);displ
         <span class="eyebrow"><span class="dot" style="background:var(--blue)"></span>Live feed</span>
         <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.7 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.7-3.8-9S9.5 5.6 12 3Z"/></svg></span>
         <h3>Get latest news</h3>
-        <p>Today's top world stories, pulled live from BBC, The Guardian, Al Jazeera and NYT — with a one-tap Ground News comparison for every headline.</p>
+        <p>Today's top stories from Ground News, each with a left / center / right media-bias breakdown so you see who's covering what — newest first.</p>
         <span class="go">Open the wire <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span>
       </a>
 
@@ -459,6 +484,22 @@ noscript div{position:fixed;inset:0;background:var(--bg0);color:var(--ink);displ
         <span class="go">Enter the arcade <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span>
       </a>
 
+      <a class="card glass" data-accent="gold" href="#research">
+        <span class="eyebrow"><span class="dot" style="background:var(--gold)"></span>Publications</span>
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v14"/><path d="M3 19h18M17 8h2a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2"/></svg></span>
+        <h3>Read my research</h3>
+        <p>Formal verification of tree ensembles, real-time evasion detection, and ML security for safety-critical systems &mdash; five selected papers with abstracts.</p>
+        <span class="go">Browse publications <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span>
+      </a>
+
+      <a class="card glass" data-accent="lime" href="#ponytail">
+        <span class="eyebrow"><span class="dot" style="background:var(--lime)"></span>Write less code</span>
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3Z"/></svg></span>
+        <h3>Configure AI agents</h3>
+        <p>A seven-rung ladder that makes your LLM coding agent lazy about the solution, never about the reading &mdash; minus 54% lines of code.</p>
+        <span class="go">See the integration guide <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span>
+      </a>
+
       <a class="card glass" data-accent="violet" href="#contact">
         <span class="eyebrow"><span class="dot" style="background:var(--violet)"></span>Direct line</span>
         <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m3.5 7 8.5 6 8.5-6"/></svg></span>
@@ -470,17 +511,17 @@ noscript div{position:fixed;inset:0;background:var(--bg0);color:var(--ink);displ
   </section>
 
   <!-- ============================ NEWS ============================ -->
-  <section class="view" id="view-news" aria-label="World news">
+  <section class="view" id="view-news" aria-label="Ground News top stories">
     <div class="view-head">
       <div>
-        <span class="eyebrow"><span class="dot" style="background:var(--blue)"></span>World wire</span>
-        <h2>Today's top stories</h2>
-        <p>Live headlines from four global newsrooms, newest first. Every story links to a Ground News bias comparison.</p>
+        <span class="eyebrow"><span class="dot" style="background:var(--blue)"></span>Ground News</span>
+        <h2>Top stories with media bias</h2>
+        <p>Ground News top stories, each with a left / center / right source breakdown so you can see who's covering what. Newest first.</p>
       </div>
       <button class="btn" id="news-refresh"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg>Refresh</button>
     </div>
     <div class="feed" id="news-feed" aria-live="polite"></div>
-    <p class="feed-note">Sources: BBC World · The Guardian · Al Jazeera · NYT World. Ground News no longer offers a public feed, so each story links to its coverage-comparison search instead.</p>
+    <p class="feed-note">Top stories and bias data sourced directly from Ground News. Each bar shows the share of coverage from Left, Center and Right-leaning outlets; the legend lists the source count per side.</p>
   </section>
 
   <!-- ============================ SECURITY ============================ -->
@@ -604,7 +645,7 @@ noscript div{position:fixed;inset:0;background:var(--bg0);color:var(--ink);displ
 
       <article class="paper-card glass">
         <div class="paper-meta">
-          <span class="paper-year">2025</span>
+          <span class="paper-year">2026</span>
           <span class="paper-type">Conference paper</span>
         </div>
         <h3>Improving SIEM Rules using Transformer-Based Rule Evasion Detection and Attribution</h3>
@@ -655,17 +696,17 @@ noscript div{position:fixed;inset:0;background:var(--bg0);color:var(--ink);displ
     <div class="view-head">
       <div>
         <span class="eyebrow"><span class="dot" style="background:var(--violet)"></span>Direct line</span>
-        <h2>Send me a message</h2>
+        <h2>Say hello</h2>
         <p>Fill this in and it lands in my inbox. A quick captcha step keeps the bots out.</p>
       </div>
     </div>
     <div class="contact-grid">
       <div class="sent-banner" id="sent-banner">✓ Message sent — thanks! I'll get back to you soon.</div>
       <form class="form-card glass" id="contact-form" action="https://formsubmit.co/valency007@gmail.com" method="POST">
-        <input type="hidden" name="_subject" value="New message via valencycolaco.com">
+        <input type="hidden" name="_subject" value="New message via colaco.se">
         <input type="hidden" name="_template" value="table">
         <input type="hidden" name="_captcha" value="true">
-        <input type="hidden" name="_next" id="next-url" value="https://valencycolaco.com/?sent=1#contact">
+        <input type="hidden" name="_next" id="next-url" value="https://colaco.se/?sent=1#contact">
         <div class="hp-field" aria-hidden="true"><input type="text" name="_honey" tabindex="-1" autocomplete="off"></div>
         <div class="form-row">
           <div class="field">
@@ -764,13 +805,13 @@ Rules:
 <div class="toast glass" id="toast" role="status"></div>
 
 <footer>
-  <p>© 2026 Valency Colaco · <a href="https://valencycolaco.com">valencycolaco.com</a> · Built with liquid glass, live feeds &amp; far too many roulette spins.</p>
+  <p>© 2026 Valency Colaco · <a href="https://colaco.se">colaco.se</a> · Built with liquid glass, live feeds &amp; far too many roulette spins.</p>
 </footer>
 
 <script>
 'use strict';
 /* ============================================================
-   valencycolaco.com — core
+   colaco.se — core
    ============================================================ */
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -1118,10 +1159,6 @@ function errorPanel(el, retryFn, extra) {
 function renderItems(el, items, opts) {
   const o = opts || {};
   el.innerHTML = items.map(it => {
-    const ground = o.groundLink
-      ? '<a class="chip-link" target="_blank" rel="noopener" href="https://ground.news/search?q=' +
-        encodeURIComponent(it.title) + '">Compare on Ground News ↗</a>'
-      : '';
     const cve = it.cve ? '<span class="cve-id">' + esc(it.cve) + '</span>' : '';
     const thumb = it.img
       ? '<div class="feed-thumb-wrap"><img class="feed-thumb" src="' + esc(it.img) +
@@ -1139,7 +1176,6 @@ function renderItems(el, items, opts) {
         (it.desc ? '<p class="snippet">' + esc(it.desc) + '</p>' : '') +
         '<div class="row">' +
           '<a class="chip-link" target="_blank" rel="noopener" href="' + esc(it.link) + '">Read the story ↗</a>' +
-          ground +
         '</div>' +
       '</article>'
     );
@@ -1161,14 +1197,157 @@ function renderItems(el, items, opts) {
 }
 
 /* ============================================================
-   World news
+   Ground News — top stories with left / center / right bias
    ============================================================ */
-const NEWS_SOURCES = [
-  { name: 'BBC World',    color: '#6ab7ff', url: 'https://feeds.bbci.co.uk/news/world/rss.xml' },
-  { name: 'The Guardian', color: '#3fe0c5', url: 'https://www.theguardian.com/world/rss' },
-  { name: 'Al Jazeera',   color: '#ffd166', url: 'https://www.aljazeera.com/xml/rss/all.xml' },
-  { name: 'NYT World',    color: '#a679ff', url: 'https://rss.nytimes.com/services/xml/rss/nyt/World.xml' }
-];
+/* Ground News has no public RSS/API, so we read its server-rendered
+   homepage (Next.js / React Server Components). The top-story data —
+   title, publish time, description, thumbnail, and the full left/center/
+   right bias breakdown — is embedded inside self.__next_f.push(...) flight
+   chunks as escaped JSON. We decode those chunks, then walk each story's
+   blindspotData segment. */
+function parseGroundNews(html) {
+  const chunks = [];
+  const re = /self\.__next_f\.push\(\[1,"((?:[^"\\]|\\.)*)"\]\)/g;
+  let m;
+  while ((m = re.exec(html)) !== null) {
+    try { chunks.push(JSON.parse('"' + m[1] + '"')); } catch (e) {}
+  }
+  const flight = chunks.join('');
+  const g = (rx, s, grp) => { const x = rx.exec(s); return x ? x[grp || 1] : null; };
+  const bIdx = [];
+  let from = 0;
+  while (true) {
+    const i = flight.indexOf('blindspotData', from);
+    if (i < 0) break;
+    bIdx.push(i);
+    from = i + 1;
+  }
+  const slugify = t => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const clean = t => String(t == null ? '' : t)
+    .replace(/\\u0027/g, "'").replace(/\u0027/g, "'")
+    .replace(/&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&')
+    .replace(/\\[nrt]/g, ' ').replace(/\s+/g, ' ').trim();
+  const stories = [];
+  for (let k = 0; k < bIdx.length; k++) {
+    const start = bIdx[k];
+    const end = k + 1 < bIdx.length ? bIdx[k + 1] : flight.length;
+    const seg = flight.slice(start, Math.min(end, start + 8000));
+    const left = +g(/leftPercent":(\d+)/, seg) || 0;
+    const center = +g(/centerPercent":(\d+)/, seg) || 0;
+    const right = +g(/rightPercent":(\d+)/, seg) || 0;
+    if (!left && !center && !right) continue;
+    let title = g(/"start":"[^"]+","title":"((?:[^"\\]|\\.)*)"/, seg);
+    if (!title) title = g(/"generatedHeadline":"((?:[^"\\]|\\.)*)"/, seg);
+    if (!title || title.length < 10) continue;
+    const slug = g(/"start":"[^\"]+","title":"(?:[^\"\\]|\\.)*","slug":"([^\"]+)"/, seg);
+    const uids = flight.slice(Math.max(0, start - 300), start).match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g);
+    const sid = uids && uids.length ? uids[uids.length - 1] : '';
+    const dateStr = g(/"start":"([^"]+)"/, seg);
+    const desc = g(/"description":"((?:[^"\\]|\\.)*)"/, seg);
+    const img = g(/"fallbackMedia":\{"url":"([^"]+)"/, seg)
+             || g(/"url":"(https:\/\/groundnews[^"]+\/assets\/[^"]+)"/, seg);
+    const blindspotFor = g(/"blindspotFor":"([^"]+)"/, seg);
+    const profile = g(/"coverageProfileStatement":"((?:[^"\\]|\\.)*)"/, seg);
+    const lSrc = +g(/leftSrcCount":(\d+)/, seg) || 0;
+    const cSrc = +g(/cntrSrcCount":(\d+)/, seg) || 0;
+    const rSrc = +g(/rightSrcCount":(\d+)/, seg) || 0;
+    stories.push({
+      title: clean(title),
+      link: slug ? 'https://ground.news/article/' + slug : (sid ? 'https://ground.news/article/' + sid : 'https://ground.news/'),
+      date: dateStr ? new Date(dateStr) : new Date(),
+      desc: desc ? clean(stripHtml(desc)).slice(0, 240) : '',
+      img: img || '',
+      bias: { left: left, center: center, right: right },
+      src: { left: lSrc, center: cSrc, right: rSrc, total: lSrc + cSrc + rSrc },
+      blindspot: blindspotFor || '',
+      profile: profile ? clean(stripHtml(profile)) : ''
+    });
+  }
+  const seen = new Set();
+  const uniq = [];
+  for (const s of stories) {
+    if (seen.has(s.link)) continue;
+    seen.add(s.link);
+    uniq.push(s);
+  }
+  uniq.sort((a, b) => b.date - a.date);
+  return uniq.slice(0, 12);
+}
+
+/* Fetch the Ground News homepage through CORS relays, accepting only a
+   response that actually contains the story data (rejects Cloudflare
+   challenge / error pages). allorigins is the reliable path; corsproxy and
+   corssh are raced as backups. */
+async function fetchGroundNews() {
+  const urls = [
+    'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://ground.news/'),
+    'https://corsproxy.io/?url=' + encodeURIComponent('https://ground.news/'),
+    'https://proxy.cors.sh/' + 'https://ground.news/'
+  ];
+  const race = new AbortController();
+  const attempts = urls.map(u =>
+    relayFetch(x => x, u, race.signal, 20000).then(t => {
+      if (!t || t.indexOf('blindspotData') < 0) throw new Error('Not Ground News content');
+      return t;
+    })
+  );
+  try {
+    const text = await Promise.any(attempts);
+    race.abort();
+    return text;
+  } catch (e) {
+    race.abort();
+    throw new Error('Ground News relays failed');
+  }
+}
+
+function renderGroundItems(el, items) {
+  el.innerHTML = items.map(it => {
+    const thumb = it.img
+      ? '<div class="feed-thumb-wrap"><img class="feed-thumb" src="' + esc(it.img) +
+        '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"></div>'
+      : '';
+    const b = it.bias, s = it.src;
+    const blindspot = it.blindspot
+      ? '<span class="blindspot-badge" title="' + esc(it.profile || '') + '">Blindspot · under-covered by ' +
+        esc(it.blindspot.charAt(0).toUpperCase() + it.blindspot.slice(1)) + '</span>'
+      : '';
+    const biasBar =
+      '<div class="bias-bar" title="Left ' + b.left + '% · Center ' + b.center + '% · Right ' + b.right + '%">' +
+        (b.left   ? '<div class="bias-seg bias-left"   style="width:' + b.left   + '%"><span>L ' + b.left   + '%</span></div>' : '') +
+        (b.center ? '<div class="bias-seg bias-center" style="width:' + b.center + '%"><span>C ' + b.center + '%</span></div>' : '') +
+        (b.right  ? '<div class="bias-seg bias-right"  style="width:' + b.right  + '%"><span>R ' + b.right  + '%</span></div>' : '') +
+      '</div>';
+    const legend = '<div class="bias-legend">' +
+      '<span class="bl bl-left">Left ' + s.left + '</span>' +
+      '<span class="bl bl-center">Center ' + s.center + '</span>' +
+      '<span class="bl bl-right">Right ' + s.right + '</span>' +
+      (s.total ? '<span class="bl-total">' + s.total + ' sources</span>' : '') +
+    '</div>';
+    return (
+      '<article class="feed-item glass' + (it.img ? ' has-thumb' : '') + '">' +
+        thumb +
+        '<div class="feed-meta">' +
+          '<span class="src-chip"><i style="--c:#5b8cff"></i>Ground News</span>' +
+          blindspot +
+          '<span>' + esc(timeAgo(it.date)) + '</span>' +
+        '</div>' +
+        '<h3><a href="' + esc(it.link) + '" target="_blank" rel="noopener">' + esc(it.title) + '</a></h3>' +
+        (it.desc ? '<p class="snippet">' + esc(it.desc) + '</p>' : '') +
+        biasBar + legend +
+        '<div class="row"><a class="chip-link" target="_blank" rel="noopener" href="' + esc(it.link) + '">Read full coverage on Ground News ↗</a></div>' +
+      '</article>'
+    );
+  }).join('');
+  el.querySelectorAll('.feed-thumb').forEach(img => {
+    const wrap = img.parentNode;
+    const timer = setTimeout(() => {
+      if (img.isConnected && !img.classList.contains('loaded') && wrap) wrap.remove();
+    }, 8000);
+    img.addEventListener('load', () => { clearTimeout(timer); img.classList.add('loaded'); }, { once: true });
+    img.addEventListener('error', () => { clearTimeout(timer); if (wrap) wrap.remove(); }, { once: true });
+  });
+}
 
 const News = {
   loaded: false,
@@ -1176,29 +1355,38 @@ const News = {
   async load(force) {
     if (this.loading) return;
     const el = $('#news-feed');
-    const cached = store.get('cache.news', null);
+    const cached = store.get('cache.ground', null);
     const FRESH = 10 * 60 * 1000;
-    /* Show cached items instantly (any age) so repeat visits feel immediate. */
     if (cached && cached.items) {
       const items = cached.items.map(it => Object.assign({}, it, { date: new Date(it.date) }));
-      renderItems(el, items, { groundLink: true });
+      renderGroundItems(el, items);
       this.loaded = true;
-      if (!force && Date.now() - cached.t < FRESH) return; /* still fresh enough */
+      if (!force && Date.now() - cached.t < FRESH) return;
     }
     this.loading = true;
-    if (!cached) skeletons(el, 6); /* only skeleton when there's nothing to show */
-    const onPartial = (items, failed) => {
-      items._failed = failed;
-      renderItems(el, items, { groundLink: true });
-    };
+    if (!cached) skeletons(el, 6);
     try {
-      const { items, failed } = await loadSources(NEWS_SOURCES, 8, 18, { onPartial });
-      items._failed = failed;
-      renderItems(el, items, { groundLink: true });
-      store.set('cache.news', { t: Date.now(), items: items.map(it => Object.assign({}, it, { date: it.date.toISOString() })) });
+      const html = await fetchGroundNews();
+      const items = parseGroundNews(html);
+      if (items.length < 3) throw new Error('Only ' + items.length + ' stories parsed');
+      renderGroundItems(el, items);
+      store.set('cache.ground', {
+        t: Date.now(),
+        items: items.map(it => Object.assign({}, it, { date: it.date.toISOString() }))
+      });
       this.loaded = true;
     } catch (e) {
-      if (!cached) errorPanel(el, () => this.load(true), '');
+      if (!cached) {
+        el.innerHTML =
+          '<div class="error-panel glass">' +
+            '<p><strong>Ground News is temporarily unreachable.</strong><br>' +
+            'The live bias feed couldn\u2019t load just now \u2014 usually a short hiccup with the public relay. ' +
+            'Hit refresh to try again.</p>' +
+            '<button class="btn primary" id="gn-retry">Try again</button>' +
+          '</div>';
+        const r = $('#gn-retry');
+        if (r) r.addEventListener('click', () => this.load(true));
+      }
       /* else: keep showing the stale cache rather than blanking the panel */
     }
     this.loading = false;
@@ -1297,6 +1485,26 @@ function initContact() {
   $('#contact-form').addEventListener('submit', () => {
     toast('Opening the captcha check…');
   });
+}
+
+/* Multilingual greeting roller — cycles "Hello" through 13 languages,
+   each new word rolling up into place like a meter. */
+const GREETINGS = [
+  'Hello', 'Hej', 'Hola', 'नमस्ते', 'مرحباً', '你好',
+  'こんにちは', 'Hallo', 'Ciao', 'Cześć', 'Moi', 'Hei', 'สวัสดี'
+];
+function startGreetRoller() {
+  const el = $('#greet');
+  if (!el) return;
+  let i = 0;
+  el.textContent = GREETINGS[0];
+  setInterval(() => {
+    i = (i + 1) % GREETINGS.length;
+    el.classList.remove('roll');
+    void el.offsetWidth; /* force reflow so the animation restarts */
+    el.textContent = GREETINGS[i];
+    el.classList.add('roll');
+  }, 2000);
 }
 
 /* ============================================================
@@ -2214,6 +2422,7 @@ const GAMES = { roulette: Roulette, g2048: G2048, snake: Snake, flappy: Flappy }
   PonytailModal.init();
   Sec.init();
   initContact();
+  startGreetRoller();
   const newsRefresh = $('#news-refresh');
   if (newsRefresh) newsRefresh.addEventListener('click', () => News.load(true));
   const secRefresh = $('#sec-refresh');

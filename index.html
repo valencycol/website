@@ -204,7 +204,10 @@ main{max-width:1100px;margin:0 auto;padding:0 20px}
 .hero .greet-line{display:flex;align-items:center;justify-content:center;min-height:1.3em;font-family:var(--font-display);font-weight:700;font-size:clamp(2.6rem,8vw,4.6rem);letter-spacing:-.03em;line-height:1.04}
 .hero .greet-line .greet-roller{height:1.3em;line-height:1.3em;vertical-align:baseline}
 .hero .greet-line .greet{line-height:1.3em;background:linear-gradient(115deg,#fff 30%, var(--blue) 55%, var(--violet) 80%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-.scroll-hint{margin-top:1.6rem;color:var(--ink3);font-size:1.4rem;animation:bounce 2.2s infinite}
+
+.scroll-hint{margin-top:1.6rem;color:var(--ink3);font-size:1.4rem;animation:bounce 2.2s infinite;cursor:pointer;text-decoration:none;transition:color .2s}
+.scroll-hint:hover{color:var(--ink2)}
+
 @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(8px)}}
 
 /* Option cards */
@@ -529,7 +532,7 @@ noscript div{position:fixed;inset:0;background:var(--bg0);color:var(--ink);displ
         <a class="btn primary" href="#options" data-scroll>Explore ↓</a>
         <a class="btn" href="#contact">Say hello</a>
       </div>
-      <div class="scroll-hint" aria-hidden="true">⌄</div>
+      <a class="scroll-hint" href="#options" data-scroll aria-label="Scroll to options">⌄</a>
     </div>
 
     <div class="options" id="options">

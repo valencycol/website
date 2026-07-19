@@ -73,15 +73,34 @@ button{font-family:inherit;color:inherit;cursor:pointer}
   radial-gradient(100% 80% at 0% 100%, #0c1730 0%, transparent 55%),
   linear-gradient(180deg,var(--bg0),var(--bg1));}
 .blob{position:fixed;z-index:-1;border-radius:50%;filter:blur(90px);opacity:.5;mix-blend-mode:screen;pointer-events:none;will-change:transform}
-.blob-1{width:52vmax;height:52vmax;left:-14vmax;top:-16vmax;background:radial-gradient(circle at 35% 35%, rgba(106,183,255,.55), transparent 62%);animation:drift1 26s ease-in-out infinite alternate}
-.blob-2{width:44vmax;height:44vmax;right:-12vmax;top:8vmax;background:radial-gradient(circle at 60% 40%, rgba(166,121,255,.5), transparent 62%);animation:drift2 31s ease-in-out infinite alternate}
-.blob-3{width:40vmax;height:40vmax;left:22vmax;bottom:-18vmax;background:radial-gradient(circle at 50% 50%, rgba(63,224,197,.42), transparent 62%);animation:drift3 24s ease-in-out infinite alternate}
-.blob-4{width:30vmax;height:30vmax;right:14vmax;bottom:-6vmax;background:radial-gradient(circle at 50% 50%, rgba(255,107,157,.34), transparent 62%);animation:drift1 36s ease-in-out infinite alternate-reverse}
-@keyframes drift1{from{transform:translate(0,0) scale(1)}to{transform:translate(9vmax,7vmax) scale(1.12)}}
-@keyframes drift2{from{transform:translate(0,0) scale(1.05)}to{transform:translate(-8vmax,9vmax) scale(.94)}}
-@keyframes drift3{from{transform:translate(0,0) scale(.95)}to{transform:translate(7vmax,-8vmax) scale(1.1)}}
+.blob-1{width:52vmax;height:52vmax;left:-14vmax;top:-16vmax;background:radial-gradient(circle at 35% 35%, rgba(106,183,255,.55), transparent 62%);animation:drift1 14s ease-in-out infinite alternate, blobPulse 7s ease-in-out infinite alternate}
+.blob-2{width:44vmax;height:44vmax;right:-12vmax;top:8vmax;background:radial-gradient(circle at 60% 40%, rgba(166,121,255,.5), transparent 62%);animation:drift2 18s ease-in-out infinite alternate, blobPulse 9s ease-in-out -3s infinite alternate}
+.blob-3{width:40vmax;height:40vmax;left:22vmax;bottom:-18vmax;background:radial-gradient(circle at 50% 50%, rgba(63,224,197,.42), transparent 62%);animation:drift3 12s ease-in-out infinite alternate, blobPulse 6s ease-in-out -2s infinite alternate}
+.blob-4{width:30vmax;height:30vmax;right:14vmax;bottom:-6vmax;background:radial-gradient(circle at 50% 50%, rgba(255,107,157,.34), transparent 62%);animation:drift1 22s ease-in-out infinite alternate-reverse, blobPulse 8s ease-in-out -5s infinite alternate}
+@keyframes drift1{from{transform:translate(0,0) scale(1)}50%{transform:translate(8vmax,11vmax) scale(1.09)}to{transform:translate(14vmax,5vmax) scale(1.2)}}
+@keyframes drift2{from{transform:translate(0,0) scale(1.05)}50%{transform:translate(-11vmax,4vmax) scale(.9)}to{transform:translate(-8vmax,13vmax) scale(1.03)}}
+@keyframes drift3{from{transform:translate(0,0) scale(.95)}50%{transform:translate(10vmax,-4vmax) scale(1.14)}to{transform:translate(5vmax,-12vmax) scale(1.03)}}
+@keyframes blobPulse{from{opacity:.42}to{opacity:.62}}
 .grain{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.05;mix-blend-mode:overlay;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+
+/* Aurora curtains — dancing bands of light across the upper sky */
+.aurora-ribbons{position:fixed;left:-12%;right:-12%;top:-14%;height:72vh;z-index:-1;pointer-events:none;overflow:hidden;transform:skewY(-7deg);animation:skyPulse 9s ease-in-out infinite alternate;
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 20%,#000 58%,transparent 96%);
+  mask-image:linear-gradient(180deg,transparent 0,#000 20%,#000 58%,transparent 96%);}
+.ribbon{position:absolute;top:-12%;bottom:-12%;left:-25%;width:150%;mix-blend-mode:screen;pointer-events:none;will-change:transform;filter:blur(32px)}
+.ribbon.r1{opacity:.26;animation:ribbonSway 11s ease-in-out infinite alternate;
+  background:repeating-linear-gradient(97deg, transparent 0 5%, rgba(63,224,197,.55) 8% 10%, transparent 13% 21%, rgba(106,183,255,.5) 25% 27%, transparent 30% 39%, rgba(166,121,255,.5) 43% 45%, transparent 48% 57%);}
+.ribbon.r2{opacity:.18;filter:blur(48px);animation:ribbonSway 17s ease-in-out infinite alternate-reverse;
+  background:repeating-linear-gradient(92deg, transparent 0 7%, rgba(106,183,255,.5) 11% 13%, transparent 17% 28%, rgba(63,224,197,.42) 32% 34%, transparent 38% 49%);}
+.ribbon.r3{opacity:.15;filter:blur(24px);animation:ribbonSway 14s ease-in-out -5s infinite alternate;
+  background:repeating-linear-gradient(101deg, transparent 0 9%, rgba(166,121,255,.42) 13% 14.5%, transparent 18% 31%, rgba(255,107,157,.25) 35% 36.5%, transparent 40% 53%);}
+@keyframes ribbonSway{from{transform:translateX(-7%) rotate(-.4deg) scaleY(1)}50%{transform:translateX(2%) rotate(.1deg) scaleY(1.1)}to{transform:translateX(7%) rotate(.4deg) scaleY(.94)}}
+@keyframes skyPulse{from{opacity:.8}to{opacity:1}}
+@media (max-width:720px){.ribbon{filter:blur(20px)}.ribbon.r2{filter:blur(32px)}.ribbon.r3{display:none}}
+
+/* Starfield canvas — twinkle, drift, flares, shooting stars (script at end of body) */
+#bg-stars{position:fixed;inset:0;z-index:-1;pointer-events:none}
 
 /* ============================================================
    Glass primitives
@@ -446,7 +465,9 @@ noscript div{position:fixed;inset:0;background:var(--bg0);color:var(--ink);displ
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important}
   .blob{animation:none}
+  .ribbon,.aurora-ribbons{animation:none}
 }
+   
 </style>
 </head>
 <body>
@@ -456,7 +477,10 @@ noscript div{position:fixed;inset:0;background:var(--bg0);color:var(--ink);displ
 <div class="blob blob-1" aria-hidden="true"></div>
 <div class="blob blob-2" aria-hidden="true"></div>
 <div class="blob blob-3" aria-hidden="true"></div>
+
 <div class="blob blob-4" aria-hidden="true"></div>
+<div class="aurora-ribbons" aria-hidden="true"><i class="ribbon r1"></i><i class="ribbon r2"></i><i class="ribbon r3"></i></div>
+<canvas id="bg-stars" aria-hidden="true"></canvas>
 <div class="grain" aria-hidden="true"></div>
 
 <header class="dock glass" role="banner">
@@ -855,7 +879,7 @@ Rules:
 <div class="toast glass" id="toast" role="status"></div>
 
 <footer>
-  <p>© 2026 Valency Colaco · <a href="https://colaco.se">colaco.se</a> · Built with liquid glass, live feeds &amp; far too many slot spins.</p>
+  <p>© 2026 Valency Colaco · <a href="https://colaco.se">colaco.se</a> · Built with Liquid Glass, live feeds, and a dynamic rendering of Sweden's night sky.</p>
 </footer>
 
 <script>
@@ -1640,7 +1664,7 @@ function initContact() {
    each new word rolling up into place like a meter. */
 const GREETINGS = [
   'Hello', 'Hej', 'Hola', 'नमस्ते', 'مرحباً', '你好',
-  'こんにちは', 'Hallo', 'Ciao', 'Cześć', 'Moi', 'Hei', 'สวัสดี'
+  'こんにちは', 'Hallo', 'Ciao', 'Cześć', 'Bonjour', 'Hei', 'สวัสดี'
 ];
 function startGreetRoller() {
   const el = $('#greet');
@@ -3140,6 +3164,192 @@ const GAMES = { slots: Slots, plinko: Plinko, roulette: Roulette, g2048: G2048, 
   route(true);
 })();
 
+</script>
+
+<script>
+/* ============================================================
+   bg-stars — living night sky: twinkling stars with random
+   flares, slow drift, pointer parallax, frequent shooting
+   stars. Pauses when the tab is hidden; renders a static sky
+   under prefers-reduced-motion.
+   ============================================================ */
+(function () {
+  const canvas = document.getElementById('bg-stars');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const finePointer = window.matchMedia('(pointer: fine)').matches;
+
+  const PALETTE = ['255,255,255', '176,215,255', '158,240,222', '208,182,255'];
+
+  // Pre-rendered glow sprite — far cheaper than per-frame gradients.
+  const sprite = document.createElement('canvas');
+  sprite.width = sprite.height = 64;
+  (function () {
+    const g = sprite.getContext('2d');
+    const rg = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    rg.addColorStop(0, 'rgba(255,255,255,1)');
+    rg.addColorStop(0.28, 'rgba(200,225,255,.5)');
+    rg.addColorStop(1, 'rgba(200,225,255,0)');
+    g.fillStyle = rg;
+    g.fillRect(0, 0, 64, 64);
+  })();
+
+  let W = 0, H = 0, lastW = 0, lastH = 0;
+  let stars = [], shots = [];
+  let px = 0, py = 0, tx = 0, ty = 0;          // parallax current / target
+  let nextShot = 0, raf = null, last = 0;
+
+  function seed() {
+    const n = Math.min(220, Math.round((W * H) / 7500));
+    stars = [];
+    for (let i = 0; i < n; i++) {
+      const z = 0.25 + Math.random() * 0.75;   // depth: far -> near
+      stars.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        z: z,
+        r: (0.5 + Math.random() * 1.1) * z + 0.3,
+        tw: Math.random() * Math.PI * 2,       // twinkle phase
+        ts: 0.8 + Math.random() * 1.8,         // twinkle speed
+        flare: 0,                              // brief brightening burst
+        c: PALETTE[(Math.random() * PALETTE.length) | 0]
+      });
+    }
+  }
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // Reseed only on real size changes (mobile URL bars fire tiny resizes).
+    if (!stars.length || Math.abs(W - lastW) > 60 || Math.abs(H - lastH) > 160) {
+      seed(); lastW = W; lastH = H;
+    }
+    if (reduceMotion) drawStatic();
+  }
+
+  function spawnShot(now) {
+    const dir = Math.random() < 0.5 ? -1 : 1;
+    const speed = 420 + Math.random() * 320;   // px/s
+    const angle = (18 + Math.random() * 14) * Math.PI / 180;
+    shots.push({
+      x: Math.random() * W * 0.7 + W * 0.15,
+      y: Math.random() * H * 0.3,
+      vx: Math.cos(angle) * speed * dir,
+      vy: Math.sin(angle) * speed,
+      life: 0,
+      ttl: 0.8 + Math.random() * 0.6
+    });
+    nextShot = now + 2200 + Math.random() * 4500;
+  }
+
+  function step(now) {
+    raf = requestAnimationFrame(step);
+    const dt = Math.min((now - last) / 1000, 0.05) || 0.016;
+    last = now;
+    const t = now / 1000;
+
+    px += (tx - px) * 0.045;
+    py += (ty - py) * 0.045;
+
+    ctx.clearRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'lighter';
+
+    // Roughly once a second, a random star flares up for a moment.
+    if (stars.length && Math.random() < dt * 0.9) {
+      stars[(Math.random() * stars.length) | 0].flare = 1;
+    }
+
+    for (const s of stars) {
+      s.y -= s.z * 7 * dt;                     // slow rise
+      s.x += s.z * 2.2 * dt;
+      if (s.y < -4) { s.y = H + 4; s.x = Math.random() * W; }
+      if (s.x > W + 4) s.x = -4;
+
+      let a = 0.3 + 0.55 * s.z * (0.5 + 0.5 * Math.sin(s.tw + t * s.ts));
+      let d = s.r * 7;
+      if (s.flare > 0) {
+        a = Math.min(1, a + s.flare * 0.6);
+        d *= 1 + s.flare * 1.7;
+        s.flare = Math.max(0, s.flare - dt * 1.5);
+      }
+      const ox = s.x + px * 22 * s.z, oy = s.y + py * 14 * s.z;
+      ctx.globalAlpha = a;
+      ctx.drawImage(sprite, ox - d / 2, oy - d / 2, d, d);
+      ctx.fillStyle = 'rgba(' + s.c + ',' + Math.min(1, a + 0.15) + ')';
+      ctx.fillRect(ox - s.r / 2, oy - s.r / 2, s.r, s.r);
+    }
+    ctx.globalAlpha = 1;
+
+    if (now > nextShot && shots.length < 3) spawnShot(now);
+    for (let i = shots.length - 1; i >= 0; i--) {
+      const sh = shots[i];
+      sh.life += dt;
+      if (sh.life > sh.ttl || sh.x < -160 || sh.x > W + 160 || sh.y > H + 60) { shots.splice(i, 1); continue; }
+      sh.x += sh.vx * dt;
+      sh.y += sh.vy * dt;
+      const p = sh.life / sh.ttl;
+      const fade = p < 0.2 ? p / 0.2 : 1 - (p - 0.2) / 0.8;
+      const tailX = sh.x - sh.vx * 0.26, tailY = sh.y - sh.vy * 0.26;
+      const grad = ctx.createLinearGradient(sh.x, sh.y, tailX, tailY);
+      grad.addColorStop(0, 'rgba(255,255,255,' + (0.9 * fade) + ')');
+      grad.addColorStop(1, 'rgba(140,190,255,0)');
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1.8;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(sh.x, sh.y);
+      ctx.lineTo(tailX, tailY);
+      ctx.stroke();
+      ctx.globalAlpha = 0.9 * fade;            // glowing head
+      ctx.drawImage(sprite, sh.x - 9, sh.y - 9, 18, 18);
+      ctx.globalAlpha = 1;
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  function drawStatic() {
+    ctx.clearRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'lighter';
+    for (const s of stars) {
+      const d = s.r * 7;
+      ctx.globalAlpha = 0.25 + 0.5 * s.z;
+      ctx.drawImage(sprite, s.x - d / 2, s.y - d / 2, d, d);
+    }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  function start() {
+    if (raf !== null || reduceMotion) return;
+    last = performance.now();
+    nextShot = last + 1500 + Math.random() * 2000;
+    raf = requestAnimationFrame(step);
+  }
+  function stop() {
+    if (raf !== null) { cancelAnimationFrame(raf); raf = null; }
+  }
+
+  window.addEventListener('resize', resize, { passive: true });
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) { stop(); } else { start(); }
+  });
+  if (finePointer && !reduceMotion) {
+    window.addEventListener('pointermove', function (e) {
+      tx = e.clientX / W - 0.5;
+      ty = e.clientY / H - 0.5;
+    }, { passive: true });
+  }
+
+  resize();
+  start();
+})();
+   
 </script>
 </body>
 </html>

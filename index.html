@@ -141,23 +141,29 @@ mask-image:linear-gradient(180deg,transparent 0,#000 22%,#000 56%,transparent 92
    Dock (top nav)
    ============================================================ */
 .dock{
-  position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:60;
+  position:fixed;top:max(14px, env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:60;
   display:flex;align-items:center;gap:.35rem;padding:.4rem .5rem;border-radius:999px;
   max-width:calc(100vw - 24px);
 }
-.dock .brand{display:flex;align-items:center;gap:.55rem;padding:.3rem .8rem .3rem .35rem;text-decoration:none;font-weight:700;font-family:var(--font-display);letter-spacing:.01em}
+.dock .brand{flex:none;display:flex;align-items:center;gap:.55rem;padding:.3rem .8rem .3rem .35rem;text-decoration:none;font-weight:700;font-family:var(--font-display);letter-spacing:.01em}
 .monogram{width:34px;height:34px;border-radius:12px;display:grid;place-items:center;font-family:var(--font-display);font-weight:700;font-size:.95rem;
   background:linear-gradient(140deg, rgba(106,183,255,.35), rgba(166,121,255,.3));
   border:1px solid rgba(255,255,255,.28);box-shadow:var(--sheen);}
-.dock nav{display:flex;gap:.2rem}
-.dock nav a{display:flex;align-items:center;gap:.42rem;padding:.5rem .85rem;border-radius:999px;text-decoration:none;font-size:.88rem;font-weight:600;color:var(--ink2);border:1px solid transparent;transition:all .2s}
+.dock nav{display:flex;gap:.2rem;min-width:0;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.dock nav::-webkit-scrollbar{display:none}
+.dock nav a{flex:none;display:flex;align-items:center;gap:.42rem;padding:.5rem .85rem;border-radius:999px;text-decoration:none;font-size:.88rem;font-weight:600;color:var(--ink2);border:1px solid transparent;transition:all .2s}
 .dock nav a svg{width:16px;height:16px;flex:none}
 .dock nav a:hover{color:var(--ink);background:rgba(255,255,255,.07)}
 .dock nav a.active{color:var(--ink);background:linear-gradient(155deg, rgba(255,255,255,.16), rgba(255,255,255,.05));border-color:var(--stroke);box-shadow:var(--sheen)}
-@media (max-width:640px){
-  .dock .brand span{display:none}
+@media (max-width:940px){
   .dock nav a span{display:none}
   .dock nav a{padding:.55rem .7rem}
+}
+@media (max-width:560px){
+  .dock .brand span{display:none}
+  .dock{gap:.2rem}
+  .dock nav{gap:.1rem}
+  .dock nav a{padding:.5rem .55rem}
 }
 
 /* ============================================================

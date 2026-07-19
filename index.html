@@ -86,18 +86,19 @@ button{font-family:inherit;color:inherit;cursor:pointer}
 
 /* Aurora curtains — dancing bands of light across the upper sky */
 .aurora-ribbons{position:fixed;left:-12%;right:-12%;top:-14%;height:72vh;z-index:-1;pointer-events:none;overflow:hidden;transform:skewY(-7deg);animation:skyPulse 9s ease-in-out infinite alternate, skyBreathe 13s ease-in-out infinite alternate;
-      -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 20%,#000 58%,transparent 96%);
-  mask-image:linear-gradient(180deg,transparent 0,#000 20%,#000 58%,transparent 96%);}
 
-.ribbon{position:absolute;top:-12%;bottom:-12%;left:-45%;width:190%;mix-blend-mode:screen;pointer-events:none;will-change:transform;filter:blur(32px)}
+-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 22%,#000 56%,transparent 92%);
+mask-image:linear-gradient(180deg,transparent 0,#000 22%,#000 56%,transparent 92%);}
+
+.ribbon{position:absolute;top:-16%;bottom:-16%;left:-45%;width:190%;mix-blend-mode:screen;pointer-events:none;will-change:transform;filter:blur(32px)}
 .ribbon.r1{opacity:.26;animation:ribbonFlow 11s linear infinite;
-  background:repeating-linear-gradient(90deg, transparent 0 3.5%, rgba(63,224,197,.55) 5% 6.5%, transparent 8% 9.5%, rgba(106,183,255,.5) 11% 12.5%, transparent 14% 15.5%, rgba(166,121,255,.5) 17% 18.5%, transparent 19.5% 20%);}
+  background:repeating-linear-gradient(90deg, rgba(63,224,197,0) 0 3.5%, rgba(63,224,197,.55) 5% 6.5%, rgba(63,224,197,0) 8%, rgba(106,183,255,0) 9.5%, rgba(106,183,255,.5) 11% 12.5%, rgba(106,183,255,0) 14%, rgba(166,121,255,0) 15.5%, rgba(166,121,255,.5) 17% 18.5%, rgba(166,121,255,0) 19.5% 20%);}
 .ribbon.r2{opacity:.18;filter:blur(48px);animation:ribbonFlow 19s linear infinite;
-  background:repeating-linear-gradient(90deg, transparent 0 4%, rgba(106,183,255,.5) 6.5% 8.5%, transparent 11% 14%, rgba(63,224,197,.42) 16% 17.5%, transparent 19.5% 20%);}
+  background:repeating-linear-gradient(90deg, rgba(106,183,255,0) 0 4%, rgba(106,183,255,.5) 6.5% 8.5%, rgba(106,183,255,0) 11%, rgba(63,224,197,0) 14%, rgba(63,224,197,.42) 16% 17.5%, rgba(63,224,197,0) 19.5% 20%);}
 .ribbon.r3{opacity:.15;filter:blur(24px);animation:ribbonFlow 14s linear infinite;
-  background:repeating-linear-gradient(90deg, transparent 0 6%, rgba(166,121,255,.42) 8% 9%, transparent 11% 15%, rgba(255,107,157,.25) 16.5% 17.5%, transparent 19.5% 20%);}
-@keyframes ribbonFlow{from{transform:translateX(0)}to{transform:translateX(20%)}}
+  background:repeating-linear-gradient(90deg, rgba(166,121,255,0) 0 6%, rgba(166,121,255,.42) 8% 9%, rgba(166,121,255,0) 11%, rgba(255,107,157,0) 15%, rgba(255,107,157,.25) 16.5% 17.5%, rgba(255,107,157,0) 19.5% 20%);}
    
+@keyframes ribbonFlow{from{transform:translateX(0)}to{transform:translateX(20%)}}
 @keyframes skyPulse{from{opacity:.8}to{opacity:1}}
 @keyframes skyBreathe{from{transform:skewY(-7deg) scaleY(1)}to{transform:skewY(-7deg) scaleY(1.06)}}
 

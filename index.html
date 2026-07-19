@@ -90,15 +90,19 @@ button{font-family:inherit;color:inherit;cursor:pointer}
 -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 22%,#000 56%,transparent 92%);
 mask-image:linear-gradient(180deg,transparent 0,#000 22%,#000 56%,transparent 92%);}
 
-.ribbon{position:absolute;top:-16%;bottom:-16%;left:-45%;width:190%;mix-blend-mode:screen;pointer-events:none;will-change:transform}
-.ribbon.r1{opacity:.22;animation:ribbonFlow 11s linear infinite;
+.ribbon{position:absolute;top:-16%;bottom:-16%;left:-45%;width:190%;mix-blend-mode:screen;pointer-events:none;will-change:transform;animation:ribbonDrift var(--dur,17s) ease-in-out infinite alternate}
+.ribbon.r1{opacity:.22;--dur:17s;
   background:repeating-linear-gradient(90deg, rgba(63,224,197,0) 0%, rgba(63,224,197,.5) 4.5%, rgba(106,183,255,.14) 8%, rgba(106,183,255,.5) 11%, rgba(166,121,255,.16) 14.5%, rgba(166,121,255,.5) 17.5%, rgba(63,224,197,0) 20%);}
-.ribbon.r2{opacity:.16;animation:ribbonFlow 19s linear infinite;
+.ribbon.r2{opacity:.16;--dur:23s;
   background:repeating-linear-gradient(90deg, rgba(106,183,255,0) 0%, rgba(106,183,255,.42) 5.5%, rgba(63,224,197,.1) 10.5%, rgba(63,224,197,.4) 15%, rgba(106,183,255,0) 20%);}
-.ribbon.r3{opacity:.13;animation:ribbonFlow 14s linear infinite;
+.ribbon.r3{opacity:.13;--dur:19s;
   background:repeating-linear-gradient(90deg, rgba(166,121,255,0) 0% 3%, rgba(166,121,255,.35) 7%, rgba(255,107,157,0) 10.5% 13%, rgba(255,107,157,.28) 16%, rgba(166,121,255,0) 19% 20%);}
-   
-@keyframes ribbonFlow{from{transform:translateX(0)}to{transform:translateX(20%)}}
+
+@keyframes ribbonDrift{
+  0%{transform:translateX(calc(var(--dir,1) * -10%)) translateY(0) scaleY(1)}
+  50%{transform:translateX(calc(var(--dir,1) * 1%)) translateY(1.4vh) scaleY(1.05)}
+  100%{transform:translateX(calc(var(--dir,1) * 12%)) translateY(-1vh) scaleY(.97)}
+}
 @keyframes skyPulse{from{opacity:.8}to{opacity:1}}
 @keyframes skyBreathe{from{transform:skewY(-7deg) scaleY(1)}to{transform:skewY(-7deg) scaleY(1.06)}}
 
@@ -491,6 +495,9 @@ noscript div{position:fixed;inset:0;background:var(--bg0);color:var(--ink);displ
 
 <div class="blob blob-4" aria-hidden="true"></div>
 <div class="aurora-ribbons" aria-hidden="true"><i class="ribbon r1"></i><i class="ribbon r2"></i><i class="ribbon r3"></i></div>
+
+<script>document.querySelectorAll('.aurora-ribbons .ribbon').forEach(function(r){r.style.setProperty('--dir',Math.random()<.5?-1:1);r.style.animationDelay=(-Math.random()*8)+'s'});</script>
+   
 <canvas id="bg-stars" aria-hidden="true"></canvas>
 <div class="grain" aria-hidden="true"></div>
 

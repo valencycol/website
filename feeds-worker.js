@@ -19,6 +19,7 @@ const ALLOWED_HOSTS = new Set([
   'ground.news',              // News — homepage + /blindspot
   'feeds.feedburner.com',     // The Hacker News
   'www.bleepingcomputer.com',
+  'news.google.com',          // Google News RSS — bypass source for bot-walled feeds
   'krebsonsecurity.com',
   'www.securityweek.com',
   'www.cisa.gov',             // advisories feed + KEV JSON
@@ -59,19 +60,12 @@ export default {
 
     // 2. Refresh from upstream; fall back to the stale copy if it fails.
     try {
-      const res = await fetch(upstream.toString(), {
-        headers: {
-          'User-Agent': 'colaco.se feed fetcher (+https://colaco.se)',
-          'Accept': 'application/rss+xml, application/atom+xml, application/xml, text/html, */*',
-        },
-        redirect: 'follow',
-      });
-      if (!res.ok) throw new Error('upstream returned ' + res.status);
-
-      const body = await res.arrayBuffer();
+      const body = await fetchUpstream(upstream.toString(), env);
       const stored = new Response(body, {
         headers: {
-          'Content-Type': res.headers.get('Content-Type') || 'application/xml; charset=utf-8',
+          // Every client consumer reads .text() and parses explicitly, so a
+          // fixed XML content-type is harmless even for the JSON/HTML feeds.
+          'Content-Type': 'application/xml; charset=utf-8',
           'Cache-Control': 'public, max-age=' + KEEP_SECONDS, // edge keeps it a day…
           'X-Fetched-At': String(Date.now()),                 // …freshness tracked ourselves
         },
@@ -84,6 +78,89 @@ export default {
     }
   },
 };
+
+// A real browser fingerprint. Many origins block obvious bot user-agents;
+// this alone gets past most of them.
+const BROWSER_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+  'Accept': 'application/rss+xml, application/atom+xml, application/xml, text/html;q=0.9, */*;q=0.8',
+  'Accept-Language': 'en-US,en;q=0.9',
+};
+
+// Fetch an allowlisted upstream. Try direct first with a browser fingerprint;
+// if the origin answers with a bot-wall status (403/503) or the connection
+// fails, retry through rss2json — a dedicated RSS fetcher that gets past the
+// Cloudflare bot walls (BleepingComputer, etc.) that block datacenter proxies.
+// rss2json returns JSON, so we rebuild the minimal RSS XML the client's parser
+// already understands. All server-side: the visitor's browser only ever talks
+// to feeds.colaco.se, and only allowlisted hosts ever reach this function.
+async function fetchUpstream(url, env) {
+  const headers = { ...BROWSER_HEADERS };
+  // Google News serves EU visitors a cookie-consent interstitial (HTML) instead
+  // of the feed when fetched from an EU datacenter IP. This cookie opts past it
+  // so we get the actual RSS. Harmless for any other host.
+  if (new URL(url).hostname.endsWith('news.google.com')) {
+    headers['Cookie'] = 'CONSENT=YES+';
+  }
+  try {
+    const res = await fetch(url, { headers, redirect: 'follow' });
+    if (res.ok) return await res.arrayBuffer();
+    // Anything other than a bot-wall status is a real error — don't mask it.
+    if (res.status !== 403 && res.status !== 503) {
+      throw new Error('upstream returned ' + res.status);
+    }
+  } catch (e) {
+    if (String(e).includes('upstream returned')) throw e; // genuine HTTP error above
+    // otherwise a network-level failure — fall through to rss2json
+  }
+
+  // Fallback via rss2json. The api_key comes from a Worker secret (Settings →
+  // Variables and Secrets → RSS2JSON_KEY); without it, rss2json throttles
+  // anonymous traffic — especially from Workers' shared egress IPs — to a 429
+  // almost immediately. A free key gives you a private 10k/day quota, far more
+  // than this needs (results are edge-cached for a day, one feed).
+  const key = env && env.RSS2JSON_KEY;
+  const api = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(url) +
+    (key ? '&api_key=' + encodeURIComponent(key) : '');
+  const res = await fetch(api, { headers: { 'Accept': 'application/json' }, redirect: 'follow' });
+  const raw = await res.text();
+  let data = null;
+  try { data = JSON.parse(raw); } catch { /* non-JSON error body */ }
+  const msg = data && data.message ? ': ' + data.message : (raw ? ': ' + raw.slice(0, 140) : '');
+  if (res.status === 429) {
+    throw new Error((key ? 'rss2json quota exhausted' : 'rss2json needs an api_key') + ' (429)' + msg);
+  }
+  if (!res.ok || !data || data.status !== 'ok') throw new Error('rss2json ' + res.status + msg);
+  if (!Array.isArray(data.items) || !data.items.length) throw new Error('rss2json returned no items' + msg);
+  return new TextEncoder().encode(buildRss(data)).buffer;
+}
+
+// Rebuild minimal RSS 2.0 XML from an rss2json payload. Only the fields the
+// client's parseFeed reads (title, link, guid, pubDate, description, image)
+// are emitted; the image rides in <enclosure>, which parseFeed already checks.
+function buildRss(data) {
+  const esc = s => String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const cdata = s => '<![CDATA[' + String(s == null ? '' : s).replace(/]]>/g, ']]]]><![CDATA[>') + ']]>';
+  const items = data.items.map(it => {
+    const img = it.thumbnail || (it.enclosure && it.enclosure.link) || '';
+    return '<item>' +
+      '<title>' + esc(it.title) + '</title>' +
+      '<link>' + esc(it.link) + '</link>' +
+      (it.guid ? '<guid isPermaLink="false">' + esc(it.guid) + '</guid>' : '') +
+      (it.pubDate ? '<pubDate>' + esc(it.pubDate) + '</pubDate>' : '') +
+      '<description>' + cdata(it.description || it.content) + '</description>' +
+      (img ? '<enclosure url="' + esc(img) + '" type="image/jpeg" />' : '') +
+      '</item>';
+  }).join('');
+  const feed = data.feed || {};
+  return '<?xml version="1.0" encoding="UTF-8"?>' +
+    '<rss version="2.0"><channel>' +
+    '<title>' + esc(feed.title || 'Feed') + '</title>' +
+    (feed.link ? '<link>' + esc(feed.link) + '</link>' : '') +
+    items +
+    '</channel></rss>';
+}
 
 function ageSeconds(res) {
   return (Date.now() - Number(res.headers.get('X-Fetched-At') || 0)) / 1000;

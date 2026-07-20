@@ -14,10 +14,20 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%236ab7ff'/%3E%3Cstop offset='1' stop-color='%23a679ff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='%230a0f1f'/%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)' opacity='.22'/%3E%3Ctext x='32' y='43' font-family='Arial,Helvetica,sans-serif' font-size='32' font-weight='700' text-anchor='middle' fill='url(%23g)'%3EV%3C/text%3E%3C/svg%3E">
 
 <link rel="preload" href="assets/fonts/space-grotesk-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+
 <style>
-@font-face{ font-family:'Space Grotesk'; font-weight:300 700; font-display:swap;
-  src:url('assets/fonts/space-grotesk-latin-wght-normal.woff2') format('woff2-variations'); unicode-range:...; }
-/* + a latin-ext rule for the second file */
+/* Space Grotesk — self-hosted variable font (OFL-1.1, github.com/floriankarsten/space-grotesk).
+   Same family name as before, so --font-display needs no changes. */
+@font-face{
+  font-family:'Space Grotesk'; font-style:normal; font-display:swap; font-weight:300 700;
+  src:url('assets/fonts/space-grotesk-latin-ext-wght-normal.woff2') format('woff2-variations');
+  unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+@font-face{
+  font-family:'Space Grotesk'; font-style:normal; font-display:swap; font-weight:300 700;
+  src:url('assets/fonts/space-grotesk-latin-wght-normal.woff2') format('woff2-variations');
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
 </style>
 
 <!-- Matter.js — open-source 2D rigid-body physics engine (MIT, brm.io/matter-js). Powers the Plinko board. -->
@@ -994,17 +1004,18 @@ function route(force) {
 window.addEventListener('hashchange', () => route(false));
 
 /* ============================================================
-   Feed engine — fetches RSS/Atom/JSON through CORS-friendly relays
+   Feed engine — fetches RSS/Atom/JSON/HTML through the first-party
+   Cloudflare Worker at feeds.colaco.se (allowlisted upstreams,
+   edge-cached, serves the last good copy if an upstream is down).
    ============================================================ */
+const FEED_PROXY = 'https://feeds.colaco.se/?url=';
+/* maxAge (seconds, optional) asks the worker to revalidate anything older;
+   clamped server-side to [60, 86400]. Omit it to use the worker default. */
+const viaProxy = (u, maxAge) =>
+  FEED_PROXY + encodeURIComponent(u) + (maxAge ? '&max_age=' + maxAge : '');
+
 const RELAYS = [
-  /* raw: true = the relay returns the original bytes verbatim (good for any
-     content, including the CISA KEV JSON). raw: false = it transforms the
-     response into its own format and needs a dedicated parser. */
-  { name: 'direct',     raw: true,  build: u => u,                                                                 parse: parseFeed },
-  { name: 'rss2json',   raw: false, build: u => 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(u), parse: parseJsonFeed },
-  { name: 'corsproxy',  raw: true,  build: u => 'https://corsproxy.io/?url=' + encodeURIComponent(u),                  parse: parseFeed },
-  { name: 'corssh',     raw: true,  build: u => 'https://proxy.cors.sh/' + u,                                            parse: parseFeed },
-  { name: 'allorigins', raw: true,  build: u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),           parse: parseFeed }
+  { name: 'worker', raw: true, build: u => viaProxy(u), parse: parseFeed }
 ];
 
 /* Fetch one URL through a single relay, with its own timeout. An external
@@ -1030,8 +1041,9 @@ async function relayFetch(build, url, externalSignal, timeoutMs) {
   }
 }
 
-/* Race every raw relay at once; first valid text wins, the rest are aborted.
-   Used for the CISA KEV JSON (which isn't a feed, so rss2json can't parse it). */
+/* Fetch plain text through the worker with a timeout. Used for the CISA
+   KEV JSON (which isn't a feed, so parseFeed doesn't apply). */
+  
 async function fetchText(url, timeoutMs) {
   timeoutMs = timeoutMs || 8000;
   const race = new AbortController();
@@ -1117,39 +1129,6 @@ function parseFeed(xmlText, source) {
       date: dateStr ? new Date(dateStr) : new Date(0),
       desc: stripHtml(pick(node, ['description', 'summary', 'content'])).slice(0, 260),
       img: extractImage(node, base),
-      source: source.name,
-      color: source.color
-    };
-  }).filter(it => it.title && it.link);
-}
-
-/* Parse the JSON envelope returned by api.rss2json.com — a dedicated
-   RSS-to-JSON service that fetches the feed server-side, so it sails past
-   Cloudflare/anti-bot blocks that defeat the generic CORS proxies. */
-function parseJsonFeed(jsonText, source) {
-  let data;
-  try { data = JSON.parse(jsonText); }
-  catch (e) { throw new Error('Bad JSON from ' + source.name); }
-  if (!data || data.status !== 'ok' || !Array.isArray(data.items)) {
-    throw new Error('rss2json error for ' + source.name);
-  }
-  const feedImg = (data.feed && data.feed.image) || '';
-  return data.items.map(it => {
-    const base = it.link || source.url;
-    let img = resolveImgUrl(it.thumbnail || '', base);
-    if (!img && it.enclosure && it.enclosure.link) img = resolveImgUrl(it.enclosure.link, base);
-    if (!img) {
-      const m = String(it.description || '').match(/<img[^>]+src=["']([^"']+)["']/i);
-      if (m && m[1]) img = resolveImgUrl(m[1], base);
-    }
-    if (!img && feedImg) img = resolveImgUrl(feedImg, source.url);
-    const dateStr = it.pubDate || it.isoDate || '';
-    return {
-      title: stripHtml(it.title || ''),
-      link: (it.link || '').trim(),
-      date: dateStr ? new Date(dateStr) : new Date(0),
-      desc: stripHtml(it.description || it.content || '').slice(0, 260),
-      img: img,
       source: source.name,
       color: source.color
     };
@@ -1402,56 +1381,33 @@ function parseGroundNews(html) {
   return uniq.slice(0, 12);
 }
 
-/* Fetch the Ground News homepage through CORS relays, accepting only a
-   response that actually contains the story data (rejects Cloudflare
-   challenge / error pages).
+/* Fetch Ground News through the first-party worker, accepting only a
+   response that actually contains the story data (rejects challenge /
+   error pages).
 
-   Freshness matters here: the public relays cache each URL server-side and
-   share that copy with every user worldwide, so "https://ground.news/" can
-   come back hours old even though the fetch succeeds. We defeat that by
-   appending a rotating `fresh` parameter (Next.js ignores unknown query
-   params). Auto-loads bucket to the minute (shared, at most ~60s stale);
-   a manual Refresh gets a millisecond-unique key so it always bypasses the
-   relay cache entirely. */
-function bustUrl(u, force) {
-  const b = force ? Date.now() : Math.floor(Date.now() / 60000);
-  return u + (u.indexOf('?') >= 0 ? '&' : '?') + 'fresh=' + b;
-}
-
+   Freshness is negotiated with the worker via max_age: background loads
+   accept an edge-cached copy up to 5 minutes old (fast, cheap, resilient);
+   a manual Refresh insists on ≤60s, the tightest the worker allows. Either
+   way the worker serves its last good copy if ground.news itself is down. */
 async function fetchGroundNews(force) {
+  const maxAge = force ? 60 : 300;
   /* Two Ground News pages carry the blindspot story data: the homepage
-     (2.6MB, freshest, most stories) and /blindspot (410KB, smaller and far
-     more reliable through a relay). We prefer the homepage — giving it a
-     short head start — but let the smaller page join the race as a fallback
-     so the feed always renders, even on a slow connection. */
-  const raceRelays = (target, timeoutMs) => {
-    const enc = encodeURIComponent(target);
-    const relays = [
-      { url: 'https://proxy.cors.sh/' + target,                                   parse: x => x },
-      { url: 'https://api.allorigins.win/raw?url=' + enc,                         parse: x => x },
-      { url: 'https://corsproxy.io/?url=' + enc,                                  parse: x => x },
-      { url: 'https://api.codetabs.com/v1/proxy?quest=' + enc,                   parse: x => x },
-      { url: 'https://thingproxy.freeboard.io/fetch/' + target,                   parse: x => x },
-      { url: 'https://api.allorigins.win/get?url=' + enc,                         parse: x => { try { return JSON.parse(x).contents || ''; } catch (e) { return ''; } } }
-    ];
-    const ac = new AbortController();
-    const attempts = relays.map(r =>
-      relayFetch(x => x, r.url, ac.signal, timeoutMs).then(t => {
-        const html = r.parse(t);
-        if (!html || html.indexOf('blindspotData') < 0) throw new Error('Not Ground News content');
-        return html;
-      })
-    );
-    return Promise.any(attempts).finally(() => ac.abort());
-  };
-  const home = bustUrl('https://ground.news/', force);
-  const blind = bustUrl('https://ground.news/blindspot', force);
+     (2.6MB, freshest, most stories) and /blindspot (410KB, smaller and
+     quicker). We prefer the homepage — giving it a short head start — but
+     let the smaller page join as a fallback so the feed always renders. */
+  const grab = (target, timeoutMs) =>
+    relayFetch(u => viaProxy(u, maxAge), target, null, timeoutMs).then(html => {
+      if (!html || html.indexOf('blindspotData') < 0) throw new Error('Not Ground News content');
+      return html;
+    });
+  const home = 'https://ground.news/';
+  const blind = 'https://ground.news/blindspot';
   return new Promise((resolve, reject) => {
     let resolved = false, pending = 2;
-    const timer = setTimeout(() => raceRelays(blind, 12000).then(ok, no), 2500);
+    const timer = setTimeout(() => grab(blind, 12000).then(ok, no), 2500);
     function ok(h) { if (!resolved) { resolved = true; clearTimeout(timer); resolve(h); } }
-    function no() { if (!resolved && --pending === 0) reject(new Error('Ground News relays failed')); }
-    raceRelays(home, 14000).then(ok, no);
+    function no() { if (!resolved && --pending === 0) reject(new Error('Ground News fetch failed')); }
+    grab(home, 14000).then(ok, no);
   });
 }
 

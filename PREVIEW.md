@@ -33,7 +33,7 @@ wrangler secret put GROQ_API_KEY --name colaco-chat     # paste from .env
 #   …then add chat.colaco.se as a custom domain in the dashboard
 
 # the feeds — redeploy so it accepts localhost
-wrangler deploy feeds-worker.js --name colaco-feeds
+wrangler deploy -c wrangler.feeds.jsonc          # the worker is named "feeds"
 ```
 
 Until the feeds worker is redeployed, `/news` and `/cybersecurity-news` will

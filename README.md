@@ -51,10 +51,13 @@ Optional per-IP rate limiting:
 then bind it as `CHAT_RL` under Settings → Variables & Bindings. Without the
 binding the worker still runs; it just doesn't rate-limit.
 
-The **feeds** worker is already deployed. Redeploy it only if you want the
-localhost origins (added for local development) to take effect:
+The **feeds** worker is already deployed and serving feeds.colaco.se. It was
+created by pasting into the dashboard, so the copy in this repo is slightly
+ahead of what is live — the difference is only the localhost and preview
+origins, which matter for local development, not for the public site.
+Redeploy when you want those:
 
-    wrangler deploy feeds-worker.js --name colaco-feeds
+    wrangler deploy -c wrangler.feeds.jsonc          # the worker is named "feeds"
 
 ## Why the API key is not in the page
 
@@ -79,6 +82,21 @@ statement, not a relevance ranking.
 
 Greetings and questions about the assistant itself ("what model are you?") are
 answered locally, without an API call.
+
+## Deploying the workers from CI
+
+`.github/workflows/workers.yml` deploys either worker when its source
+changes on `main`. GitHub *Pages* cannot do this — Pages only publishes
+static files — but GitHub *Actions* can. It needs two repository secrets:
+
+    CLOUDFLARE_API_TOKEN    Workers Scripts:Edit, Workers KV Storage:Edit,
+                            Account Settings:Read
+    CLOUDFLARE_ACCOUNT_ID   f636367a9ba7cf2429a505cf32a2b6a3
+
+Worker secrets (`GROQ_API_KEY`, `TURNSTILE_SECRET`) are not touched by a
+deploy — they live on the worker and survive. Custom domains survive too.
+Only bindings declared in the wrangler config are replaced, which is why
+`CHAT_RL` is declared in `wrangler.jsonc` rather than added in the dashboard.
 
 ## Abuse protection
 

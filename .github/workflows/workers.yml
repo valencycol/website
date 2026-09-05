@@ -1,0 +1,108 @@
+# Deploys the two Cloudflare Workers when their source changes.
+#
+# GitHub Pages itself cannot do this — Pages only publishes static files.
+# This is GitHub Actions, the same CI that runs the Pages workflow, calling
+# wrangler with an API token.
+#
+# Setup (once):
+#   1. Cloudflare dashboard → My Profile → API Tokens → Create Token →
+#      Custom token with these permissions on your account:
+#         Account · Workers Scripts        · Edit
+#         Account · Workers KV Storage     · Edit
+#         Account · Account Settings       · Read
+#   2. GitHub repo → Settings → Secrets and variables → Actions → New secret
+#         CLOUDFLARE_API_TOKEN   = the token from step 1
+#         CLOUDFLARE_ACCOUNT_ID  = f636367a9ba7cf2429a505cf32a2b6a3
+#
+# Worker secrets (GROQ_API_KEY, TURNSTILE_SECRET) are NOT touched by a
+# deploy — they live on the worker and survive. Only bindings declared in
+# the wrangler config are replaced, which is why CHAT_RL is declared there.
+
+name: Deploy Workers
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "chat-worker.js"
+      - "feeds-worker.js"
+      - "wrangler.jsonc"
+      - "wrangler.feeds.jsonc"
+      - ".github/workflows/workers.yml"
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Which worker to deploy"
+        type: choice
+        default: both
+        options: [both, chat, feeds]
+
+# Never let two deploys of the same worker race.
+concurrency:
+  group: workers-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  # Pinned. An unpinned wrangler in CI means the deploy tool can change
+  # under you between two runs of identical code.
+  WRANGLER_VERSION: "4.127.1"
+
+jobs:
+  chat:
+    name: colaco-chat
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2      # enough to diff against the previous commit
+
+      - name: Did chat-worker change?
+        id: changed
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            [ "${{ inputs.target }}" = "feeds" ] && echo "run=false" >> "$GITHUB_OUTPUT" || echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if git diff --name-only HEAD~1 HEAD 2>/dev/null | grep -qE '^(chat-worker\.js|wrangler\.jsonc)$'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy
+        if: steps.changed.outputs.run == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@${{ env.WRANGLER_VERSION }} deploy
+
+  feeds:
+    name: feeds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Did feeds-worker change?
+        id: changed
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            [ "${{ inputs.target }}" = "chat" ] && echo "run=false" >> "$GITHUB_OUTPUT" || echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if git diff --name-only HEAD~1 HEAD 2>/dev/null | grep -qE '^(feeds-worker\.js|wrangler\.feeds\.jsonc)$'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy
+        if: steps.changed.outputs.run == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@${{ env.WRANGLER_VERSION }} deploy -c wrangler.feeds.jsonc

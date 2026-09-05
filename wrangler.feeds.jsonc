@@ -1,0 +1,20 @@
+{
+  // Deploy config for the feed proxy behind feeds.colaco.se.
+  //
+  //   wrangler deploy -c wrangler.feeds.jsonc
+  //
+  // The worker is named "feeds" — NOT "colaco-feeds". Deploying with the
+  // wrong --name silently creates a second worker and leaves the live one
+  // untouched, which looks like a deploy that did nothing.
+  //
+  // This worker was originally created by pasting into the dashboard, so
+  // until its first wrangler deploy the live code is older than this repo.
+  //
+  // No routes are declared here on purpose: the feeds.colaco.se custom
+  // domain is attached to the worker, and wrangler leaves routes it was not
+  // told about alone. Secrets and custom domains survive a deploy; only
+  // bindings declared in config are replaced.
+  "name": "feeds",
+  "compatibility_date": "2026-08-28",
+  "main": "feeds-worker.js"
+}

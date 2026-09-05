@@ -256,12 +256,19 @@ body.booting{overflow:hidden}
 .ps1 b{color:var(--acc);font-weight:600}
 #cmdline{
   flex:1;min-width:0;background:none;border:none;outline:none;
-  font:inherit;font-size:15px;color:var(--ink);caret-color:transparent;padding:2px 0;
+  font:inherit;font-size:15px;color:var(--ink);padding:2px 0;
+  /* The real caret, in phosphor green. It was previously hidden behind a
+     decorative block that lived outside the input — which, with the input
+     at flex:1, parked it at the far right of the row instead of next to
+     the text. caret-shape keeps the blocky look where it is supported and
+     degrades to a thin accent caret where it is not; both sit correctly. */
+  caret-color:var(--acc);
+  caret-shape:block;
 }
 #cmdline::placeholder{color:var(--ink3)}
-.caret{width:9px;height:17px;background:var(--acc);flex:none;box-shadow:0 0 8px var(--acc-glow);animation:blink 1.05s step-end infinite;margin-left:-6px}
+
 @keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
-.prompt.busy .caret{animation:none;opacity:.3}
+.prompt.busy #cmdline{caret-color:transparent}
 
 /* autocomplete ghost + suggestion strip */
 .hints{display:flex;gap:6px;padding:0 16px 10px;flex-wrap:wrap;align-items:center}
@@ -460,7 +467,6 @@ label{font-size:11px !important;letter-spacing:.1em;text-transform:uppercase;col
   .prompt{padding:9px 10px;gap:6px}
   .ps1{font-size:11px}
   #cmdline{font-size:16px}          /* 16px stops iOS zooming the page on focus */
-  .caret{height:15px;width:8px}
   .hints{padding:0 10px 8px;gap:5px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
   .hints::-webkit-scrollbar{display:none}
   .ascii{font-size:12px;line-height:1.15}
@@ -488,6 +494,6 @@ label{font-size:11px !important;letter-spacing:.1em;text-transform:uppercase;col
 
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
-  .caret,.cursor-blk{animation:none !important;opacity:1 !important}
+  .cursor-blk{animation:none !important;opacity:1 !important}
   #matrix{display:none}
 }

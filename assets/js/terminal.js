@@ -271,7 +271,7 @@ const Term = {
     };
 
     try {
-      const { cites, local, grounded, sources } = await Chat.ask(question, onToken, onStatus);
+      const { cites, local, grounded, sources, followUp } = await Chat.ask(question, onToken, onStatus);
       clearInterval(this._rlTimer);
       if (first) { body.textContent = '(no answer returned)'; wrap.classList.remove('thinking'); }
 

@@ -1,3 +1,5 @@
+import { EmailMessage } from 'cloudflare:email';
+
 // chat.colaco.se — Groq proxy for the colaco.se terminal assistant.
 //
 // WHY THIS EXISTS
@@ -55,7 +57,7 @@ const PASS_TTL   = 12 * 60 * 60;   // a verified visitor is trusted for 12 hours
    user agent, no pass, nothing that identifies a person across questions.
    Entries expire on their own, so the log never grows without bound. */
 const LOG_TTL_DAYS  = 14;
-const DIGEST_TO     = 'valency007@gmail.com';
+const DIGEST_TO     = 'valency007@gmail.com';   // must be a verified Email Routing destination
 const DIGEST_FROM   = 'digest@colaco.se';
 const DIGEST_MAX    = 400;         // questions per email
 
@@ -105,7 +107,13 @@ You are openai/gpt-oss-20b served by Groq, running behind a Cloudflare Worker be
 export default {
   /* Weekly digest — see the crons trigger in wrangler.jsonc. */
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(sendDigest(env).catch(err => console.error('digest failed:', err)));
+    /* Logged either way so `wrangler tail --name colaco-chat` shows what the
+       weekly run actually did, rather than leaving it a silent success. */
+    ctx.waitUntil(
+      sendDigest(env)
+        .then(r => console.log('digest:', r))
+        .catch(err => console.error('digest FAILED:', err && err.stack || String(err)))
+    );
   },
 
   async fetch(request, env, ctx) {
@@ -382,18 +390,40 @@ async function sendDigest(env) {
     'Entries are deleted automatically after ' + LOG_TTL_DAYS + ' days.',
   ].join('\n');
 
-  const html = '<pre style="font:13px ui-monospace,Menlo,monospace;white-space:pre-wrap">'
-    + text.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))
-    + '</pre>';
-
-  await env.EMAIL.send({
-    to: DIGEST_TO,
-    from: { email: DIGEST_FROM, name: 'colaco.se' },
-    subject,
-    text,
-    html,
-  });
+  await env.EMAIL.send(new EmailMessage(DIGEST_FROM, DIGEST_TO, mime(DIGEST_FROM, DIGEST_TO, subject, text)));
   return 'sent ' + rows.length + ' questions';
+}
+
+/* Build an RFC 5322 message by hand.
+
+   The tidy env.EMAIL.send({to, subject, html}) form belongs to Email Service,
+   which needs a Workers Paid plan. Email Routing's send binding is free and
+   already configured here, but it takes raw MIME — and pulling in mimetext
+   would mean giving this repo a build step it does not otherwise need.
+
+   Subject and body are base64-encoded because the digest carries em-dashes,
+   Swedish characters and whatever visitors typed; 7-bit would mangle them. */
+function b64utf8(str) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin);
+}
+
+function mime(from, to, subject, body) {
+  const b64 = b64utf8(body).replace(/(.{76})/g, '$1\r\n');   // RFC 2045 line limit
+  return [
+    'From: colaco.se <' + from + '>',
+    'To: <' + to + '>',
+    'Subject: =?UTF-8?B?' + b64utf8(subject) + '?=',
+    'Message-ID: <' + Date.now() + '.' + Math.random().toString(36).slice(2) + '@colaco.se>',
+    'Date: ' + new Date().toUTCString(),
+    'MIME-Version: 1.0',
+    'Content-Type: text/plain; charset=utf-8',
+    'Content-Transfer-Encoding: base64',
+    '',
+    b64,
+  ].join('\r\n');
 }
 
 // Fixed-window counter in KV. No-ops when CHAT_RL isn't bound, and never

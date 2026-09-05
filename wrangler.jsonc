@@ -23,10 +23,14 @@
   // Weekly digest of what visitors asked. Monday 08:00 UTC.
   "triggers": { "crons": ["0 8 * * 1"] },
 
-  // Email Sending. The from-domain must be onboarded once:
-  //   wrangler email sending enable colaco.se
-  // Without this binding the cron runs and simply reports it cannot send.
-  "send_email": [{ "name": "EMAIL" }],
+  // Email Routing's send binding — free, and colaco.se already has
+  // valency007@gmail.com verified as a destination. Email SERVICE (the
+  // nicer object API) needs a Workers Paid plan, hence the raw-MIME path
+  // in sendDigest().
+  //
+  // destination_address locks the binding to one recipient: even if the
+  // worker were compromised it could not be turned into a spam relay.
+  "send_email": [{ "name": "EMAIL", "destination_address": "valency007@gmail.com" }],
 
   "observability": { "enabled": true }
 }

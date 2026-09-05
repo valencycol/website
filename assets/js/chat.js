@@ -217,9 +217,18 @@ const REFERS_BACK = /\b(the above|above|previous|earlier|preceding|the (text|ans
 const META_ON_REF = /\b(translate|summari[sz]e|rewrite|rephrase|shorten|expand|elaborate|explain|rephrase)\b[\s\S]*\b(it|that|this|these|those|above)\b/i;
 const BARE_META   = /^(translate|summari[sz]e|rewrite|rephrase|shorten|expand|elaborate)( (it|that|this|the above|the text|the list))?[.?!\s]*$/i;
 const IN_LANGUAGE = /^(in|to|into)\s+(english|swedish|french|spanish|german|hindi|arabic|chinese|mandarin|japanese|italian|portuguese|russian|dutch)\b/i;
+const BACKREF = /\b(this|that|it|these|those|them|everything|the above|all (this|that|of it|of this|of that)|the whole (thing|text|list|passage))\b/i;
+const A_LANGUAGE = /\b(swedish|english|french|spanish|german|hindi|arabic|chinese|mandarin|japanese|italian|portuguese|russian|dutch|korean|norwegian|danish|finnish)\b/i;
 function isFollowUp(q, historyLen) {
   if (historyLen < 2) return false;   // needs a prior exchange to refer to
-  return REFERS_BACK.test(q) || META_ON_REF.test(q) || BARE_META.test(q) || IN_LANGUAGE.test(q);
+  if (REFERS_BACK.test(q) || META_ON_REF.test(q) || BARE_META.test(q) || IN_LANGUAGE.test(q)) return true;
+  /* Typo-proof fallback: a SHORT message that hinges on a back-reference
+     ("ranslate all this o swedish" — verb mangled, but "all this" is clearly
+     the previous answer). A message this short that points at "this"/"that"
+     is referring to the conversation, not naming a new subject to search. */
+  const words = q.trim().split(/\s+/).length;
+  if (words <= 7 && BACKREF.test(q)) return true;
+  return false;
 }
 
 /* Interrogatives and filler verbs. They carry no topic, but they are common

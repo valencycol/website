@@ -465,7 +465,11 @@ async function webSearch(query, env) {
         'Content-Type': 'application/json',
       },
       signal: AbortSignal.timeout(8000),
-      body: JSON.stringify({ query: query.slice(0, 400), count: 5, freshness: 'noLimit', summary: false }),
+      // summary:true returns page-level text (often thousands of chars), not
+      // just a one-line snippet — enough for the model to pull a specific
+      // fact (a race winner, a price) instead of declining. Sliced per result
+      // so five of them stay well within the context budget.
+      body: JSON.stringify({ query: query.slice(0, 400), count: 5, freshness: 'noLimit', summary: true }),
     });
     if (!r.ok) return { context: '', sources: [] };
     const data = await r.json();
@@ -477,9 +481,9 @@ async function webSearch(query, env) {
       const url = String(it.url || '');
       if (!/^https:\/\//i.test(url)) continue;            // https links only
       const title = String(it.name || it.displayUrl || url).slice(0, 150);
+      const text = String(it.summary || it.snippet || '').replace(/\s+/g, ' ').trim().slice(0, 1200);
       sources.push({ title, url });
-      blocks.push('[' + sources.length + '] ' + title + '\n' +
-                  String(it.snippet || '').slice(0, 500) + '\n' + url);
+      blocks.push('[' + sources.length + '] ' + title + '\n' + text + '\n' + url);
     }
     return { context: blocks.join('\n\n---\n\n'), sources };
   } catch (e) {

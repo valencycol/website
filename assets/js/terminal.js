@@ -20,6 +20,15 @@ const Term = {
     this.histIdx  = this.hist.length;
 
     this.input.addEventListener('keydown', e => this.onKey(e));
+    this.input.addEventListener('input', () => this.suggest());
+    this.ghostTyped = $('.g-typed');
+    this.ghostRest  = $('.g-rest');
+    $('#go').addEventListener('click', () => {
+      const v = this.input.value;
+      this.input.value = '';
+      this.suggest();
+      this.run(v);
+    });
 
     /* Clicking anywhere in the shell focuses the prompt — but not when
        the visitor is selecting text or hitting a link/button. */
@@ -31,6 +40,39 @@ const Term = {
 
     $$('[data-cmd]').forEach(el =>
       el.addEventListener('click', () => this.run(el.dataset.cmd, true)));
+  },
+
+  /* Inline completion, against the command list and nothing else.
+
+     Deliberately not history or the suggested questions: this is a terminal,
+     and a terminal completes commands. Suggesting a half-remembered previous
+     question as you type a new one is noise, and completing free text would
+     be guessing at what someone means to ask.
+
+     Only canonical command names are offered — never aliases, since
+     completing "/cyber" to "/cybersecurity-news" is helpful but completing it
+     to a second name for the same thing is just confusing. */
+  suggest() {
+    const v = this.input.value;
+    const clear = () => { this.ghostTyped.textContent = ''; this.ghostRest.textContent = ''; this.pending = ''; };
+
+    // Only for a command being typed: needs the slash, and nothing after a space.
+    if (!v.startsWith('/') || /\s/.test(v) || v.length < 2) return clear();
+
+    const typed = v.slice(1).toLowerCase();
+    const match = Object.keys(COMMANDS).find(c => c.startsWith(typed) && c !== typed);
+    if (!match) return clear();
+
+    this.ghostTyped.textContent = v;
+    this.ghostRest.textContent = match.slice(typed.length);
+    this.pending = '/' + match;
+  },
+
+  accept() {
+    if (!this.pending) return false;
+    this.input.value = this.pending;
+    this.suggest();
+    return true;
   },
 
   /* On a phone, focusing the input throws up the keyboard and eats the
@@ -46,8 +88,16 @@ const Term = {
       e.preventDefault();
       const v = this.input.value;
       this.input.value = '';
+      this.suggest();
       this.run(v);
       return;
+    }
+    /* Right arrow at the end of the line accepts the completion, the way a
+       shell does. Anywhere else it just moves the caret. */
+    if (e.key === 'ArrowRight' &&
+        this.input.selectionStart === this.input.value.length &&
+        this.input.selectionStart === this.input.selectionEnd) {
+      if (this.accept()) { e.preventDefault(); return; }
     }
     if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
       if (!this.hist.length) return;
@@ -56,23 +106,24 @@ const Term = {
       this.histIdx += e.key === 'ArrowUp' ? -1 : 1;
       this.histIdx = Math.max(0, Math.min(this.hist.length, this.histIdx));
       this.input.value = this.histIdx === this.hist.length ? this.draft : this.hist[this.histIdx];
+      this.suggest();
       requestAnimationFrame(() => this.input.setSelectionRange(9999, 9999));
       return;
     }
     if (e.key === 'Tab') {
       e.preventDefault();
+      if (this.accept()) return;              // take the ghost first
       const v = this.input.value.trim();
       if (!v.startsWith('/')) return;
-      const m = Object.keys(COMMANDS).filter(c => c.startsWith(v.slice(1)));
-      if (m.length === 1) this.input.value = '/' + m[0] + ' ';
-      else if (m.length > 1) {
+      const m = Object.keys(COMMANDS).filter(c => c.startsWith(v.slice(1).toLowerCase()));
+      if (m.length > 1) {                     // ambiguous — list them, as a shell does
         this.echo(v);
         this.print(m.map(c => '/' + c).join('   '), 'dim sp');
       }
       return;
     }
     if (e.key === 'l' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); this.clear(); }
-    if (e.key === 'Escape') { this.input.value = ''; Modal.close(); }
+    if (e.key === 'Escape') { this.input.value = ''; this.suggest(); Modal.close(); }
   },
 
   /* ── output ─────────────────────────────────────────────── */
@@ -111,7 +162,7 @@ const Term = {
     store.set('term.hist', this.hist);
 
     this.echo(line);
-    if (fromChip) this.input.value = '';
+    if (fromChip) { this.input.value = ''; this.suggest(); }
 
     if (line.startsWith('/')) {
       const [word, ...rest] = line.slice(1).split(/\s+/);
@@ -268,7 +319,6 @@ const ALIASES = {
   threats: 'cybersecurity-news', infosec: 'cybersecurity-news',
   research: 'publications', papers: 'publications', pubs: 'publications',
   kev: 'cve', vulns: 'cve',
-  ponytail: 'agents', llm: 'agents',
   arcade: 'games', play: 'games',
   hello: 'contact', email: 'contact', hire: 'contact',
   docs: 'sources', kb: 'sources',
@@ -311,8 +361,8 @@ const COMMANDS = {
   },
 
   'publications': {
-    desc: 'five selected papers',
-    run(_, t) { Modal.open('research', 'publications — selected research'); }
+    desc: 'published papers',
+    run(_, t) { Modal.open('research', 'publications — published papers'); }
   },
 
   'cybersecurity-news': {
@@ -340,14 +390,14 @@ const COMMANDS = {
     }
   },
 
-  'agents': {
-    desc: 'make AI coding agents write less code',
-    run(_, t) { Modal.open('ponytail', 'agents — ponytail integration guide'); }
-  },
-
   'games': {
     desc: 'six browser games',
     run(_, t) { Modal.open('games', 'arcade — pick your poison'); }
+  },
+
+  'card': {
+    desc: 'contact details and photo',
+    run(_, t) { Modal.open('card', 'contact card — valency oscar colaco'); }
   },
 
   'contact': {
@@ -405,14 +455,6 @@ const COMMANDS = {
     }
   },
 
-  'ask': {
-    desc: 'ask the assistant explicitly',
-    async run(arg, t) {
-      if (!arg) { t.print('usage: /ask <question>   — or just type the question', 'dim sp'); return; }
-      await t.ask(arg);
-    }
-  },
-
   'fun': {
     desc: 'things worth asking the assistant',
     run(_, t) {
@@ -442,20 +484,6 @@ const COMMANDS = {
       else document.documentElement.dataset.theme = next;
       store.set('term.theme', next);
       t.print('phosphor set to ' + next, 'ok');
-      t.gap();
-    }
-  },
-
-  'crt': {
-    desc: 'scanlines & flicker — on | off',
-    run(arg, t) {
-      const want = (arg || '').toLowerCase();
-      const on = want ? (want === 'on' || want === '1' || want === 'yes')
-                      : document.documentElement.dataset.crt !== 'on';
-      if (on) document.documentElement.dataset.crt = 'on';
-      else delete document.documentElement.dataset.crt;
-      store.set('term.crt', on);
-      t.print('scanlines ' + (on ? 'on — authentic, and harder to read' : 'off'), 'ok');
       t.gap();
     }
   },
@@ -587,7 +615,7 @@ function printBanner(t) {
    phone, and a wrapped boot log looks broken rather than authentic. */
 const BOOT_WIDE = [
   ['booting colaco.se …', 'dim', 90],
-  ['[ok] display       phosphor green · /crt for scanlines', 'ok', 60],
+  ['[ok] display       phosphor green', 'ok', 60],
   ['[ok] feeds         thehackernews · bleepingcomputer · krebs · securityweek · cisa', 'ok', 60],
   ['[ok] assistant     groq · gpt-oss-20b · retrieval-scoped', 'ok', 60],
   ['[ok] corpus        knowledge/ mounted read-only', 'ok', 60],
@@ -698,11 +726,29 @@ function initMatrix() {
     }));
   };
 
+  /* --bg0 as an rgba() with the trail alpha, recomputed cheaply per frame
+     so a mid-session /theme switch is picked up immediately. */
+  let lastBg = '', lastTrail = 'rgba(4,7,10,0.13)';
+  const trailColour = () => {
+    const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg0').trim();
+    if (bg === lastBg) return lastTrail;
+    lastBg = bg;
+    const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(bg);
+    lastTrail = m
+      ? 'rgba(' + parseInt(m[1], 16) + ',' + parseInt(m[2], 16) + ',' + parseInt(m[3], 16) + ',0.13)'
+      : 'rgba(4,7,10,0.13)';
+    return lastTrail;
+  };
+
   const draw = ts => {
     raf = requestAnimationFrame(draw);
     if (ts - last < 55) return;                 // ~18fps: cheap, and it looks right
     last = ts;
-    ctx.fillStyle = 'rgba(4,7,10,0.13)';        // trail decay
+    /* Trail decay. This has to be the CURRENT theme's background: it was
+       hardcoded to the green theme's, so switching to amber or ice smeared
+       a green-black wash over the new palette and old glyphs faded to the
+       wrong colour. Read it from the same custom property the theme sets. */
+    ctx.fillStyle = trailColour();
     ctx.fillRect(0, 0, w, h);
     const accent = getComputedStyle(document.documentElement).getPropertyValue('--acc').trim() || '#00ff9c';
     for (let i = 0; i < cols.length; i++) {
@@ -725,20 +771,36 @@ function initMatrix() {
   });
 }
 
-/* The ponytail panel carries a copy-to-clipboard button. It used to live
-   in its own modal manager; now it just needs its one listener. */
-function initCopyButtons() {
-  $$('.copy-btn').forEach(btn => {
-    const pre = btn.closest('.prompt-wrap, .ponytail-body')?.querySelector('.prompt-block');
-    if (!pre) return;
+/* Copy-to-clipboard on the contact card. The clipboard API needs a secure
+   context and can be refused outright, so there is a selection-based
+   fallback and, failing both, an honest message. */
+function initCopy() {
+  $$('[data-copy]').forEach(btn => {
     btn.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(pre.innerText.trim());
+      const text = btn.dataset.copy;
+      const ok = () => {
         const was = btn.textContent;
-        btn.textContent = 'Copied ✓';
-        setTimeout(() => { btn.textContent = was; }, 1600);
+        btn.textContent = 'copied';
+        btn.classList.add('done');
+        setTimeout(() => { btn.textContent = was; btn.classList.remove('done'); }, 1500);
+      };
+      try {
+        await navigator.clipboard.writeText(text);
+        ok();
       } catch (e) {
-        toast('Clipboard blocked — select and copy manually.');
+        /* http:// or a permissions policy blocked it — select the value so
+           the visitor can copy it by hand rather than being told nothing. */
+        const val = btn.closest('.crow')?.querySelector('.crow-value');
+        if (val) {
+          const r = document.createRange();
+          r.selectNodeContents(val);
+          const sel = getSelection();
+          sel.removeAllRanges();
+          sel.addRange(r);
+          toast('Clipboard blocked — the value is selected, press ⌘C');
+        } else {
+          toast('Clipboard unavailable');
+        }
       }
     });
   });
@@ -765,17 +827,17 @@ function initContact() {
 (function main() {
   const saved = store.get('term.theme', 'green');
   if (saved && saved !== 'green') document.documentElement.dataset.theme = saved;
-  /* Scanlines default off — they dim every glyph on the page. /crt opts in. */
-  if (store.get('term.crt', false)) document.documentElement.dataset.crt = 'on';
 
   Modal.init();
   Term.init();
   Sec.init();
   GameModal.init();
   initContact();
-  initCopyButtons();
+  initCopy();
   initUploads();
   initMatrix();
+
+  $('#avatar-open').addEventListener('click', () => Term.run('/card', true));
 
   $$('.game-tile').forEach(tile =>
     tile.addEventListener('click', () => GameModal.open(tile.dataset.game)));

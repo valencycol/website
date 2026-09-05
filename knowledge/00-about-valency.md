@@ -127,23 +127,20 @@ The site is a terminal. Visitors type slash-commands:
 
 - `/help` — list every command
 - `/about`, `/whoami` — this bio
-- `/publications` (aliases `/research`, `/papers`) — the five papers above
+- `/publications` (aliases `/research`, `/papers`) — Published Papers
 - `/cybersecurity-news` (aliases `/cyber`, `/sec`) — live security feed (The
   Hacker News, BleepingComputer, Krebs on Security, SecurityWeek), CISA
   advisories, and the CISA KEV catalogue
 - `/cve` (alias `/kev`) — CISA known-exploited vulnerabilities
 - `/news` — Ground News top stories with left/center/right media-bias breakdown
-- `/agents` (alias `/ponytail`) — configuring LLM coding agents to write less code
 - `/games` (alias `/arcade`) — six browser games
 - `/contact` — send Valency a message
 - `/scholar` — open the Google Scholar profile
 - `/sources` — list the documents the assistant is allowed to read
 - `/upload` — add your own documents for the current session only
 - `/forget` — remove an uploaded document (`/forget all` clears them)
-- `/ask` — ask the assistant explicitly (or just type the question)
 - `/fun` — suggested questions worth asking
 - `/theme` — phosphor colour: green, amber or ice
-- `/crt` — scanlines and flicker on or off
 - `/banner`, `/clear`, `/date`, `/exit` — terminal housekeeping
 
 Anything typed that is *not* a command is sent to the AI assistant. It looks
@@ -151,6 +148,10 @@ in these documents first and answers from them when it can, citing which ones.
 When the documents don't cover the question it answers from its own general
 knowledge instead, and says so. The assistant endpoint is protected by
 Cloudflare Turnstile, solved once behind the boot screen.
+
+Question text is retained for 14 days so Valency can see what visitors ask.
+No IP address or identifier is stored with it, and nothing links one question
+to another. Uploaded files never leave the browser.
 
 ## TODO: fill these in
 

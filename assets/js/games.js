@@ -70,48 +70,6 @@ const GameModal = {
 };
 
 
-const PonytailModal = {
-  init() {
-    this.overlay = $('#ponytail-modal');
-    this.panel = $('.ponytail-panel');
-    if (!this.overlay) return;
-    $('#ponytail-open').addEventListener('click', () => this.open());
-    $('#ponytail-close').addEventListener('click', () => this.close());
-    this.overlay.addEventListener('click', e => { if (e.target === this.overlay) this.close(); });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape' && this.overlay.classList.contains('show')) this.close(); });
-    const copyBtn = $('#ponytail-copy');
-    copyBtn.addEventListener('click', () => this.copyPrompt(copyBtn));
-  },
-  open() {
-    this.overlay.classList.add('show');
-    document.body.classList.add('modal-open');
-    if (this.panel) this.panel.focus({ preventScroll: true });
-  },
-  close() {
-    if (this.overlay) this.overlay.classList.remove('show');
-    document.body.classList.remove('modal-open');
-  },
-  copyPrompt(btn) {
-    const code = $('#ponytail-prompt');
-    const text = code ? code.textContent : '';
-    const done = () => { btn.textContent = 'Copied ✓'; btn.classList.add('copied'); showToast('Prompt copied to clipboard'); setTimeout(() => { btn.textContent = 'Copy prompt'; btn.classList.remove('copied'); }, 2200); };
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(done).catch(() => this.fallbackCopy(text, done));
-    } else {
-      this.fallbackCopy(text, done);
-    }
-  },
-  fallbackCopy(text, done) {
-    try {
-      const ta = document.createElement('textarea');
-      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
-      document.body.appendChild(ta); ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      done();
-    } catch (e) { showToast('Copy failed — select the text manually'); }
-  }
-};
 
 /* ============================================================
    SLOTS — 5×3 video slot with 5 paylines

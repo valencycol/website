@@ -20,5 +20,13 @@
     }
   ],
 
+  // Weekly digest of what visitors asked. Monday 08:00 UTC.
+  "triggers": { "crons": ["0 8 * * 1"] },
+
+  // Email Sending. The from-domain must be onboarded once:
+  //   wrangler email sending enable colaco.se
+  // Without this binding the cron runs and simply reports it cannot send.
+  "send_email": [{ "name": "EMAIL" }],
+
   "observability": { "enabled": true }
 }

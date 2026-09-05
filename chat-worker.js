@@ -50,6 +50,15 @@ const SITEVERIFY = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 const TURNSTILE_ACTION = 'chat';
 const PASS_TTL   = 12 * 60 * 60;   // a verified visitor is trusted for 12 hours
 
+/* Weekly digest of what visitors asked. Deliberately minimal: the question
+   text, when it was asked, and whether the corpus could answer it. No IP, no
+   user agent, no pass, nothing that identifies a person across questions.
+   Entries expire on their own, so the log never grows without bound. */
+const LOG_TTL_DAYS  = 14;
+const DIGEST_TO     = 'valency007@gmail.com';
+const DIGEST_FROM   = 'digest@colaco.se';
+const DIGEST_MAX    = 400;         // questions per email
+
 const GROQ_URL   = 'https://api.groq.com/openai/v1/chat/completions';
 const MODEL      = 'openai/gpt-oss-20b';
 
@@ -89,11 +98,16 @@ Answer every question you reasonably can, including general ones — code, maths
 
 ## The website
 
-You may describe how this site works and list its commands: /help /about /whoami /publications /cybersecurity-news /news /cve /agents /games /contact /scholar /sources /upload /forget /ask /fun /theme /crt /banner /clear /date /exit. Point people at the right command when it beats a prose answer — live threat intel is /cybersecurity-news, not something you know.
+You may describe how this site works and list its commands: /help /about /whoami /publications /cybersecurity-news /news /cve /games /contact /scholar /sources /upload /forget /fun /theme /banner /clear /date /exit. Point people at the right command when it beats a prose answer — live threat intel is /cybersecurity-news, not something you know.
 
-You are openai/gpt-oss-20b served by Groq, running behind a Cloudflare Worker because a static site cannot hold an API key. You read the documents under /sources. Nothing a visitor types is stored, and files added with /upload are read in the browser for one session and never uploaded anywhere.`;
+You are openai/gpt-oss-20b served by Groq, running behind a Cloudflare Worker because a static site cannot hold an API key. You read the documents under /sources. Files added with /upload are read in the browser for one session and never uploaded anywhere. Question text is retained for 14 days so Valency can see what people ask — without IP addresses or any identifier that links questions together. Say so plainly if asked; do not claim nothing is stored.`;
 
 export default {
+  /* Weekly digest — see the crons trigger in wrangler.jsonc. */
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(sendDigest(env).catch(err => console.error('digest failed:', err)));
+  },
+
   async fetch(request, env, ctx) {
     const origin = request.headers.get('Origin') || '';
     const cors = corsHeaders(origin);
@@ -201,6 +215,8 @@ export default {
                   502, cors);
     }
 
+    ctx.waitUntil(logQuestion(env, question, body, request));
+
     // Pass the SSE stream straight through so the terminal can type it out.
     return new Response(upstream.body, {
       headers: {
@@ -292,6 +308,92 @@ async function verifyPass(pass, origin, env) {
   let diff = 0;
   for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return diff === 0;
+}
+
+/* Record one question for the weekly digest. Uses the same KV namespace as
+   the rate limiter, under a separate prefix. Every failure is swallowed:
+   logging must never cost a visitor their answer. */
+async function logQuestion(env, question, body, request) {
+  if (!env.CHAT_RL) return;
+  try {
+    const now = Date.now();
+    const key = 'q:' + String(now).padStart(15, '0') + ':' + Math.random().toString(36).slice(2, 8);
+    await env.CHAT_RL.put(key, JSON.stringify({
+      q: question.slice(0, 500),
+      t: now,
+      // Country only — coarse enough to be useful, too coarse to identify.
+      c: request.headers.get('CF-IPCountry') || '??',
+      // Did the site's own documents have anything to say about it?
+      g: Boolean(String(body.context || '').trim()),
+    }), { expirationTtl: LOG_TTL_DAYS * 86400 });
+  } catch (e) { /* the answer matters more than the log */ }
+}
+
+/* Cron entry point. Reads the last seven days and emails a digest. */
+async function sendDigest(env) {
+  if (!env.CHAT_RL) return 'no KV binding — nothing logged';
+  if (!env.EMAIL)   return 'no EMAIL binding — cannot send';
+
+  const since = Date.now() - 7 * 86400 * 1000;
+  const rows = [];
+  let cursor;
+  do {
+    const page = await env.CHAT_RL.list({ prefix: 'q:', limit: 1000, cursor });
+    for (const k of page.keys) {
+      const raw = await env.CHAT_RL.get(k.name);
+      if (!raw) continue;
+      try {
+        const r = JSON.parse(raw);
+        if (r.t >= since) rows.push(r);
+      } catch (e) { /* skip a corrupt row */ }
+    }
+    cursor = page.list_complete ? null : page.cursor;
+  } while (cursor && rows.length < DIGEST_MAX);
+
+  rows.sort((a, b) => b.t - a.t);
+
+  const grounded = rows.filter(r => r.g).length;
+  const countries = {};
+  for (const r of rows) countries[r.c] = (countries[r.c] || 0) + 1;
+  const topCountries = Object.entries(countries).sort((a, b) => b[1] - a[1]).slice(0, 6)
+    .map(([c, n]) => c + ' ' + n).join(' · ') || '—';
+
+  const period = new Date(since).toISOString().slice(0, 10) + ' to ' + new Date().toISOString().slice(0, 10);
+  const subject = 'colaco.se — ' + rows.length + ' question' + (rows.length === 1 ? '' : 's') + ' this week';
+
+  const line = r => {
+    const when = new Date(r.t).toISOString().slice(0, 16).replace('T', ' ');
+    return when + '  ' + (r.g ? '[docs]' : '[general]') + '  ' + r.q;
+  };
+
+  const text = [
+    subject, '='.repeat(subject.length), '',
+    'Period       ' + period,
+    'Questions    ' + rows.length,
+    'From docs    ' + grounded + ' (' + (rows.length ? Math.round(grounded / rows.length * 100) : 0) + '%)',
+    'Countries    ' + topCountries,
+    '',
+    rows.length ? 'QUESTIONS (newest first)' : 'No questions this week.',
+    rows.length ? '-'.repeat(24) : '',
+    ...rows.slice(0, DIGEST_MAX).map(line),
+    '',
+    'Greetings and questions about the assistant itself are answered in the',
+    'browser and never reach this worker, so they do not appear here.',
+    'Entries are deleted automatically after ' + LOG_TTL_DAYS + ' days.',
+  ].join('\n');
+
+  const html = '<pre style="font:13px ui-monospace,Menlo,monospace;white-space:pre-wrap">'
+    + text.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))
+    + '</pre>';
+
+  await env.EMAIL.send({
+    to: DIGEST_TO,
+    from: { email: DIGEST_FROM, name: 'colaco.se' },
+    subject,
+    text,
+    html,
+  });
+  return 'sent ' + rows.length + ' questions';
 }
 
 // Fixed-window counter in KV. No-ops when CHAT_RL isn't bound, and never

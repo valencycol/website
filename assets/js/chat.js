@@ -247,8 +247,10 @@ const MODEL_CARD = [
    + "Type /fun for questions worth asking, or /help for the full command list. Anything outside those documents, I decline."],
 
   [/\b(do|will)\s+you\s+(store|save|keep|remember|log|train)\b|\b(my|the)\s+(data|privacy|uploads?)\b|\bis\s+this\s+private\b/i,
-   "Nothing is stored. Files you add with /upload are read in your browser for this session only and never leave it. "
-   + "Questions go to Groq via the site's worker to be answered, and aren't logged here."],
+   "Files you add with /upload are read in your browser for this session only and never leave it. "
+   + "Questions are sent to Groq via the site's worker to be answered, and the question text is kept for 14 days "
+   + "so Valency can see what people ask — no IP address, no identifier, nothing linking questions to each other. "
+   + "Greetings and questions about me are answered in your browser and never sent anywhere."],
 ];
 
 function classify(query) {

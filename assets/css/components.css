@@ -45,29 +45,17 @@
 .paper-link{align-self:flex-start;margin-top:.2rem;display:inline-flex;align-items:center;gap:.35rem;font-weight:600;font-size:.88rem;text-decoration:none;color:var(--blue)}
 .paper-link:hover{text-decoration:underline;text-underline-offset:3px}
 
-.ponytail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.1rem}
-@media (max-width:760px){.ponytail-grid{grid-template-columns:1fr}}
-.ponytail-grid .card{padding:1.7rem 1.6rem 1.5rem}
+.card-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.1rem}
+@media (max-width:760px){.card-grid{grid-template-columns:1fr}}
+.card-grid .card{padding:1.7rem 1.6rem 1.5rem}
 .ladder{list-style:none;padding:0;margin:.4rem 0 0;display:flex;flex-direction:column;gap:.45rem}
 .ladder li{color:var(--ink2);font-size:.92rem;line-height:1.45;padding-left:.2rem}
 .ladder li b{color:var(--ink);font-family:var(--font-mono);margin-right:.35rem}
 .benchmark{color:var(--ink3);font-size:.82rem;font-family:var(--font-mono);margin-top:.4rem}
 
 /* Ponytail modal */
-.ponytail-panel{width:min(720px,100%)}
-.ponytail-body{display:flex;flex-direction:column;gap:.85rem}
-.ponytail-body h4{font-family:var(--font-display);font-size:1.02rem;font-weight:700;margin-top:.4rem}
-.pt-lead{color:var(--ink2);font-size:.94rem}
-.pt-hint{color:var(--ink3);font-size:.82rem;margin:-.2rem 0 .1rem}
-.pt-hint code,.pt-foot code{font-family:var(--font-mono);background:rgba(255,255,255,.08);padding:.05rem .35rem;border-radius:5px;font-size:.85em}
-.pt-foot{margin-top:.5rem}
 .code-block{position:relative;background:rgba(3,6,14,.66);border:1px solid var(--stroke);border-radius:var(--r-sm);padding:.95rem 1.05rem;overflow:auto;margin:0;font-family:var(--font-mono);font-size:.82rem;line-height:1.6;color:var(--ink2)}
 .code-block code{font-family:inherit;color:inherit;white-space:pre}
-.prompt-wrap{position:relative}
-.prompt-block{max-height:340px}
-.prompt-block code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere}
-.copy-btn{align-self:flex-start;margin-top:.55rem}
-.copy-btn.copied{background:var(--teal);border-color:var(--teal)}
 
 /* ============================================================
    Feed items (news + security)

@@ -15,8 +15,8 @@
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='14' fill='%2304070a'/><text y='72' x='16' font-size='62' font-family='monospace' fill='%2300ff9c'>&gt;_</text></svg>">
 
-<link rel="stylesheet" href="assets/css/components.css">
-<link rel="stylesheet" href="assets/css/terminal.css">
+<link rel="stylesheet" href="assets/css/components.css?v=dev">
+<link rel="stylesheet" href="assets/css/terminal.css?v=dev">
 <script defer src="assets/vendor/matter.min.js"></script>
 </head>
 <body>
@@ -39,14 +39,12 @@
 
 <canvas id="matrix" aria-hidden="true"></canvas>
 <div class="crt" aria-hidden="true"></div>
-<div class="flicker" aria-hidden="true"></div>
 
 <div class="shell" id="shell">
   <div class="win" style="flex:1;min-height:0">
 
     <!-- ── title bar ─────────────────────────────────────── -->
     <div class="win-bar">
-      <div class="win-dots" aria-hidden="true"><i></i><i></i><i></i></div>
       <span class="win-title">visitor@colaco.se — bash — 96×32</span>
       <div class="win-meta">
         <span class="led">online</span>
@@ -55,8 +53,10 @@
 
     <!-- ── identity header ───────────────────────────────── -->
     <header class="head">
-      <img class="avatar" src="assets/img/valency.jpeg" width="64" height="64"
-           alt="Valency Oscar Colaco" decoding="async">
+      <button class="avatar-btn" id="avatar-open" title="Contact details" aria-label="Open contact details">
+        <img class="avatar" src="assets/img/valency.jpeg" width="72" height="72"
+             alt="Valency Oscar Colaco" decoding="async">
+      </button>
       <div class="head-id">
         <h1>Valency Oscar Colaco</h1>
         <p class="role">Cybersecurity &amp; AI/ML Researcher</p>
@@ -70,7 +70,7 @@
         <button class="btn ghost" data-cmd="/publications">/publications</button>
         <button class="btn ghost" data-cmd="/cybersecurity-news">/cybersecurity-news</button>
         <a class="btn ghost" href="https://scholar.google.com/citations?user=xMG8t8oAAAAJ&amp;hl=en"
-           target="_blank" rel="noopener">Scholar ↗</a>
+           target="_blank" rel="noopener">Google Scholar</a>
       </nav>
     </header>
 
@@ -81,10 +81,16 @@
     <div class="term-prompt">
       <div class="prompt" id="prompt">
         <span class="ps1"><b>visitor@colaco.se</b>:~$</span>
-        <input id="cmdline" type="text" autocomplete="off" autocapitalize="off"
-               autocorrect="off" spellcheck="false" enterkeyhint="send"
-               aria-label="Command or question"
-               placeholder="/help — or ask me anything about Valency's research">
+        <span class="cmd-field">
+          <!-- The ghost sits under the input showing the rest of the matching
+               command. The typed part is hidden so the two line up exactly. -->
+          <span class="ghost" aria-hidden="true"><span class="g-typed"></span><span class="g-rest"></span></span>
+          <input id="cmdline" type="text" autocomplete="off" autocapitalize="off"
+                 autocorrect="off" spellcheck="false" enterkeyhint="send"
+                 aria-label="Command or question" aria-describedby="ghost-hint"
+                 placeholder=" Try /help or Ask a question">
+        </span>
+        <button class="go-btn" id="go" type="button" aria-label="Run">GO</button>
       </div>
       <div class="hints">
         <span class="lbl">try</span>
@@ -92,7 +98,6 @@
         <button class="chip" data-cmd="/cybersecurity-news">/cybersecurity-news</button>
         <button class="chip" data-cmd="/publications">/publications</button>
         <button class="chip" data-cmd="/news">/news</button>
-        <button class="chip" data-cmd="/agents">/agents</button>
         <button class="chip" data-cmd="/games">/games</button>
         <button class="chip" data-cmd="/contact">/contact</button>
         <button class="chip" data-cmd="/fun">/fun</button>
@@ -121,7 +126,7 @@
       </div>
     </div>
 
-    <div class="ponytail-grid">
+    <div class="card-grid">
       <div class="card glass">
         <span class="eyebrow"><span class="dot"></span>The work</span>
         <h3>Defending Tree Ensembles</h3>
@@ -145,10 +150,48 @@
     <p style="color:var(--ink2);font-size:12.5px;max-width:74ch">Adversarial machine learning · evasion attacks · tree ensembles · intrusion detection · automotive and CAN-bus security · SIEM and SIGMA rules · alert triage · formal verification of ML models · robustness certification · autoencoders for anomaly detection · safety-critical ML.</p>
 
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:22px">
-      <a class="btn primary" href="https://scholar.google.com/citations?user=xMG8t8oAAAAJ&amp;hl=en" target="_blank" rel="noopener">Google Scholar ↗</a>
+      <a class="btn primary" href="https://scholar.google.com/citations?user=xMG8t8oAAAAJ&amp;hl=en" target="_blank" rel="noopener">Google Scholar</a>
       <button class="btn" data-cmd="/publications">/publications</button>
       <button class="btn" data-cmd="/contact">/contact</button>
     </div>
+  </div>
+
+  <div id="panel-card" hidden>
+    <div class="card-head">
+      <img class="card-photo" src="assets/img/valency.jpeg" width="340" height="340"
+           alt="Valency Oscar Colaco" decoding="async">
+      <div>
+        <h2>Valency Oscar Colaco</h2>
+        <p class="card-role">Cybersecurity &amp; AI/ML Researcher</p>
+        <p class="card-aff">Linköping University, Sweden<br>CYBER &middot; IDA</p>
+      </div>
+    </div>
+
+    <div class="contact-rows">
+      <div class="crow">
+        <span class="crow-label">Email</span>
+        <a class="crow-value" href="mailto:valency007@gmail.com">valency007@gmail.com</a>
+        <button class="crow-copy" data-copy="valency007@gmail.com">copy</button>
+      </div>
+      <div class="crow">
+        <span class="crow-label">WhatsApp</span>
+        <a class="crow-value" href="tel:+6147916182">+61 047916182</a>
+        <button class="crow-copy" data-copy="+61 047916182">copy</button>
+      </div>
+      <div class="crow">
+        <span class="crow-label">Phone <i>SE</i></span>
+        <a class="crow-value" href="tel:+46707944558">+46 0707944558</a>
+        <button class="crow-copy" data-copy="+46 0707944558">copy</button>
+      </div>
+      <div class="crow">
+        <span class="crow-label">Scholar</span>
+        <a class="crow-value" href="https://scholar.google.com/citations?user=xMG8t8oAAAAJ&amp;hl=en"
+           target="_blank" rel="noopener">Google Scholar profile</a>
+        <button class="crow-copy" data-copy="https://scholar.google.com/citations?user=xMG8t8oAAAAJ&amp;hl=en">copy</button>
+      </div>
+    </div>
+
+    <p class="card-note">The Swedish number is not on WhatsApp. Prefer a written message? <button class="linky" data-cmd="/contact">/contact</button></p>
   </div>
 
   <div id="panel-news" hidden data-wide="1">
@@ -243,7 +286,7 @@
 <div class="sec-head">
       <div>
         <span class="eyebrow"><span class="dot" style="background:var(--blue)"></span>Publications</span>
-        <h2>Selected research</h2>
+        <h2>Published Papers</h2>
         <p>Formal verification of tree ensembles, real-time evasion detection, and ML security in safety-critical systems. From my <a href="https://scholar.google.com/citations?user=xMG8t8oAAAAJ&amp;hl=en" target="_blank" rel="noopener">Google Scholar profile</a>.</p>
       </div>
     </div>
@@ -307,84 +350,6 @@
 
     </div>
 </div>
-  <div id="panel-ponytail" hidden data-wide="1">
-<div class="sec-head">
-      <div>
-        <span class="eyebrow"><span class="dot" style="background:var(--pink)"></span>Write less, ship better</span>
-        <h2>Configure AI Agents to Write Code Efficiently</h2>
-        <p>An integration guide for <a href="https://github.com/DietrichGebert/ponytail" target="_blank" rel="noopener">ponytail</a> &mdash; a lightweight ruleset that makes your LLM coding agent lazy about the solution and never about the reading.</p>
-      </div>
-    </div>
-
-    <div class="ponytail-grid">
-      <div class="card glass" data-accent="pink">
-        <span class="eyebrow"><span class="dot" style="background:var(--pink)"></span>What it is</span>
-        <h3>A ladder of seven questions</h3>
-        <p>Before writing any new code, ponytail makes the agent climb a ladder &mdash; each rung asks whether the task can be solved with something that already exists. It writes the absolute minimum, only when nothing else fits.</p>
-        <ul class="ladder">
-          <li><b>1.</b> Does this need to exist? &rarr; YAGNI</li>
-          <li><b>2.</b> Already in the codebase? &rarr; reuse it</li>
-          <li><b>3.</b> In the stdlib? &rarr; use it</li>
-          <li><b>4.</b> A native platform feature? &rarr; use it</li>
-          <li><b>5.</b> An installed dependency? &rarr; use it</li>
-          <li><b>6.</b> Solvable in one line? &rarr; one line</li>
-          <li><b>7.</b> Only then: the minimum that works</li>
-        </ul>
-      </div>
-
-      <div class="card glass" data-accent="teal">
-        <span class="eyebrow"><span class="dot" style="background:var(--teal)"></span>Why it works</span>
-        <h3>Lazy, not negligent</h3>
-        <p>The agent is lazy about the solution but never about the reading &mdash; it scans the existing code and dependencies thoroughly before suggesting anything new. Trust-boundary validation, data-loss handling, security, and accessibility are never on the chopping block.</p>
-        <p class="benchmark"><b>Benchmark:</b> &minus;54% LOC &middot; &minus;22% tokens &middot; &minus;20% cost &middot; &minus;27% time &middot; 100% safe.</p>
-        
-      </div>
-    </div>
-
-<div class="ponytail-body">
-<p class="pt-lead">Three ways to wire ponytail into a coding agent. The fastest is the plugin; the most portable is pasting the prompt.</p>
-
-      <h4>1. Install as a plugin (Claude Code)</h4>
-      <pre class="code-block"><code>/plugin marketplace add DietrichGebert/ponytail
-/plugin install ponytail@ponytail</code></pre>
-      <p class="pt-hint">Run the two commands above as separate prompts. For Codex, swap <code>/plugin</code> for <code>codex plugin</code>.</p>
-
-      <h4>2. Toggle it on the fly</h4>
-      <pre class="code-block"><code>/ponytail            # default mode (full)
-/ponytail lite        # lighter guardrails
-/ponytail ultra       # strictest
-/ponytail off
-/ponytail-review      # review code against the ladder
-/ponytail-audit       # audit a path for over-engineering
-/ponytail-debt        # flag unnecessary complexity
-/ponytail-gain        # show savings vs. baseline
-/ponytail-help</code></pre>
-
-      <h4>3. Or paste this prompt into any LLM</h4>
-      <p class="pt-hint">No plugin support? Drop this into your system prompt, a <code>.cursorrules</code> / <code>AGENTS.md</code> file, or the first message of a chat.</p>
-      <div class="prompt-wrap">
-        <pre class="code-block prompt-block" id="ponytail-prompt"><code>Before writing any new code, you MUST climb this ladder in order and stop at the first rung that applies:
-
-1. Does this need to exist? If not, write nothing. (YAGNI)
-2. Is it already in the codebase? Reuse it. Do not duplicate.
-3. Is it in the standard library? Use that.
-4. Is it a native platform/language feature? Use that.
-5. Is there an already-installed dependency that does it? Use that.
-6. Can it be done in one line of existing code? Write one line.
-7. Only then: write the absolute minimum new code that works.
-
-Rules:
-- Be lazy about the solution, never about the reading. Always read the relevant existing code, dependencies, and docs before proposing anything new.
-- Prefer deleting over adding. Prefer composing over creating.
-- Lazy, not negligent: trust-boundary validation, data-loss handling, security, and accessibility are NEVER cut to save lines.
-- When you do add code, state which rung of the ladder you reached and why no earlier rung applied.
-- Default to the smallest change that solves the problem correctly.</code></pre>
-        <button class="btn primary copy-btn" id="ponytail-copy">Copy prompt</button>
-      </div>
-
-      <p class="benchmark pt-foot">Benchmark vs. unguarded agent: &minus;54% LOC &middot; &minus;22% tokens &middot; &minus;20% cost &middot; &minus;27% time &middot; 100% safe. <a href="https://github.com/DietrichGebert/ponytail" target="_blank" rel="noopener">View the repo &#8599;</a></p>
-</div>
-</div>
   <div id="panel-contact" hidden>
 <div class="sec-head">
       <div>
@@ -435,7 +400,6 @@ Rules:
 <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
   <div class="win modal-panel" id="modal-shell">
     <div class="win-bar">
-      <div class="win-dots" aria-hidden="true"><i></i><i></i><i></i></div>
       <span class="win-title" id="modal-title">panel</span>
       <div class="win-meta">
         <span class="esc-hint">ESC to close</span>
@@ -450,7 +414,6 @@ Rules:
 <div class="modal" id="game-modal" role="dialog" aria-modal="true" aria-labelledby="game-modal-title">
   <div class="win modal-panel" id="game-panel" tabindex="-1">
     <div class="win-bar">
-      <div class="win-dots" aria-hidden="true"><i></i><i></i><i></i></div>
       <span class="win-title" id="game-modal-title">Game</span>
       <div class="win-meta">
         <span class="esc-hint">ESC to close</span>
@@ -468,11 +431,11 @@ Rules:
 
 <div class="toast" id="toast" role="status"></div>
 
-<script src="assets/js/core.js"></script>
-<script src="assets/js/turnstile.js"></script>
-<script src="assets/js/feeds.js"></script>
-<script src="assets/js/games.js"></script>
-<script src="assets/js/chat.js"></script>
-<script src="assets/js/terminal.js"></script>
+<script src="assets/js/core.js?v=dev"></script>
+<script src="assets/js/turnstile.js?v=dev"></script>
+<script src="assets/js/feeds.js?v=dev"></script>
+<script src="assets/js/games.js?v=dev"></script>
+<script src="assets/js/chat.js?v=dev"></script>
+<script src="assets/js/terminal.js?v=dev"></script>
 </body>
 </html>

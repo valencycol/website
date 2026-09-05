@@ -145,10 +145,9 @@ body.booting{overflow:hidden}
 }
 
 /* ── CRT atmosphere ──────────────────────────────────────────
-   Scanlines and flicker are OFF by default. They are a full-page
-   overlay, so they dim every glyph and the photograph along with
-   them — authentic, and genuinely harder to read. `/crt on` brings
-   them back for anyone who wants the effect. */
+   A gentle vignette only. Full-page scanlines were tried and removed:
+   the overlay dims every glyph and the photograph along with them —
+   authentic, and genuinely harder to read. */
 #matrix{position:fixed;inset:0;z-index:0;opacity:.07;pointer-events:none}
 .crt{position:fixed;inset:0;z-index:60;pointer-events:none}
 
@@ -160,23 +159,6 @@ body.booting{overflow:hidden}
     transparent 62%, rgba(0,0,0,.34) 100%);
 }
 
-/* opt-in: html[data-crt="on"] */
-:root[data-crt="on"] .crt::before{
-  content:'';position:absolute;inset:0;
-  background:repeating-linear-gradient(to bottom,
-    rgba(0,0,0,0) 0 2px, rgba(0,0,0,.22) 2px 4px);
-  mix-blend-mode:multiply;
-}
-:root[data-crt="on"] #matrix{opacity:.16}
-.flicker{position:fixed;inset:0;z-index:61;pointer-events:none;
-  background:var(--acc);opacity:0;mix-blend-mode:overlay}
-:root[data-crt="on"] .flicker{animation:flicker 7s infinite}
-@keyframes flicker{
-  0%,96%,100%{opacity:0}
-  97%{opacity:.018}
-  98%{opacity:.004}
-  99%{opacity:.012}
-}
 
 /* ── Shell layout ──────────────────────────────────────────── */
 .shell{
@@ -195,16 +177,11 @@ body.booting{overflow:hidden}
   display:flex;flex-direction:column;min-height:0;
 }
 .win-bar{
-  display:flex;align-items:center;gap:10px;
+  display:flex;align-items:center;gap:12px;
   padding:8px 12px;border-bottom:1px solid var(--stroke);
   background:var(--bg2);border-radius:var(--r-md) var(--r-md) 0 0;
   flex:none;
 }
-.win-dots{display:flex;gap:6px;flex:none}
-.win-dots i{width:10px;height:10px;border-radius:50%;display:block;border:1px solid rgba(0,0,0,.4)}
-.win-dots i:nth-child(1){background:#ff5f57}
-.win-dots i:nth-child(2){background:#febc2e}
-.win-dots i:nth-child(3){background:#28c840}
 .win-title{
   font-size:11px;letter-spacing:.14em;text-transform:uppercase;
   color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
@@ -254,9 +231,43 @@ body.booting{overflow:hidden}
 .prompt{display:flex;align-items:center;gap:8px;padding:12px 16px}
 .ps1{color:var(--acc-dim);white-space:nowrap;flex:none;font-size:13px}
 .ps1 b{color:var(--acc);font-weight:600}
+/* The input and its ghost must render identically or the completion will
+   not line up. Every metric that affects glyph position lives here. */
+/* The visible box lives on the wrapper, not the input. The input must be
+   fully transparent or its background paints over the ghost sitting behind
+   it — which is exactly what the global input re-skin was doing. */
+.cmd-field{
+  position:relative;flex:1;min-width:0;display:block;
+  background:var(--bg0);border:1px solid var(--stroke);border-radius:3px;
+  transition:border-color .15s, box-shadow .15s;
+}
+.cmd-field:focus-within{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc-glow)}
+.ghost,#cmdline{
+  font:inherit;font-size:15px;letter-spacing:normal;
+  padding:5px 10px;border:0;
+  white-space:pre;
+}
+.ghost{
+  position:absolute;inset:0;pointer-events:none;overflow:hidden;
+  display:flex;align-items:center;
+}
+.g-typed{visibility:hidden}
+.g-rest{color:var(--ink3)}
+.go-btn{
+  flex:none;font:inherit;font-size:12px;font-weight:700;letter-spacing:.12em;
+  padding:6px 14px;border-radius:3px;border:1px solid var(--acc);
+  color:var(--acc);background:var(--glass-2);transition:.15s;
+}
+.go-btn:hover,.go-btn:focus-visible{background:var(--acc);color:var(--bg0);box-shadow:0 0 16px -4px var(--acc-glow)}
+.go-btn:active{transform:translateY(1px)}
+.prompt.busy .go-btn{opacity:.4;pointer-events:none}
+
 #cmdline{
-  flex:1;min-width:0;background:none;border:none;outline:none;
-  font:inherit;font-size:15px;color:var(--ink);padding:2px 0;
+  width:100%;outline:none;position:relative;
+  background:transparent !important;   /* beats the global input re-skin */
+  border:0 !important;
+  border-radius:0 !important;
+  color:var(--ink) !important;
   /* The real caret, in phosphor green. It was previously hidden behind a
      decorative block that lived outside the input — which, with the input
      at flex:1, parked it at the far right of the row instead of next to
@@ -364,6 +375,49 @@ body.booting{overflow:hidden}
 .cite.ungrounded{color:var(--amber);border-color:rgba(255,176,0,.4)}
 .msg .warn{color:var(--amber)}
 
+/* ── Contact card ──────────────────────────────────────────── */
+.avatar-btn{padding:0;border:0;background:none;cursor:pointer;flex:none;line-height:0;border-radius:4px}
+.avatar-btn:hover .avatar{border-color:var(--acc);box-shadow:0 0 18px -4px var(--acc-glow)}
+.avatar-btn:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
+
+.card-head{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;margin-bottom:22px}
+.card-photo{
+  width:150px;height:150px;flex:none;border-radius:4px;object-fit:cover;
+  border:1px solid var(--stroke-2);
+}
+.card-head h2{font-size:17px;color:var(--acc);letter-spacing:.02em;margin-bottom:4px}
+.card-role{font-size:13px;color:var(--ink2)}
+.card-aff{font-size:12px;color:var(--ink3);margin-top:6px;line-height:1.6}
+
+.contact-rows{display:grid;gap:2px;border-top:1px dashed var(--stroke);padding-top:14px}
+.crow{display:flex;align-items:center;gap:12px;padding:7px 0;border-bottom:1px solid rgba(0,255,156,.06)}
+.crow-label{
+  flex:none;width:96px;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);
+}
+.crow-label i{font-style:normal;opacity:.7}
+.crow-value{
+  flex:1;min-width:0;font-size:13.5px;color:var(--acc2);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.crow-value:hover{color:var(--acc)}
+.crow-copy{
+  flex:none;font:inherit;font-size:11px;width:62px;text-align:center;
+  border:1px solid var(--stroke);border-radius:2px;padding:2px 0;color:var(--ink3);transition:.14s;
+}
+.crow-copy:hover{border-color:var(--acc);color:var(--acc);background:var(--glass-2)}
+.crow-copy.done{border-color:var(--acc);color:var(--bg0);background:var(--acc)}
+.card-note{margin-top:18px;font-size:12px;color:var(--ink3)}
+.linky{font:inherit;font-size:12px;color:var(--acc2);border:0;background:none;padding:0;text-decoration:underline}
+.linky:hover{color:var(--acc)}
+
+@media (max-width:560px){
+  .card-photo{width:112px;height:112px}
+  .crow{flex-wrap:wrap;gap:6px 10px}
+  .crow-label{width:auto}
+  .crow-value{flex:1 1 100%;order:3;white-space:normal;word-break:break-all}
+  .crow-copy{margin-left:auto}
+}
+
 /* ── Upload dropzone ───────────────────────────────────────── */
 .dropzone{
   position:fixed;inset:0;z-index:150;display:none;place-items:center;
@@ -439,6 +493,7 @@ input,textarea{
   color:var(--ink) !important;border-radius:3px !important;
 }
 input:focus,textarea:focus{border-color:var(--acc) !important;box-shadow:0 0 0 1px var(--acc-glow) !important}
+#cmdline:focus{box-shadow:none !important}
 label{font-size:11px !important;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3) !important}
 .game-canvas,.canvas-wrap{border-radius:3px}
 .hud-pill{font-family:var(--font-mono);font-size:11px}
@@ -466,7 +521,8 @@ label{font-size:11px !important;letter-spacing:.1em;text-transform:uppercase;col
   .stream{padding:10px;min-height:0}
   .prompt{padding:9px 10px;gap:6px}
   .ps1{font-size:11px}
-  #cmdline{font-size:16px}          /* 16px stops iOS zooming the page on focus */
+  .ghost,#cmdline{font-size:16px}   /* 16px stops iOS zooming the page on focus */
+  .go-btn{padding:6px 11px;font-size:11px}
   .hints{padding:0 10px 8px;gap:5px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
   .hints::-webkit-scrollbar{display:none}
   .ascii{font-size:12px;line-height:1.15}

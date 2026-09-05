@@ -133,7 +133,6 @@ The site is a terminal. Visitors type slash-commands:
   advisories, and the CISA KEV catalogue
 - `/cve` (alias `/kev`) — CISA known-exploited vulnerabilities
 - `/news` — Ground News top stories with left/center/right media-bias breakdown
-- `/games` (alias `/arcade`) — six browser games
 - `/contact` — send Valency a message
 - `/scholar` — open the Google Scholar profile
 - `/sources` — list the documents the assistant is allowed to read

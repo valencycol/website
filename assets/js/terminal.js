@@ -348,15 +348,13 @@ const Modal = {
     });
     $('#modal').classList.remove('show');
     document.body.classList.remove('modal-open');
-    if (typeof GameModal !== 'undefined') GameModal.close();
     this.current = null;
   },
   init() {
     $('#modal-close').addEventListener('click', () => this.close());
     $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') this.close(); });
     document.addEventListener('keydown', e => {
-      /* the arcade owns Escape while a game is running */
-      if (e.key === 'Escape' && this.current && !(typeof GameModal !== 'undefined' && GameModal.active)) {
+      if (e.key === 'Escape' && this.current) {
         this.close();
       }
     });
@@ -371,7 +369,6 @@ const ALIASES = {
   threats: 'cybersecurity-news', infosec: 'cybersecurity-news',
   research: 'publications', papers: 'publications', pubs: 'publications',
   kev: 'cve', vulns: 'cve',
-  arcade: 'games', play: 'games',
   hello: 'contact', email: 'contact', hire: 'contact',
   docs: 'sources', kb: 'sources',
   bio: 'about', me: 'about',
@@ -440,11 +437,6 @@ const COMMANDS = {
       const btn = $('#panel-security .tabs button[data-tab="kev"]');
       if (btn) btn.click(); else Sec.load();
     }
-  },
-
-  'games': {
-    desc: 'six browser games',
-    run(_, t) { Modal.open('games', 'arcade — pick your poison'); }
   },
 
   'card': {
@@ -610,8 +602,8 @@ function renderSources(t) {
   t.print(RAG.docs.length + (RAG.docs.length === 1 ? ' document · ' : ' documents · ') +
           RAG.chunks.length + ' chunks indexed', 'ok');
   t.print(session
-    ? 'The assistant answers from these and nothing else. /upload adds more, /forget removes yours.'
-    : 'The assistant answers from these and nothing else. /upload adds your own.', 'dim sp');
+    ? 'The assistant answers from these. /upload adds more, /forget removes yours.'
+    : 'The assistant answers from these. /upload adds your own.', 'dim sp');
 }
 
 /* Suggested prompts — printed by /fun and shown under the prompt. */
@@ -883,7 +875,6 @@ function initContact() {
   Modal.init();
   Term.init();
   Sec.init();
-  GameModal.init();
   initContact();
   initCopy();
   initUploads();
@@ -891,9 +882,6 @@ function initContact() {
 
   $('#avatar-open').addEventListener('click', () => Term.run('/card', true));
 
-  $$('.game-tile').forEach(tile =>
-    tile.addEventListener('click', () => GameModal.open(tile.dataset.game)));
-  refreshBestScores();
 
   /* Deep links: colaco.se/#publications opens that panel on load. */
   const openFromHash = () => {

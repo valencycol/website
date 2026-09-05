@@ -48,20 +48,3 @@ function toast(msg) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
 }
 
-/* ============================================================
-   Best-score chips on the games hub
-   ============================================================ */
-function refreshBestScores() {
-  const map = {
-    slots:   () => store.get('credits', 1000) + ' chips',
-    plinko:  () => store.get('credits', 1000) + ' chips',
-    roulette: () => store.get('credits', 1000) + ' chips',
-    g2048:   () => 'Best: ' + store.get('g2.best', 0),
-    xo:      () => 'Wins: ' + store.get('xo.wins', 0),
-    flappy:  () => 'Best: ' + store.get('fl.best', 0)
-  };
-  $$('[data-best]').forEach(el => {
-    const fn = map[el.dataset.best];
-    if (fn) el.textContent = fn();
-  });
-}

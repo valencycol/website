@@ -395,18 +395,25 @@ async function fetchGroundNews(force) {
       if (!html || html.indexOf('blindspotData') < 0) throw new Error('Not Ground News content');
       return html;
     });
-  const home = 'https://ground.news/';
-  const blind = 'https://ground.news/blindspot';
-  return new Promise((resolve, reject) => {
-    let resolved = false, pending = 2;
-    const timer = setTimeout(() => grab(blind, 12000).then(ok, no), 2500);
-    function ok(h) { if (!resolved) { resolved = true; clearTimeout(timer); resolve(h); } }
-    function no() { if (!resolved && --pending === 0) reject(new Error('Ground News fetch failed')); }
-    grab(home, 14000).then(ok, no);
-  });
+  /* Homepage first, always. It carries the freshest and most complete
+     top-stories data. /blindspot is smaller and quicker but holds
+     under-covered — and therefore older — stories, so it must never win a
+     race and serve staler content. It is a fallback for when the homepage
+     genuinely fails (and the worker's stale-cache copy also can't be had),
+     nothing more. */
+  try {
+    return await grab('https://ground.news/', 14000);
+  } catch (e) {
+    return await grab('https://ground.news/blindspot', 12000);
+  }
 }
 
 function renderGroundItems(el, items) {
+  /* Strict newest-first, unconditionally — Ground News ranks its homepage by
+     coverage/importance, not time, so the raw order can lead with an older
+     but heavily-covered story. Sort by each story's latest coverage date so
+     the freshest always leads. */
+  items = items.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
   el.innerHTML = items.map(it => {
     const thumb = it.img
       ? '<div class="feed-thumb-wrap"><img class="feed-thumb" src="' + esc(it.img) +

@@ -189,6 +189,10 @@ body.booting{overflow:hidden}
 .win-meta{margin-left:auto;display:flex;align-items:center;gap:12px;flex:none;font-size:11px;color:var(--ink3)}
 .led{display:inline-flex;align-items:center;gap:5px}
 .led::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--acc);box-shadow:0 0 6px var(--acc);animation:pulse 2.4s infinite}
+.mem{font-size:11px;color:var(--ink3);letter-spacing:.04em;cursor:default;border:1px solid var(--stroke);border-radius:3px;padding:0 6px;transition:color .2s,border-color .2s}
+.mem.active{color:var(--acc2);border-color:var(--stroke-2)}
+.mem.full{color:var(--amber);border-color:rgba(255,176,0,.4)}
+@media (max-width:720px){.mem{display:none}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
 
 /* ── Header ────────────────────────────────────────────────── */

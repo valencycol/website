@@ -309,10 +309,22 @@ const Term = {
     }
     this.busy(false);
     this.scroll();
+    updateMem();
   },
 };
 
 const PS1 = 'visitor@colaco.se:~$';
+
+/* The context meter in the title bar: how many of the last 10 exchanges the
+   assistant is currently holding as follow-up context. */
+function updateMem() {
+  const el = $('#mem');
+  if (!el) return;
+  const n = Math.min(10, Math.floor((typeof Chat !== 'undefined' ? Chat.history.length : 0) / 2));
+  el.textContent = 'memory ' + n + '/10';
+  el.classList.toggle('active', n > 0 && n < 10);
+  el.classList.toggle('full', n >= 10);
+}
 
 /* Short, readable label for a web-source chip: the hostname without www. */
 function hostOf(url) {
@@ -544,6 +556,7 @@ const COMMANDS = {
       t.print(n ? 'conversation reset — ' + (n / 2 | 0) + ' exchange' + ((n / 2 | 0) === 1 ? '' : 's') + ' forgotten.'
                 : 'nothing to reset — no conversation yet.', 'ok');
       t.print('The assistant no longer has the earlier messages as context.', 'dim sp');
+      updateMem();
     }
   },
 
@@ -889,6 +902,7 @@ function initContact() {
   initCopy();
   initUploads();
   initMatrix();
+  updateMem();
 
   $('#avatar-open').addEventListener('click', () => Term.run('/card', true));
 

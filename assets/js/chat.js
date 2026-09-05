@@ -188,7 +188,9 @@ const FORMAT = new Set(('bullet bullets point points slide slides deck summary s
   + 'pitch elevator intro introduction abstract blurb bio note notes format style tone plain simple '
   + 'quick quickly fast concise verbose expand elaborate rewrite rephrase translate version draft '
   + 'three four five six seven eight nine ten couple few several first second third top best worst '
-  + 'like example examples instance basically essentially please times time').split(' '));
+  + 'like example examples instance basically essentially please times time '
+  + 'latest recent current today todays now currently lately nowadays recently ongoing live '
+  + 'update updates happening headlines news' ).split(' '));
 
 /* A bare greeting, with nothing else attached. */
 const GREETING = /^(hi|hey|hello|yo|hiya|howdy|greetings|good\s+(morning|afternoon|evening)|sup|hej|halla|hola)(\s+(there|all|everyone|folks|again))?[\s!.?]*$/i;
@@ -324,7 +326,7 @@ const Chat = {
        word ("news", df 1) scores HIGH while the terms that matter ("iceman",
        in most chunks) score low. */
     const coverage = topical.length ? known.length / topical.length : 0;
-    const grounded = hits.length > 0 && known.length > 0 && coverage >= 0.5;
+    const grounded = hits.length > 0 && known.length > 0 && coverage >= 0.6;
 
     /* Context goes up only when the corpus actually has a claim on the
        question. Sending Valency's bio alongside "write a prime sieve" is

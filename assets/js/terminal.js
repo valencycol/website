@@ -148,32 +148,66 @@ const Term = {
     /* The model reasons before it answers, and that phase renders nothing.
        Show it counting rather than a frozen "retrieving". */
     let thought = 0;
-    const onStatus = n => {
+    const onStatus = (n, info) => {
       if (!first) return;                 // the answer has started; leave it alone
+
+      /* A rate limit is being waited out — count it down rather than
+         freezing, so the wait reads as deliberate instead of broken. */
+      if (info && info.verifying) {
+        body.innerHTML = 'verifying session<span class="dots"></span><span class="cursor-blk"></span>';
+        this.scroll();
+        return;
+      }
+      if (info && info.waiting) {
+        let left = info.waiting;
+        clearInterval(this._rlTimer);
+        const tickDown = () => {
+          if (!first) { clearInterval(this._rlTimer); return; }
+          body.innerHTML = '<span class="warn">rate limited</span> — retrying in ' +
+            '<span class="tick">' + left + 's</span><span class="cursor-blk"></span>';
+          if (--left < 0) clearInterval(this._rlTimer);
+        };
+        tickDown();
+        this._rlTimer = setInterval(tickDown, 1000);
+        this.scroll();
+        return;
+      }
+
+      clearInterval(this._rlTimer);
       thought += n;
       body.innerHTML = 'thinking<span class="dots"></span> ' +
         '<span class="tick">' + thought + ' chars</span><span class="cursor-blk"></span>';
     };
 
     try {
-      const { cites, local } = await Chat.ask(question, onToken, onStatus);
+      const { cites, local, grounded } = await Chat.ask(question, onToken, onStatus);
+      clearInterval(this._rlTimer);
       if (first) { body.textContent = '(no answer returned)'; wrap.classList.remove('thinking'); }
-      if (cites && cites.length && !local) {
+
+      if (!local) {
         const c = document.createElement('div');
         c.className = 'cites';
-        c.innerHTML = '<b>sources:</b>' + cites.map(s => '<span class="cite">' + esc(s) + '</span>').join('');
+        /* Say where the answer came from. An answer drawn from the corpus
+           cites it; one drawn from the model's own knowledge says that
+           plainly, so the two are never mistaken for each other. */
+        c.innerHTML = grounded && cites.length
+          ? '<b>sources:</b>' + cites.map(s => '<span class="cite">' + esc(s) + '</span>').join('')
+          : '<span class="cite ungrounded">general knowledge — not from Valency\u2019s documents</span>';
         wrap.appendChild(c);
       }
     } catch (err) {
+      clearInterval(this._rlTimer);
       wrap.classList.remove('thinking');
       body.textContent = '';
       const e = document.createElement('div');
-      e.className = 'line err';
-      e.textContent = 'assistant error: ' + err.message;
+      e.className = 'line ' + (err.rateLimited ? 'warn' : 'err');
+      e.textContent = err.rateLimited ? err.message : 'assistant error: ' + err.message;
       wrap.appendChild(e);
       const hint = document.createElement('div');
       hint.className = 'line dim';
-      hint.textContent = 'Every command still works — this only affects free-text questions. Try /help.';
+      hint.textContent = err.rateLimited
+        ? 'Press \u2191 to bring the question back, then Enter to retry.'
+        : 'Every command still works — this only affects free-text questions. Try /help.';
       wrap.appendChild(hint);
     }
     this.busy(false);
@@ -754,7 +788,10 @@ function initContact() {
   };
   addEventListener('hashchange', openFromHash);
 
-  bootSequence().then(openFromHash);
+  /* The gate runs behind the boot overlay; the terminal starts typing only
+     once it lifts. Verification failure does not block anything here — only
+     the assistant needs a pass. */
+  runGate().then(() => bootSequence()).then(openFromHash);
 
   /* Warm the corpus in the background so the first question is fast. */
   setTimeout(() => RAG.load().catch(() => {}), 1200);

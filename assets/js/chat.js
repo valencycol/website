@@ -215,18 +215,18 @@ function tokenize(s) {
 /* ============================================================
    Task-type router
 
-   The question is not "how complex is this?" — complexity is the wrong
-   axis. "What separates Iceman from Maverick?" is a long, hard answer
-   that should work; "write FizzBuzz" is trivial for the model and should
-   not. What separates them is the KIND of work being asked for.
-
-   So every input is routed into one of four kinds before anything else
-   happens. Three of them never touch the network:
+   Nothing is refused. Two kinds of input have fixed, correct answers, so
+   they are handled here rather than spending a call on them; everything
+   else goes to retrieval and then the model.
 
      greeting   "hi"                      → answered here
      meta       "what model are you?"     → answered here, from MODEL_CARD
-     offlimits  "write a prime sieve"     → refused here
      normal     everything else           → retrieval, then the model
+
+   Retrieval no longer gates anything. It supplies context when the corpus
+   has some, and says so when it doesn't — the model answers either way,
+   from its own knowledge if need be, and is told to be explicit about
+   which it used.
    ============================================================ */
 
 /* Facts about the assistant itself. Legitimate questions with fixed
@@ -251,40 +251,6 @@ const MODEL_CARD = [
    + "Questions go to Groq via the site's worker to be answered, and aren't logged here."],
 ];
 
-/* Work we don't do, however easy it would be. Two signals must coincide:
-   a verb that asks for something to be PRODUCED, and an artifact type we
-   have no business producing. That pairing is what keeps "write a short
-   intro slide about Iceman" (fine — the artifact is prose about the
-   corpus) apart from "write a script that does X" (not fine).
-
-   Some artifacts are off limits on their own, because no phrasing of them
-   is ever in remit: a named programming language, a code fence, LeetCode. */
-const MAKE_VERB = /\b(write|generate|create|produce|build|implement|code|program|develop|make|give|show|draft|compose|design|refactor|debug|fix|optimi[sz]e|convert|translate|solve|calculate|compute|prove|derive)\b/i;
-
-const OFFLIMITS_ARTIFACT = /\b(code|script|program|programme|function|method|class|algorithm|snippet|repo|repository|app|application|website|api|query|regex|command|one-?liner|essay|poem|haiku|sonnet|song|lyrics|story|novel|joke|limerick|recipe|workout|diet|itinerary|cv|r[ée]sum[ée]|cover\s+letter|email|tweet|caption|homework|assignment|proof|equation|integral|derivative)\b/i;
-
-/* No verb needed — these are never in remit at any phrasing. */
-const OFFLIMITS_ALONE = new RegExp([
-  '```',
-  // a named programming language or framework
-  '\\b(python|javascript|typescript|java|c\\+\\+|c#|golang|rust|ruby|php|kotlin|swift|scala|perl|matlab|sql|bash|shell|powershell|html|css|react|django|flask|numpy|pandas|pytorch|tensorflow)\\b',
-  // classic exercise names
-  '\\bleet\\s?code\\b', '\\bfizz\\s?buzz\\b', '\\bprime\\s+numbers?\\b', '\\bfibonacci\\b',
-  '\\bsort(ing)?\\s+(a|an|the)\\s+(list|array)\\b',
-  // homework, at any phrasing
-  '\\b(homework|assignment|exam|quiz)\\b',
-  // arithmetic and calculus asked bare — "what is the derivative of x squared",
-  // "17 * 43". Note `integral` is NOT listed alone: "an integral part of" is a
-  // perfectly ordinary phrase.
-  '\\bwhat(\'?s| is)\\s+(the\\s+)?(derivative|integral|square\\s+root|factorial|logarithm)\\s+of\\b',
-  '\\d+\\s*[+\\-*/×÷^]\\s*\\d+',
-  '\\b\\d+\\s+(times|plus|minus|divided\\s+by|multiplied\\s+by)\\s+\\d+\\b',
-  // translation, but only when a language is named — "how does this translate
-  // to automotive security?" is a legitimate idiom and must survive
-  '\\btranslat(e|ing|ion)\\b[\\s\\S]{0,40}\\b(german|french|spanish|swedish|japanese|chinese|mandarin|hindi|arabic|portuguese|italian|russian|korean|dutch|polish|turkish|greek|hebrew|latin)\\b',
-  '\\b(german|french|spanish|swedish|japanese|chinese|hindi|arabic|italian|russian|korean)\\b[\\s\\S]{0,20}\\btranslat',
-].join('|'), 'i');
-
 function classify(query) {
   const q = String(query).trim();
   if (GREETING.test(q)) return { kind: 'greeting' };
@@ -293,31 +259,9 @@ function classify(query) {
     if (re.test(q)) return { kind: 'meta', answer };
   }
 
-  if (OFFLIMITS_ALONE.test(q)) return { kind: 'offlimits' };
-
-  /* The verb and the artifact must be two different words. `code` is both a
-     verb and a noun, so "what code did he release?" would otherwise satisfy
-     the pairing on its own and be read as a request to write some. */
-  const verb = q.match(MAKE_VERB);
-  const artifact = q.match(OFFLIMITS_ARTIFACT);
-  if (verb && artifact && verb.index !== artifact.index) return { kind: 'offlimits' };
-
   return { kind: 'normal' };
 }
 
-const OFFLIMITS_REPLIES = [
-  "Not what I'm for. I answer questions about Valency's research and this site — I don't write code or do general tasks. Try /fun.",
-  "That's a job for a general assistant, and I'm not one. I only answer from Valency's documents — /sources lists them.",
-  "I'll pass on that. My remit is Valency's work and this website; anything else and you want a different tool.",
-  "No — writing that isn't something I do. Ask me about the research instead, or /help for what this terminal can do.",
-];
-let lastOff = -1;
-function pickOfflimits() {
-  let i;
-  do { i = Math.floor(Math.random() * OFFLIMITS_REPLIES.length); } while (i === lastOff && OFFLIMITS_REPLIES.length > 1);
-  lastOff = i;
-  return OFFLIMITS_REPLIES[i];
-}
 
 /* ── The ask ───────────────────────────────────────────────── */
 
@@ -327,8 +271,9 @@ const Chat = {
 
   /* onToken(text) is called as the answer streams in; onStatus(n) fires
      while the model is still reasoning and nothing is renderable yet.
-     Returns { text, cites } or throws. */
-  async ask(question, onToken, onStatus) {
+     onStatus(n, info) also fires with { waiting: seconds } while a rate
+     limit is being waited out. Returns { text, cites, grounded } or throws. */
+  async ask(question, onToken, onStatus, retried) {
     const route = classify(question);
 
     /* Greetings and questions about the assistant itself are legitimate and
@@ -343,55 +288,55 @@ const Chat = {
       if (onToken) await typeOut(route.answer, onToken);
       return { text: route.answer, cites: [], local: true };
     }
-    /* Work requests are rejected outright, before retrieval and before the
-       network. Nothing in the corpus could make "write a prime sieve" in
-       remit, so there is nothing to look up. */
-    if (route.kind === 'offlimits') {
-      const msg = pickOfflimits();
-      if (onToken) await typeOut(msg, onToken);
-      return { text: msg, cites: [], local: true };
-    }
-
     if (!RAG.ready) await RAG.load();
 
     const hits = RAG.search(question, 6);
-    const { topical, known } = RAG.anchors(question);
+    const { known } = RAG.anchors(question);
 
-    /* Decline locally when the question is plainly off-corpus: nothing
-       matched, or most of its content words don't exist in any document.
-       An unanswerable question should not cost a network round-trip, and
-       a local decline cannot hallucinate.
+    /* The corpus is consulted first and always. When it has something
+       relevant, it is supplied as context and the model is told to prefer
+       it. When it has nothing, the model answers from its own knowledge
+       instead — and is told to say so.
 
-       A BM25 score floor was tried and removed: with a corpus this small,
-       IDF collapses for the terms that matter most — "valency", "iceman"
-       and "vote" appear in nearly every chunk, so the questions most worth
-       answering scored LOWEST.
+       `grounded` reports which happened, so the terminal can label the
+       answer honestly: cited sources when it came from Valency's
+       documents, a plain marker when it did not. Retrieval no longer
+       gates anything; it only informs. */
+    /* No score threshold here, for the same reason there is no score floor
+       on the gate: with a corpus this small, IDF collapses for the terms
+       that matter most. "What is Iceman" tops out at 0.42 — a 0.4 cutoff
+       called it ungrounded on a rounding error. Whether the question has a
+       real anchor in the vocabulary is the reliable signal; search already
+       drops anything scoring zero. */
+    const grounded = hits.length > 0 && known.length > 0;
 
-       A question with no topical words at all ("what about the second
-       one?", "tell me more") deliberately passes through: those are
-       follow-ups that lean on the conversation history, and refusing them
-       would break every multi-turn exchange. The cost is that "what is 17
-       times 43" also gets through — one API call, which the model refuses.
+    /* Context goes up only when the corpus actually has a claim on the
+       question. Sending Valency's bio alongside "write a prime sieve" is
+       noise the model has to ignore, and it makes the answer's provenance
+       ambiguous — the label the visitor sees should match what was sent. */
+    const context = grounded
+      ? hits.map((h, i) =>
+          '[' + (i + 1) + '] ' + (h.c.title || h.c.doc) +
+          (h.c.heading ? ' \u203a ' + h.c.heading : '') + '\n' + h.c.text
+        ).join('\n\n---\n\n')
+      : '';
 
-       This is tuned to let borderline questions THROUGH, not to catch
-       them. It is a cost optimisation, not the scope boundary — the real
-       boundary is the system prompt in chat-worker.js, which refuses to
-       answer from anything but the context it is handed. */
-    if (topical.length && !known.length) {
-      const msg = pickDecline();
-      if (onToken) await typeOut(msg, onToken);
-      return { text: msg, cites: [], local: true };
-    }
+    /* Cite every document that went up as context — no relevance cut.
 
-    const context = hits.map((h, i) =>
-      '[' + (i + 1) + '] ' + (h.c.title || h.c.doc) +
-      (h.c.heading ? ' › ' + h.c.heading : '') + '\n' + h.c.text
-    ).join('\n\n---\n\n');
+       A cut was tried at several thresholds and none of them held: for "how
+       fast is Maverick" the agent-guide chunk scores 0.50 of the top hit,
+       tied with a genuine one, because that document is short and "fast" is
+       prominent in it. BM25 is not misbehaving; the docs are just uneven.
 
+       More to the point, this list is a provenance statement, not a
+       relevance ranking. Every one of these chunks was visible to the model,
+       so hiding one would imply the answer could not have come from it. */
     const cites = [];
-    for (const h of hits) {
-      const label = h.c.title || h.c.doc;
-      if (!cites.includes(label)) cites.push(label);
+    if (grounded) {
+      for (const h of hits) {
+        const label = h.c.title || h.c.doc;
+        if (!cites.includes(label)) cites.push(label);
+      }
     }
 
     /* A CORS rejection surfaces as a bare TypeError("Failed to fetch") with
@@ -403,13 +348,56 @@ const Chat = {
       res = await fetch(CHAT_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, context, history: this.history.slice(-8) }),
+        body: JSON.stringify({ question, context, history: this.history.slice(-8),
+                               pass: (typeof Gate !== 'undefined' ? Gate.pass : '') }),
       });
     } catch (e) {
       throw new Error(
         'could not reach ' + new URL(CHAT_ENDPOINT).host + ' from ' + location.origin +
         '. Either the worker is not deployed, or this origin is not on its allowlist ' +
         '(see isAllowedOrigin in chat-worker.js).');
+    }
+
+    /* Rate limits are a normal operating condition here, not a failure:
+       Groq's free tier is generous but finite, and the worker adds a per-IP
+       budget of its own. Wait the interval the server names and try once
+       more — most limits are a short burst window, so one patient retry
+       clears them. Two failures in a row is a real queue, and then we say
+       so plainly rather than retrying forever. */
+    /* The pass expired, or the visitor never got one. Solve a fresh
+       challenge and retry once — silently, since this is housekeeping
+       rather than something they did wrong. */
+    if (res.status === 401 && typeof Gate !== 'undefined' && !retried) {
+      try {
+        if (onStatus) onStatus(0, { verifying: true });
+        await Gate.refresh();
+        return this.ask(question, onToken, onStatus, true);
+      } catch (e) {
+        throw new Error('could not verify this browser with Turnstile: ' + e.message
+          + '. Reload the page to try again.');
+      }
+    }
+
+    if (res.status === 429) {
+      let wait = 0, msg = '';
+      try {
+        const j = await res.json();
+        wait = Number(j.retryAfter) || 0;
+        msg = j.error || '';
+      } catch (e) { /* no body — fall back to the header */ }
+      if (!wait) wait = Number(res.headers.get('Retry-After')) || 8;
+      wait = Math.min(Math.max(wait, 2), 60);
+
+      if (!retried) {
+        if (onStatus) onStatus(0, { waiting: wait });
+        await new Promise(r => setTimeout(r, wait * 1000));
+        return this.ask(question, onToken, onStatus, true);   // one retry, then stop
+      }
+      const e = new Error(msg || ('busy — the assistant is rate limited. Try again in about '
+                + wait + ' second' + (wait === 1 ? '' : 's') + '.'));
+      e.rateLimited = true;
+      e.retryAfter = wait;
+      throw e;
     }
 
     if (!res.ok) {
@@ -422,7 +410,7 @@ const Chat = {
     this.history.push({ role: 'user', content: question });
     this.history.push({ role: 'assistant', content: text });
     if (this.history.length > 16) this.history = this.history.slice(-16);
-    return { text, cites };
+    return { text, cites, grounded };
   },
 };
 

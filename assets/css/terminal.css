@@ -81,6 +81,69 @@ button{font-family:inherit;color:inherit;cursor:pointer;background:none;border:n
 ::selection{background:var(--acc);color:var(--bg0)}
 :focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 
+/* ── Boot gate ─────────────────────────────────────────────── */
+.boot{
+  position:fixed;inset:0;z-index:400;display:grid;place-items:center;
+  background:var(--bg0);
+  transition:opacity .55s ease, visibility .55s;
+}
+.boot.gone{opacity:0;visibility:hidden;pointer-events:none}
+body.booting{overflow:hidden}
+.boot-inner{width:min(460px,86vw);text-align:center;display:grid;gap:14px;justify-items:center}
+
+.boot-mark{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.boot-word{
+  font-size:clamp(20px,5.2vw,30px);font-weight:700;
+  letter-spacing:.34em;text-indent:.34em;      /* indent offsets the trailing space */
+  color:var(--acc);text-shadow:0 0 22px var(--acc-glow);
+  animation:boot-flicker 2.4s ease-in-out infinite;
+}
+.boot-dot{color:var(--acc-dim)}
+.boot-caret{
+  width:11px;height:clamp(20px,5vw,28px);background:var(--acc);flex:none;
+  box-shadow:0 0 12px var(--acc-glow);animation:blink 1.05s step-end infinite;
+}
+@keyframes boot-flicker{0%,100%{opacity:1}45%{opacity:.74}55%{opacity:.96}}
+
+/* progress rail: a sweeping shimmer over a filling bar, so it reads as
+   working rather than merely waiting */
+.boot-bar{
+  width:100%;height:3px;border-radius:2px;overflow:hidden;
+  background:rgba(0,255,156,.10);border:1px solid var(--stroke);
+}
+.boot-bar i{
+  display:block;height:100%;width:6%;border-radius:2px;
+  background:linear-gradient(90deg,var(--acc-dim),var(--acc));
+  box-shadow:0 0 12px var(--acc-glow);
+  transition:width .45s cubic-bezier(.3,.9,.4,1);
+  position:relative;
+}
+.boot-bar i::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);
+  animation:boot-sweep 1.15s linear infinite;
+}
+@keyframes boot-sweep{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+
+.boot-line{
+  font-size:12px;color:var(--acc);letter-spacing:.16em;text-transform:uppercase;
+  min-height:1.3em;
+}
+.boot-line::after{content:'_';animation:blink 1.05s step-end infinite;margin-left:2px}
+.boot-sub{font-size:10.5px;color:var(--ink3);letter-spacing:.1em}
+.boot.failed .boot-line{color:var(--amber)}
+.boot.failed .boot-bar i{background:var(--amber);box-shadow:0 0 12px rgba(255,176,0,.4)}
+
+/* The widget is invisible in managed/interaction-only mode and only takes
+   space on the rare occasion it actually has something to ask. */
+.ts-widget:empty{display:none}
+.ts-widget{margin-top:2px;min-height:0}
+
+@media (prefers-reduced-motion:reduce){
+  .boot-logo{animation:none}
+  .boot-bar i::after{animation:none}
+}
+
 /* ── CRT atmosphere ──────────────────────────────────────────
    Scanlines and flicker are OFF by default. They are a full-page
    overlay, so they dim every glyph and the photograph along with
@@ -291,6 +354,8 @@ button{font-family:inherit;color:inherit;cursor:pointer;background:none;border:n
 .cites{margin-top:8px;font-size:11px;color:var(--ink3);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .cites b{color:var(--ink3);font-weight:400}
 .cite{border:1px solid var(--stroke);border-radius:3px;padding:1px 7px;color:var(--acc2)}
+.cite.ungrounded{color:var(--amber);border-color:rgba(255,176,0,.4)}
+.msg .warn{color:var(--amber)}
 
 /* ── Upload dropzone ───────────────────────────────────────── */
 .dropzone{

@@ -146,8 +146,11 @@ The site is a terminal. Visitors type slash-commands:
 - `/crt` — scanlines and flicker on or off
 - `/banner`, `/clear`, `/date`, `/exit` — terminal housekeeping
 
-Anything typed that is *not* a command is sent to the AI assistant, which
-answers only from the documents in the site's knowledge base.
+Anything typed that is *not* a command is sent to the AI assistant. It looks
+in these documents first and answers from them when it can, citing which ones.
+When the documents don't cover the question it answers from its own general
+knowledge instead, and says so. The assistant endpoint is protected by
+Cloudflare Turnstile, solved once behind the boot screen.
 
 ## TODO: fill these in
 

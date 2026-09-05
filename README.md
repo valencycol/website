@@ -1,135 +1,186 @@
 # colaco.se
 
 A personal site shaped like a terminal. Visitors type slash-commands, or ask
-the AI assistant a question in plain English — and the assistant answers only
-from the documents in [`knowledge/`](knowledge/).
+an AI assistant a question in plain English. The assistant answers from the
+documents in [`knowledge/`](knowledge/); when a question isn't covered there it
+falls back to a live web search and cites the links.
 
-Static site on GitHub Pages, plus two Cloudflare Workers that hold the things
-a static site cannot: an allowlisted feed proxy, and the Groq API key.
+It is a **static site on GitHub Pages** plus **two Cloudflare Workers** that
+hold the things a static page cannot: API keys, and an allowlisted feed proxy.
+
+```
+Browser ──► GitHub Pages (this repo, static)
+   │
+   ├─► chat.<domain>  (Worker: colaco-chat)  ──► Groq · Turnstile · LangSearch · KV · Email
+   └─► feeds.<domain> (Worker: feeds)        ──► RSS / Ground News / CISA (allowlisted)
+```
+
+---
+
+## What you need to provide, and where it goes
+
+Three kinds of value. Only the first two are secret.
+
+### 1 · Cloudflare Worker secrets — on the `colaco-chat` worker
+
+Pushed with `wrangler secret put <NAME> --name colaco-chat` (never committed).
+
+| Secret | Needed for | Get it from | If unset |
+|---|---|---|---|
+| `GROQ_API_KEY` | the AI assistant | <https://console.groq.com/keys> | assistant returns HTTP 500 |
+| `TURNSTILE_SECRET` | the bot gate | your Turnstile widget (step 3) | **gate is disabled** — the endpoint is open |
+| `LANGSEARCH_API_KEY` | live web search | <https://langsearch.com/dashboard> (free) | out-of-corpus answers use the model's own memory, no web sources |
+
+`GROQ_MODEL` is an optional plain var (not a secret); it defaults to
+`openai/gpt-oss-20b` in code.
+
+### 2 · GitHub Actions secrets — repo → Settings → Secrets and variables → Actions
+
+Only needed if you want the workers to **auto-deploy from CI** on push
+(`.github/workflows/workers.yml`). Pages itself needs none of these.
+
+| Secret | Purpose |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | a token with **Workers Scripts: Edit**, **Workers KV Storage: Edit**, **Account Settings: Read** |
+| `CLOUDFLARE_ACCOUNT_ID` | your Cloudflare account id |
+
+### 3 · Public config — committed in the code, NOT secret
+
+| Value | Where | Note |
+|---|---|---|
+| Turnstile **sitekey** | `assets/js/turnstile.js` (`TURNSTILE_SITEKEY`) | public by design — pairs with the secret above |
+| KV namespace **id** | `wrangler.jsonc` (`kv_namespaces[].id`) | identifier, not a secret |
+| Worker URLs | `assets/js/chat.js`, `turnstile.js`, `feeds.js` | your `chat.` / `feeds.` subdomains |
+
+> `.env` is **gitignored and read by nothing at runtime.** It is just your
+> local scratchpad to paste keys into before running `wrangler secret put`.
+> See `.env.example`.
+
+---
+
+## Setup from a fresh clone
+
+**Prerequisites:** a Cloudflare account with your **domain already added as a
+zone** (needed for the `chat.` / `feeds.` custom subdomains), Node + `npm i -g
+wrangler && wrangler login`, and a Groq account.
+
+1. **Get the keys.** Groq key (required); LangSearch key (optional, web
+   search). Paste both into `.env`.
+
+2. **Create the Turnstile widget.** Cloudflare dashboard → Turnstile → add a
+   **Managed** widget whose domains include your site plus `localhost` and
+   `127.0.0.1`. It gives a **sitekey** (→ paste into `assets/js/turnstile.js`)
+   and a **secret** (→ worker, next step).
+
+3. **Create the rate-limit KV namespace** and copy its id into `wrangler.jsonc`:
+
+   ```sh
+   wrangler kv namespace create CHAT_RL
+   ```
+
+4. **Deploy the chat worker and push its secrets:**
+
+   ```sh
+   wrangler deploy                                   # uses wrangler.jsonc → colaco-chat
+   wrangler secret put GROQ_API_KEY       --name colaco-chat
+   wrangler secret put TURNSTILE_SECRET   --name colaco-chat
+   wrangler secret put LANGSEARCH_API_KEY --name colaco-chat   # optional
+   ```
+
+   Then dashboard → the `colaco-chat` worker → Settings → Domains & Routes →
+   add custom domain **`chat.<yourdomain>`**.
+
+5. **Deploy the feeds worker:**
+
+   ```sh
+   wrangler deploy -c wrangler.feeds.jsonc           # worker is named "feeds"
+   ```
+
+   Then add its custom domain **`feeds.<yourdomain>`**.
+
+6. **Point the site at your workers.** In the three client files, change the
+   `colaco.se` subdomains to yours, and in both workers set `ALLOWED_ORIGINS`
+   to your site's origin:
+
+   - `assets/js/chat.js` → `CHAT_ENDPOINT`
+   - `assets/js/turnstile.js` → `VERIFY_ENDPOINT`
+   - `assets/js/feeds.js` → `FEED_PROXY`
+   - `chat-worker.js` and `feeds-worker.js` → `ALLOWED_ORIGINS`
+
+7. **Enable GitHub Pages.** Repo → Settings → Pages → **Source: GitHub
+   Actions**. Every push to `main` now deploys via `.github/workflows/static.yml`.
+
+8. **(Optional) weekly email digest.** Cloudflare → Email → **Email Routing** →
+   verify a destination address. Put it in `chat-worker.js` (`DIGEST_TO`) and
+   `wrangler.jsonc` (`send_email.destination_address`), then redeploy the
+   chat worker. Fires Mondays 08:00 UTC. Skip this and nothing else breaks.
+
+9. **(Optional) CI worker deploys.** Add the two GitHub Actions secrets from
+   the table above; then editing `chat-worker.js` / `feeds-worker.js` and
+   pushing redeploys them automatically. Without this, deploy workers by hand
+   with the commands above.
+
+---
+
+## Make it yours (search-and-replace `colaco.se`)
+
+Beyond the worker URLs in step 6: the contact email and card
+(`index.html` — the `formsubmit.co/…`, `mailto:`, `tel:` links),
+`canonical` / `og:` meta tags, `DIGEST_FROM`, the worker names in the two
+`wrangler.*.jsonc` files if you want different names, and of course the
+content under `knowledge/` and the PDFs in `publications/`.
+
+---
 
 ## Layout
 
-    index.html              the terminal shell + every panel's markup
-    assets/css/
-      terminal.css          the CRT theme, layout, responsive rules
-      components.css        feed / game / paper components carried over
-    assets/js/
-      core.js               $, esc, store, timeAgo, toast
-      feeds.js              RSS/Atom/JSON engine, Ground News parser, security desk
-      games.js              the six games
-      chat.js               retrieval + Groq client
-      turnstile.js          boot gate: Turnstile challenge, signed pass
-      terminal.js           command router, modal manager, boot, uploads
-    assets/img/valency.jpeg profile photo (local copy)
-    knowledge/              everything the assistant may read
-    feeds-worker.js         → feeds.colaco.se
-    chat-worker.js          → chat.colaco.se
-    backup/                 the previous "Liquid Glass" site, kept intact
+```
+index.html               terminal shell + every panel's markup
+assets/css/
+  terminal.css           CRT theme, layout, responsive rules
+  components.css         feed / paper / form component styles
+assets/js/
+  core.js                $, esc, store, timeAgo, toast
+  turnstile.js           boot gate: Turnstile challenge → signed pass
+  feeds.js               RSS/Atom/JSON engine, Ground News + security desk
+  chat.js                in-browser retrieval + the assistant client
+  terminal.js            command router, modal manager, boot, uploads
+assets/img/valency.jpeg  profile photo
+assets/vendor/           matter.min.js (unused; kept for backup restore)
+knowledge/               documents the assistant may read (+ manifest.json)
+publications/            paper PDFs linked from the site
+chat-worker.js           → chat.<domain>   (wrangler.jsonc)
+feeds-worker.js          → feeds.<domain>  (wrangler.feeds.jsonc)
+backup/                  the previous "Liquid Glass" site (also git tag
+                         pre-terminal-redesign) — includes the removed games
+```
 
-The previous design is also tagged in git as `pre-terminal-redesign`.
+---
 
-See [PREVIEW.md](PREVIEW.md) for previewing a branch before it goes live.
+## Day-to-day
 
-## Deploying
+**Run locally:** `python3 -m http.server 8080`, open <http://localhost:8080>.
+Everything works offline except the live feeds and the assistant, which need
+their workers reachable and `localhost` in the workers' `ALLOWED_ORIGINS`.
 
-The **site** deploys itself: push to `main` and the Pages workflow in
-`.github/workflows/static.yml` publishes the repo root.
+**Deploy the site:** push to `main` (Pages workflow). Assets are cache-busted
+with the commit SHA, so returning visitors never run new HTML against stale JS.
 
-The **assistant** needs its Worker deployed once:
+**Deploy a worker:** `wrangler deploy` (chat) or
+`wrangler deploy -c wrangler.feeds.jsonc` (feeds) — or let CI do it (step 9).
+Worker **secrets and custom domains survive a deploy**; only bindings declared
+in the wrangler config are replaced (which is why `CHAT_RL` lives there, not
+just in the dashboard).
 
-    npm i -g wrangler && wrangler login
-    wrangler deploy chat-worker.js --name colaco-chat
-    wrangler secret put GROQ_API_KEY --name colaco-chat     # paste from .env
+**Add to the knowledge base:** drop a `.md`/`.txt` file in `knowledge/`, add a
+line to `knowledge/manifest.json`, push. No build step, no embeddings —
+retrieval is BM25 in the browser. See [`knowledge/README.md`](knowledge/README.md).
 
-Then in the Cloudflare dashboard, open the `colaco-chat` worker →
-Settings → Domains & Routes → add the custom domain `chat.colaco.se`.
+## Why the keys aren't in the page
 
-Optional per-IP rate limiting:
-
-    wrangler kv namespace create CHAT_RL
-
-then bind it as `CHAT_RL` under Settings → Variables & Bindings. Without the
-binding the worker still runs; it just doesn't rate-limit.
-
-The **feeds** worker is already deployed and serving feeds.colaco.se. It was
-created by pasting into the dashboard, so the copy in this repo is slightly
-ahead of what is live — the difference is only the localhost and preview
-origins, which matter for local development, not for the public site.
-Redeploy when you want those:
-
-    wrangler deploy -c wrangler.feeds.jsonc          # the worker is named "feeds"
-
-## Why the API key is not in the page
-
-This site is static. Anything in `index.html` or `assets/js/` is readable by
-anyone who opens View Source, and a Groq key found that way is billable by
-whoever found it. So the key lives as a Worker secret and the browser talks to
-`chat.colaco.se`, which adds the key server-side. `.env` is gitignored and is
-only your local copy for `wrangler secret put`.
-
-## How the assistant answers
-
-Retrieval runs first, always. Every question is scored against the chunks in
-`knowledge/`; when the corpus has a claim on it, those chunks go up as context
-and the model is told to prefer them. When it does not, the model answers from
-its own general knowledge instead, and is told to say so.
-
-The terminal labels which happened, so the two are never confused: an answer
-grounded in the documents shows `sources:` chips naming them, and one from the
-model's own knowledge shows an amber `general knowledge` marker. The citation
-list names every document that went up as context — it is a provenance
-statement, not a relevance ranking.
-
-Greetings and questions about the assistant itself ("what model are you?") are
-answered locally, without an API call.
-
-## Deploying the workers from CI
-
-`.github/workflows/workers.yml` deploys either worker when its source
-changes on `main`. GitHub *Pages* cannot do this — Pages only publishes
-static files — but GitHub *Actions* can. It needs two repository secrets:
-
-    CLOUDFLARE_API_TOKEN    Workers Scripts:Edit, Workers KV Storage:Edit,
-                            Account Settings:Read
-    CLOUDFLARE_ACCOUNT_ID   f636367a9ba7cf2429a505cf32a2b6a3
-
-Worker secrets (`GROQ_API_KEY`, `TURNSTILE_SECRET`) are not touched by a
-deploy — they live on the worker and survive. Custom domains survive too.
-Only bindings declared in the wrangler config are replaced, which is why
-`CHAT_RL` is declared in `wrangler.jsonc` rather than added in the dashboard.
-
-## Abuse protection
-
-Because the assistant answers general questions, its endpoint is worth abusing
-— left open it is a free LLM on the site's Groq quota. Two things stop that:
-
-**Cloudflare Turnstile.** A visitor solves one challenge behind the boot
-screen and receives a short-lived signed pass (HMAC over expiry + origin,
-12-hour TTL, no server-side storage). Every question carries that pass;
-requests without a valid one are refused with 401. Turnstile tokens are
-single-use, which is exactly why the pass exists — a token cannot ride along
-with each message. Siteverify is called from the worker, never the browser,
-and the token must have been solved on the same origin that is calling.
-
-**Per-IP rate limiting.** Bind a KV namespace as `CHAT_RL` on the worker to
-enforce it (30 questions per 10 minutes by default):
-
-    wrangler kv namespace create CHAT_RL
-
-Without the binding the worker still runs but does not throttle. Rate limits
-are handled gracefully at both ends: the worker forwards Groq's own
-`Retry-After`, and the terminal counts the wait down and retries once.
-
-## Running locally
-
-    python3 -m http.server 8080
-
-Then open http://localhost:8080. The feeds need the localhost origins deployed
-to the feeds worker (see above); everything else works offline, and the
-assistant works as soon as `chat.colaco.se` is up.
-
-## Adding to the knowledge base
-
-See [`knowledge/README.md`](knowledge/README.md). Short version: drop a text
-file in `knowledge/`, add a line to `knowledge/manifest.json`, push. No build
-step and no embedding job — retrieval is BM25 in the browser.
+The site is static: anything in `index.html` or `assets/js/` is readable via
+View Source, and a Groq key found that way is billable by whoever finds it. So
+the keys live as Worker secrets and the browser talks to `chat.<domain>`,
+which adds them server-side. Turnstile gates that endpoint (a single-use token
+is exchanged once for a short-lived signed pass), and a per-IP KV rate limit
+(30 questions / 10 min) caps abuse.

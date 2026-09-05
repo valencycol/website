@@ -100,22 +100,27 @@ const RAG = {
     }
   },
 
-  /* How much of the question do we even have words for?
+  /* Does this question have any topical anchor in the corpus at all?
 
-     BM25 alone is a poor scope test: "how do I bake bread" scores well
-     on `how` and returns confident nonsense. So before trusting a score
-     we check that the question's content words actually exist in the
-     corpus. Returns the fraction that do, 0..1. */
-  coverage(query) {
+     BM25 alone is a poor scope test: "how do I bake bread" scores well on
+     `how` and returns confident nonsense. So we test the question's words
+     against the corpus vocabulary instead.
+
+     This was first written as a ratio — known words over content words —
+     and that was wrong. "Summarise Valency in three bullet points for an
+     intro slide" scored 1/6 and got refused, because five of its six words
+     describe the SHAPE of the answer, not its subject. Format words are not
+     evidence of scope in either direction, so they are stripped, and what
+     remains is a presence test: one real anchor is enough. A question is
+     out of scope when it mentions nothing we have, not when it mentions
+     other things as well. */
+  anchors(query) {
     const words = String(query).toLowerCase().match(/[a-z0-9][a-z0-9+#._-]*/g) || [];
-    const content = words.filter(w => w.length > 2 && !STOP.has(w) && !ASK.has(w));
-    if (!content.length) return 1;              // "hi" — let the model handle it
-    let known = 0;
-    for (const w of content) {
-      if (this.vocab.has(w) ||
-          (w.length > 4 && this.vocab.has(w.replace(/s$/, '')))) known++;
-    }
-    return known / content.length;
+    const topical = words.filter(w =>
+      w.length > 2 && !STOP.has(w) && !ASK.has(w) && !FORMAT.has(w) && !/^\d+$/.test(w));
+    const known = topical.filter(w =>
+      this.vocab.has(w) || (w.length > 4 && this.vocab.has(w.replace(/s$/, ''))));
+    return { topical, known };
   },
 
   /* BM25-lite. Enough signal for a corpus this size, and it costs
@@ -159,6 +164,20 @@ const STOP = new Set(('a an and are as at be but by for from has have he her his
   + 'that the their this to was were what when where which who will with you your do does did can could would '
   + 'should about into than then them they there these those we us our me my').split(' '));
 
+/* Words describing the SHAPE of a wanted answer — its length, format or
+   register. They say nothing about the subject, so they must not count for
+   or against scope. */
+const FORMAT = new Set(('bullet bullets point points slide slides deck summary summarise summarize '
+  + 'brief briefly short shortly long detailed detail depth overview outline recap tldr eli5 '
+  + 'paragraph paragraphs sentence sentences line lines word words page pages list listing table '
+  + 'pitch elevator intro introduction abstract blurb bio note notes format style tone plain simple '
+  + 'quick quickly fast concise verbose expand elaborate rewrite rephrase translate version draft '
+  + 'three four five six seven eight nine ten couple few several first second third top best worst '
+  + 'like example examples instance basically essentially please times time').split(' '));
+
+/* A bare greeting, with nothing else attached. */
+const GREETING = /^(hi|hey|hello|yo|hiya|howdy|greetings|good\s+(morning|afternoon|evening)|sup|hej|halla|hola)(\s+(there|all|everyone|folks|again))?[\s!.?]*$/i;
+
 /* Interrogatives and filler verbs. They carry no topic, but they are common
    enough in the corpus to score well, which is exactly the trap. */
 const ASK = new Set(('how why what who when where which whom whose tell explain describe '
@@ -188,27 +207,40 @@ const Chat = {
      while the model is still reasoning and nothing is renderable yet.
      Returns { text, cites } or throws. */
   async ask(question, onToken, onStatus) {
+    /* "hi" is not an out-of-scope question, and refusing it reads as broken.
+       Answer it here rather than spending a call on it. */
+    if (GREETING.test(question.trim())) {
+      const msg = "Hello. I answer questions about Valency's research, publications and this site "
+                + "— from his documents only. Try /fun for ideas, or /help for commands.";
+      if (onToken) await typeOut(msg, onToken);
+      return { text: msg, cites: [], local: true };
+    }
     if (!RAG.ready) await RAG.load();
 
     const hits = RAG.search(question, 6);
-    const cover = RAG.coverage(question);
+    const { topical, known } = RAG.anchors(question);
 
     /* Decline locally when the question is plainly off-corpus: nothing
        matched, or most of its content words don't exist in any document.
        An unanswerable question should not cost a network round-trip, and
        a local decline cannot hallucinate.
 
-       The gate is coverage only, deliberately. A BM25 score floor was
-       tried and removed: with a corpus this small, IDF collapses for the
-       terms that matter most — "valency", "iceman" and "vote" appear in
-       nearly every chunk, so the questions most worth answering scored
-       LOWEST. Coverage has no such bias.
+       A BM25 score floor was tried and removed: with a corpus this small,
+       IDF collapses for the terms that matter most — "valency", "iceman"
+       and "vote" appear in nearly every chunk, so the questions most worth
+       answering scored LOWEST.
+
+       A question with no topical words at all ("what about the second
+       one?", "tell me more") deliberately passes through: those are
+       follow-ups that lean on the conversation history, and refusing them
+       would break every multi-turn exchange. The cost is that "what is 17
+       times 43" also gets through — one API call, which the model refuses.
 
        This is tuned to let borderline questions THROUGH, not to catch
        them. It is a cost optimisation, not the scope boundary — the real
        boundary is the system prompt in chat-worker.js, which refuses to
        answer from anything but the context it is handed. */
-    if (!hits.length || cover < 0.4) {
+    if (topical.length && !known.length) {
       const msg = pickDecline();
       if (onToken) await typeOut(msg, onToken);
       return { text: msg, cites: [], local: true };
@@ -225,11 +257,23 @@ const Chat = {
       if (!cites.includes(label)) cites.push(label);
     }
 
-    const res = await fetch(CHAT_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, context, history: this.history.slice(-8) }),
-    });
+    /* A CORS rejection surfaces as a bare TypeError("Failed to fetch") with
+       no detail — the browser deliberately hides the reason. Since that is
+       overwhelmingly the failure people hit (an origin the worker doesn't
+       allow, or the worker not deployed at all), name it here. */
+    let res;
+    try {
+      res = await fetch(CHAT_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, context, history: this.history.slice(-8) }),
+      });
+    } catch (e) {
+      throw new Error(
+        'could not reach ' + new URL(CHAT_ENDPOINT).host + ' from ' + location.origin +
+        '. Either the worker is not deployed, or this origin is not on its allowlist ' +
+        '(see isAllowedOrigin in chat-worker.js).');
+    }
 
     if (!res.ok) {
       let detail = '';

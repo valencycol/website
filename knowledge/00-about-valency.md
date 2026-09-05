@@ -9,7 +9,7 @@
 - **Full name:** Valency Oscar Colaco
 - **Goes by:** Valency
 - **Role:** Cybersecurity & AI/ML Researcher
-- **Affiliation:** Linköping University (LiU), Sweden — RTSLAB (Real-Time Systems Laboratory), Department of Computer and Information Science (IDA)
+- **Affiliation:** Linköping University (LiU), Sweden — CYBER, Department of Computer and Information Science (IDA)
 - **Location:** Sweden
 - **Website:** https://colaco.se
 - **Google Scholar:** https://scholar.google.com/citations?user=xMG8t8oAAAAJ&hl=en

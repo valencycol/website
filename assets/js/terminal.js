@@ -173,7 +173,7 @@ const Term = {
       wrap.appendChild(e);
       const hint = document.createElement('div');
       hint.className = 'line dim';
-      hint.textContent = 'The commands still work — try /help.';
+      hint.textContent = 'Every command still works — this only affects free-text questions. Try /help.';
       wrap.appendChild(hint);
     }
     this.busy(false);

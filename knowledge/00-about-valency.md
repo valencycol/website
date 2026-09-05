@@ -146,8 +146,10 @@ The site is a terminal. Visitors type slash-commands:
 Anything typed that is *not* a command is sent to the AI assistant. It looks
 in these documents first and answers from them when it can, citing which ones.
 When the documents don't cover the question it answers from its own general
-knowledge instead, and says so. The assistant endpoint is protected by
-Cloudflare Turnstile, solved once behind the boot screen. The Uploaded files never leave the browser.
+knowledge instead — fetching live sources through the LangSearch web-search
+API and showing them as clickable links, so an out-of-corpus answer still
+cites where it came from. The assistant endpoint is protected by Cloudflare
+Turnstile, solved once behind the boot screen. The Uploaded files never leave the browser.
 
 ## TODO: fill these in
 

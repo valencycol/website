@@ -102,7 +102,7 @@ Answer every question you reasonably can, including general ones — code, maths
 
 You may describe how this site works and list its commands: /help /about /whoami /publications /cybersecurity-news /news /cve /games /contact /scholar /sources /upload /forget /fun /theme /banner /clear /date /exit. Point people at the right command when it beats a prose answer — live threat intel is /cybersecurity-news, not something you know.
 
-You are openai/gpt-oss-20b served by Groq, running behind a Cloudflare Worker because a static site cannot hold an API key. You read the documents under /sources. Files added with /upload are read in the browser for one session and never uploaded anywhere. Question text is retained for 14 days so Valency can see what people ask — without IP addresses or any identifier that links questions together. Say so plainly if asked; do not claim nothing is stored.`;
+You are openai/gpt-oss-20b served by Groq, running behind a Cloudflare Worker because a static site cannot hold an API key. You read the documents under /sources. When a question is not covered by those documents, its text is sent to the LangSearch web-search API to fetch live sources, which are shown to the visitor as clickable links. Files added with /upload are read in the browser for one session and never uploaded anywhere. Question text is retained for 14 days so Valency can see what people ask — without IP addresses or any identifier that links questions together. Say so plainly if asked; do not claim nothing is stored.`;
 
 export default {
   /* Weekly digest — see the crons trigger in wrangler.jsonc. */
@@ -144,7 +144,7 @@ export default {
     }
 
     const question = String(body.question || '').slice(0, MAX_QUESTION_CHARS).trim();
-    const context  = String(body.context  || '').slice(0, MAX_CONTEXT_CHARS);
+    let context    = String(body.context  || '').slice(0, MAX_CONTEXT_CHARS);
     if (!question) return json({ error: 'missing question' }, 400, cors);
 
     const limited = await rateLimit(env, request);
@@ -162,8 +162,25 @@ export default {
           .map(m => ({ role: m.role, content: m.content.slice(0, MAX_QUESTION_CHARS) }))
       : [];
 
+    /* The corpus had nothing for this question (the client sends an empty
+       context when its own retrieval came up short). If a LangSearch key is
+       configured, search the web and answer from THOSE results instead of
+       gpt-oss's 2024 training memory — the model is unchanged, it just gets
+       live sources in its context. The URLs are handed back to the browser
+       so the answer can cite clickable links. */
+    let webSources = [];
+    let ctxHeader = 'CONTEXT — retrieved from Valency\'s documents. This is all you know:';
+    if (!context && env.LANGSEARCH_API_KEY) {
+      const web = await webSearch(question, env);
+      if (web.context) {
+        context = web.context;
+        webSources = web.sources;
+        ctxHeader = 'CONTEXT — live web search results for this question. Answer from these and nothing else; do not add facts they do not support:';
+      }
+    }
+
     const userMessage =
-      'CONTEXT — retrieved from Valency\'s documents. This is all you know:\n' +
+      ctxHeader + '\n' +
       '<<<\n' + (context || '(nothing retrieved for this question)') + '\n>>>\n\n' +
       'QUESTION: ' + question;
 
@@ -225,8 +242,17 @@ export default {
 
     ctx.waitUntil(logQuestion(env, question, body, request));
 
-    // Pass the SSE stream straight through so the terminal can type it out.
-    return new Response(upstream.body, {
+    /* When the answer is built from web results, the browser needs the source
+       URLs to render clickable citations. They ride in front of the Groq
+       stream as one custom SSE frame the client recognises and peels off;
+       every following frame is Groq's own, passed through untouched. */
+    let outBody = upstream.body;
+    if (webSources.length) {
+      const frame = 'data: ' + JSON.stringify({ type: 'sources', sources: webSources }) + '\n\n';
+      outBody = prependFrame(frame, upstream.body);
+    }
+
+    return new Response(outBody, {
       headers: {
         ...cors,
         'Content-Type': 'text/event-stream; charset=utf-8',
@@ -424,6 +450,56 @@ function mime(from, to, subject, body) {
     '',
     b64,
   ].join('\r\n');
+}
+
+/* LangSearch web search. Returns a context block and the source list, or
+   empties on any failure — a search that fell over must not sink the answer;
+   gpt-oss just falls back to its own knowledge. Result URLs are scheme-checked
+   before they are ever handed to the browser as links. */
+async function webSearch(query, env) {
+  try {
+    const r = await fetch('https://api.langsearch.com/v1/web-search', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + env.LANGSEARCH_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      signal: AbortSignal.timeout(8000),
+      body: JSON.stringify({ query: query.slice(0, 400), count: 5, freshness: 'noLimit', summary: false }),
+    });
+    if (!r.ok) return { context: '', sources: [] };
+    const data = await r.json();
+    const items = ((data.data || {}).webPages || {}).value || [];
+
+    const sources = [];
+    const blocks = [];
+    for (const it of items.slice(0, 5)) {
+      const url = String(it.url || '');
+      if (!/^https:\/\//i.test(url)) continue;            // https links only
+      const title = String(it.name || it.displayUrl || url).slice(0, 150);
+      sources.push({ title, url });
+      blocks.push('[' + sources.length + '] ' + title + '\n' +
+                  String(it.snippet || '').slice(0, 500) + '\n' + url);
+    }
+    return { context: blocks.join('\n\n---\n\n'), sources };
+  } catch (e) {
+    return { context: '', sources: [] };
+  }
+}
+
+/* Emit one string in front of an existing stream, then pass the rest through. */
+function prependFrame(prefix, upstreamBody) {
+  const enc = new TextEncoder();
+  const reader = upstreamBody.getReader();
+  return new ReadableStream({
+    start(controller) { controller.enqueue(enc.encode(prefix)); },
+    async pull(controller) {
+      const { done, value } = await reader.read();
+      if (done) { controller.close(); return; }
+      controller.enqueue(value);
+    },
+    cancel(reason) { reader.cancel(reason); },
+  });
 }
 
 // Fixed-window counter in KV. No-ops when CHAT_RL isn't bound, and never

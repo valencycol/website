@@ -373,6 +373,8 @@ body.booting{overflow:hidden}
 .cites b{color:var(--ink3);font-weight:400}
 .cite{border:1px solid var(--stroke);border-radius:3px;padding:1px 7px;color:var(--acc2)}
 .cite.ungrounded{color:var(--amber);border-color:rgba(255,176,0,.4)}
+.cite.web{color:var(--acc);border-color:var(--stroke-2);text-decoration:none}
+.cite.web:hover{background:var(--acc);color:var(--bg0);border-color:var(--acc)}
 .msg .warn{color:var(--amber)}
 
 /* ── Contact card ──────────────────────────────────────────── */

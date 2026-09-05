@@ -231,19 +231,25 @@ const Term = {
     };
 
     try {
-      const { cites, local, grounded } = await Chat.ask(question, onToken, onStatus);
+      const { cites, local, grounded, sources } = await Chat.ask(question, onToken, onStatus);
       clearInterval(this._rlTimer);
       if (first) { body.textContent = '(no answer returned)'; wrap.classList.remove('thinking'); }
 
       if (!local) {
         const c = document.createElement('div');
         c.className = 'cites';
-        /* Say where the answer came from. An answer drawn from the corpus
-           cites it; one drawn from the model's own knowledge says that
-           plainly, so the two are never mistaken for each other. */
-        c.innerHTML = grounded && cites.length
-          ? '<b>sources:</b>' + cites.map(s => '<span class="cite">' + esc(s) + '</span>').join('')
-          : '<span class="cite ungrounded">general knowledge — not from Valency\u2019s documents</span>';
+        /* Say where the answer came from, three ways never mistaken for each
+           other: the corpus (named doc chips), a live web search (clickable
+           link chips), or the model's own memory (a plain marker). */
+        if (grounded && cites.length) {
+          c.innerHTML = '<b>sources:</b>' + cites.map(s => '<span class="cite">' + esc(s) + '</span>').join('');
+        } else if (sources && sources.length) {
+          c.innerHTML = '<b>web:</b>' + sources.map(src =>
+            '<a class="cite web" href="' + esc(src.url) + '" target="_blank" rel="noopener nofollow">' +
+            esc(hostOf(src.url)) + '</a>').join('');
+        } else {
+          c.innerHTML = '<span class="cite ungrounded">general knowledge — not from Valency\u2019s documents</span>';
+        }
         wrap.appendChild(c);
       }
     } catch (err) {
@@ -267,6 +273,12 @@ const Term = {
 };
 
 const PS1 = 'visitor@colaco.se:~$';
+
+/* Short, readable label for a web-source chip: the hostname without www. */
+function hostOf(url) {
+  try { return new URL(url).hostname.replace(/^www\./, ''); }
+  catch (e) { return url.slice(0, 40); }
+}
 
 /* ============================================================
    Modal manager

@@ -250,7 +250,9 @@ const MODEL_CARD = [
    "Files you add with /upload are read in your browser for this session only and never leave it. "
    + "Questions are sent to Groq via the site's worker to be answered, and the question text is kept for 14 days "
    + "so Valency can see what people ask — no IP address, no identifier, nothing linking questions to each other. "
-   + "Greetings and questions about me are answered in your browser and never sent anywhere."],
+   + "When the answer needs the live web (anything not in Valency's documents), the question is also sent to the "
+   + "LangSearch web-search API to fetch sources. Greetings and questions about me are answered in your browser "
+   + "and never sent anywhere."],
 ];
 
 function classify(query) {
@@ -408,11 +410,11 @@ const Chat = {
       throw new Error(detail || ('assistant offline (HTTP ' + res.status + ')'));
     }
 
-    const text = await readSSE(res, onToken, onStatus);
+    const { text, sources } = await readSSE(res, onToken, onStatus);
     this.history.push({ role: 'user', content: question });
     this.history.push({ role: 'assistant', content: text });
     if (this.history.length > 16) this.history = this.history.slice(-16);
-    return { text, cites, grounded };
+    return { text, cites, grounded, sources };
   },
 };
 
@@ -428,6 +430,7 @@ async function readSSE(res, onToken, onStatus) {
   const reader = res.body.getReader();
   const dec = new TextDecoder();
   let buf = '', out = '';
+  const sources = [];   // web citations, when the worker searched the web
   for (;;) {
     const { done, value } = await reader.read();
     if (done) break;
@@ -439,14 +442,25 @@ async function readSSE(res, onToken, onStatus) {
       const payload = line.slice(5).trim();
       if (!payload || payload === '[DONE]') continue;
       try {
-        const delta = JSON.parse(payload).choices?.[0]?.delta;
+        const obj = JSON.parse(payload);
+        // Custom frame the worker prepends when it answered from a web
+        // search — not a Groq frame. Capture the links and move on.
+        if (obj.type === 'sources' && Array.isArray(obj.sources)) {
+          for (const src of obj.sources) {
+            if (src && typeof src.url === 'string' && /^https:\/\//i.test(src.url)) {
+              sources.push({ title: String(src.title || src.url), url: src.url });
+            }
+          }
+          continue;
+        }
+        const delta = obj.choices && obj.choices[0] && obj.choices[0].delta;
         if (!delta) continue;
         if (delta.reasoning && onStatus) onStatus(delta.reasoning.length);
         if (delta.content) { out += delta.content; if (onToken) onToken(delta.content); }
       } catch (e) { /* keep-alive or partial frame — skip it */ }
     }
   }
-  return out.trim();
+  return { text: out.trim(), sources };
 }
 
 const DECLINES = [

@@ -140,6 +140,8 @@ The site is a terminal. Visitors type slash-commands:
 - `/forget` — remove an uploaded document (`/forget all` clears them)
 - `/fun` — suggested questions worth asking
 - `/theme` — phosphor colour: green, amber or ice
+- `/reset` — clear the conversation memory (the assistant keeps the last
+  ~10 exchanges as context; /reset forgets them)
 - `/banner`, `/clear`, `/date`, `/exit` — terminal housekeeping
 
 **Commands work with or without the leading slash, and in plain phrasing.**

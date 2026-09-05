@@ -307,6 +307,10 @@ function classify(query) {
 
 /* ── The ask ───────────────────────────────────────────────── */
 
+/* Conversation memory: the last 10 exchanges (a question + its answer
+   each), so a follow-up can reference up to ~10 messages back. */
+const HISTORY_EXCHANGES = 10;
+
 const Chat = {
   history: [],
   busy: false,
@@ -315,6 +319,9 @@ const Chat = {
      while the model is still reasoning and nothing is renderable yet.
      onStatus(n, info) also fires with { waiting: seconds } while a rate
      limit is being waited out. Returns { text, cites, grounded } or throws. */
+  /* Forget the conversation — clears the memory a follow-up would draw on. */
+  reset() { const n = this.history.length; this.history = []; return n; },
+
   async ask(question, onToken, onStatus, retried) {
     const route = classify(question);
 
@@ -404,7 +411,7 @@ const Chat = {
       res = await fetch(CHAT_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, context, allowWeb: !followUp, history: this.history.slice(-8),
+        body: JSON.stringify({ question, context, allowWeb: !followUp, history: this.history.slice(-2 * HISTORY_EXCHANGES),
                                pass: (typeof Gate !== 'undefined' ? Gate.pass : '') }),
       });
     } catch (e) {
@@ -465,7 +472,7 @@ const Chat = {
     const { text, sources } = await readSSE(res, onToken, onStatus);
     this.history.push({ role: 'user', content: question });
     this.history.push({ role: 'assistant', content: text });
-    if (this.history.length > 16) this.history = this.history.slice(-16);
+    if (this.history.length > 2 * HISTORY_EXCHANGES) this.history = this.history.slice(-2 * HISTORY_EXCHANGES);
     return { text, cites, grounded, sources, followUp };
   },
 };

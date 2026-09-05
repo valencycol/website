@@ -372,7 +372,7 @@ const ALIASES = {
   hello: 'contact', email: 'contact', hire: 'contact',
   docs: 'sources', kb: 'sources',
   bio: 'about', me: 'about',
-  cls: 'clear', man: 'help', '?': 'help',
+  cls: 'clear', 'new': 'reset', forget_chat: 'reset', man: 'help', '?': 'help',
   quit: 'exit', q: 'exit',
 };
 
@@ -535,6 +535,16 @@ const COMMANDS = {
   'banner': {
     desc: 'reprint the banner',
     run(_, t) { printBanner(t); }
+  },
+
+  'reset': {
+    desc: 'forget the conversation history',
+    run(_, t) {
+      const n = (typeof Chat !== 'undefined') ? Chat.reset() : 0;
+      t.print(n ? 'conversation reset — ' + (n / 2 | 0) + ' exchange' + ((n / 2 | 0) === 1 ? '' : 's') + ' forgotten.'
+                : 'nothing to reset — no conversation yet.', 'ok');
+      t.print('The assistant no longer has the earlier messages as context.', 'dim sp');
+    }
   },
 
   'clear': {

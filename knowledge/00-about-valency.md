@@ -147,11 +147,7 @@ Anything typed that is *not* a command is sent to the AI assistant. It looks
 in these documents first and answers from them when it can, citing which ones.
 When the documents don't cover the question it answers from its own general
 knowledge instead, and says so. The assistant endpoint is protected by
-Cloudflare Turnstile, solved once behind the boot screen.
-
-Question text is retained for 14 days so Valency can see what visitors ask.
-No IP address or identifier is stored with it, and nothing links one question
-to another. Uploaded files never leave the browser.
+Cloudflare Turnstile, solved once behind the boot screen. The Uploaded files never leave the browser.
 
 ## TODO: fill these in
 

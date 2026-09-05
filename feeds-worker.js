@@ -8,11 +8,9 @@
 // Works for RSS/Atom XML and plain HTML pages alike — it returns the upstream
 // body verbatim with CORS headers your pages are allowed to read.
 //
-// Fetches are server-side with a browser fingerprint (+ a consent cookie for
-// Google News). If a future feed is bot-walled by its origin, point it at
-// Google News instead — e.g.
-//   https://news.google.com/rss/search?q=site:HOST&hl=en-US&gl=US&ceid=US:en
-// which republishes the articles as plain RSS this worker can fetch directly.
+// Fetches are server-side with a browser fingerprint. Note: Google News RSS
+// is NOT usable as a bypass — it now returns 503 to datacenter IPs — so a
+// bot-walled origin needs a source that serves a clean feed directly.
 
 // Origins allowed to call this worker.
 //
@@ -47,8 +45,6 @@ function isAllowedOrigin(origin) {
 const ALLOWED_HOSTS = new Set([
   'ground.news',              // News — homepage + /blindspot
   'feeds.feedburner.com',     // The Hacker News
-  'www.bleepingcomputer.com',
-  'news.google.com',          // Google News RSS — bypass source for bot-walled feeds
   'krebsonsecurity.com',
   'www.securityweek.com',
   'www.cisa.gov',             // advisories feed + KEV JSON
@@ -121,12 +117,6 @@ const BROWSER_HEADERS = {
 // turns into a stale-cache hit or a 502. Only allowlisted hosts reach here.
 async function fetchUpstream(url) {
   const headers = { ...BROWSER_HEADERS };
-  // Google News serves EU visitors a cookie-consent interstitial (HTML) instead
-  // of the feed when fetched from an EU datacenter IP. This cookie opts past it
-  // so we get the actual RSS. Harmless for any other host.
-  if (new URL(url).hostname.endsWith('news.google.com')) {
-    headers['Cookie'] = 'CONSENT=YES+';
-  }
   const res = await fetch(url, { headers, redirect: 'follow' });
   if (!res.ok) throw new Error('upstream returned ' + res.status);
   return await res.arrayBuffer();

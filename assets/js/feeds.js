@@ -533,7 +533,6 @@ const News = {
    ============================================================ */
 const SEC_NEWS_SOURCES = [
   { name: 'The Hacker News',  color: '#ff6b9d', url: 'https://feeds.feedburner.com/TheHackersNews' },
-  { name: 'BleepingComputer', color: '#6ab7ff', url: 'https://news.google.com/rss/search?q=when:7d%20site:bleepingcomputer.com&hl=en-US&gl=US&ceid=US:en' },
   { name: 'Krebs on Security',color: '#3fe0c5', url: 'https://krebsonsecurity.com/feed/' },
   { name: 'SecurityWeek',     color: '#ffd166', url: 'https://www.securityweek.com/feed/' }
 ];

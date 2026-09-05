@@ -192,7 +192,6 @@ body.booting{overflow:hidden}
 .mem{font-size:11px;color:var(--ink3);letter-spacing:.04em;cursor:default;border:1px solid var(--stroke);border-radius:3px;padding:0 6px;transition:color .2s,border-color .2s}
 .mem.active{color:var(--acc2);border-color:var(--stroke-2)}
 .mem.full{color:var(--amber);border-color:rgba(255,176,0,.4)}
-@media (max-width:720px){.mem{display:none}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
 
 /* ── Header ────────────────────────────────────────────────── */
@@ -510,6 +509,8 @@ label{font-size:11px !important;letter-spacing:.1em;text-transform:uppercase;col
   .shell{padding:8px 8px 8px;gap:6px}
   .win-bar{padding:7px 10px}
   .win-title{font-size:10px;letter-spacing:.08em}
+  .mem{font-size:10px;padding:0 4px;letter-spacing:0}
+  .win-meta{gap:8px}
   .head{padding:12px 10px;gap:10px}
   .avatar{width:44px;height:44px}
   .head-id h1{font-size:15px}

@@ -142,6 +142,12 @@ export default {
           model: env.GROQ_MODEL || MODEL,
           messages,
           temperature: 0.2,          // low: this is a retrieval job, not a creative one
+          // gpt-oss is a reasoning model: it streams chain-of-thought in
+          // `delta.reasoning` before answering in `delta.content`. Left on
+          // default it spends ~3x more tokens thinking than answering, which
+          // is pure latency for "what does this document say". Low effort is
+          // ample when the answer is already sitting in the context block.
+          reasoning_effort: 'low',
           max_tokens: MAX_TOKENS_OUT,
           stream: true,
         }),

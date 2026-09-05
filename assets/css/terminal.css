@@ -284,6 +284,9 @@ button{font-family:inherit;color:inherit;cursor:pointer;background:none;border:n
 }
 .msg.ai .body a{color:var(--acc)}
 .msg.ai.thinking .body{color:var(--ink3)}
+.msg.ai .tick{color:var(--ink3);font-size:11.5px}
+.dots::after{content:'';animation:dots 1.2s steps(4,end) infinite}
+@keyframes dots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}
 .cursor-blk{display:inline-block;width:8px;height:14px;background:var(--acc2);vertical-align:-2px;animation:blink 1.05s step-end infinite}
 .cites{margin-top:8px;font-size:11px;color:var(--ink3);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .cites b{color:var(--ink3);font-weight:400}

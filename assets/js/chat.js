@@ -184,9 +184,10 @@ const Chat = {
   history: [],
   busy: false,
 
-  /* onToken(text) is called as the answer streams in.
+  /* onToken(text) is called as the answer streams in; onStatus(n) fires
+     while the model is still reasoning and nothing is renderable yet.
      Returns { text, cites } or throws. */
-  async ask(question, onToken) {
+  async ask(question, onToken, onStatus) {
     if (!RAG.ready) await RAG.load();
 
     const hits = RAG.search(question, 6);
@@ -236,7 +237,7 @@ const Chat = {
       throw new Error(detail || ('assistant offline (HTTP ' + res.status + ')'));
     }
 
-    const text = await readSSE(res, onToken);
+    const text = await readSSE(res, onToken, onStatus);
     this.history.push({ role: 'user', content: question });
     this.history.push({ role: 'assistant', content: text });
     if (this.history.length > 16) this.history = this.history.slice(-16);
@@ -244,8 +245,15 @@ const Chat = {
   },
 };
 
-/* Groq streams OpenAI-style SSE: `data: {...}` lines, then `data: [DONE]`. */
-async function readSSE(res, onToken) {
+/* Groq streams OpenAI-style SSE: `data: {...}` lines, then `data: [DONE]`.
+
+   gpt-oss is a reasoning model, so a response arrives in two phases: first
+   `delta.reasoning` (its chain-of-thought), then `delta.content` (the actual
+   answer). The reasoning is never shown — it is verbose, it restates the
+   prompt, and users did not ask to read it. It is useful for one thing:
+   proving the request is alive while nothing renders, so it drives a
+   "thinking" indicator via onStatus. */
+async function readSSE(res, onToken, onStatus) {
   const reader = res.body.getReader();
   const dec = new TextDecoder();
   let buf = '', out = '';
@@ -260,8 +268,10 @@ async function readSSE(res, onToken) {
       const payload = line.slice(5).trim();
       if (!payload || payload === '[DONE]') continue;
       try {
-        const delta = JSON.parse(payload).choices?.[0]?.delta?.content;
-        if (delta) { out += delta; if (onToken) onToken(delta); }
+        const delta = JSON.parse(payload).choices?.[0]?.delta;
+        if (!delta) continue;
+        if (delta.reasoning && onStatus) onStatus(delta.reasoning.length);
+        if (delta.content) { out += delta.content; if (onToken) onToken(delta.content); }
       } catch (e) { /* keep-alive or partial frame — skip it */ }
     }
   }

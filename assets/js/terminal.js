@@ -145,8 +145,18 @@ const Term = {
       this.scroll();
     };
 
+    /* The model reasons before it answers, and that phase renders nothing.
+       Show it counting rather than a frozen "retrieving". */
+    let thought = 0;
+    const onStatus = n => {
+      if (!first) return;                 // the answer has started; leave it alone
+      thought += n;
+      body.innerHTML = 'thinking<span class="dots"></span> ' +
+        '<span class="tick">' + thought + ' chars</span><span class="cursor-blk"></span>';
+    };
+
     try {
-      const { cites, local } = await Chat.ask(question, onToken);
+      const { cites, local } = await Chat.ask(question, onToken, onStatus);
       if (first) { body.textContent = '(no answer returned)'; wrap.classList.remove('thinking'); }
       if (cites && cites.length && !local) {
         const c = document.createElement('div');

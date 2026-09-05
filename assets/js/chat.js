@@ -295,7 +295,7 @@ const Chat = {
     if (!RAG.ready) await RAG.load();
 
     const hits = RAG.search(question, 6);
-    const { known } = RAG.anchors(question);
+    const { topical, known } = RAG.anchors(question);
 
     /* The corpus is consulted first and always. When it has something
        relevant, it is supplied as context and the model is told to prefer
@@ -312,7 +312,19 @@ const Chat = {
        called it ungrounded on a rounding error. Whether the question has a
        real anchor in the vocabulary is the reliable signal; search already
        drops anything scoring zero. */
-    const grounded = hits.length > 0 && known.length > 0;
+    /* Grounding needs more than one incidental word in common with the
+       corpus. "Latest news from mumbai" shares the word "news" with the
+       site's /news feature and would otherwise be treated as a Valency
+       question — sending doc context, suppressing the web search, and
+       leaving the model to shrug. Requiring the known words to be at least
+       HALF of the question's content words fixes it: "news from mumbai" is
+       1-of-3 (→ web search), while "what is Iceman" is 1-of-1 and "why is
+       adversarial retraining bad for tree ensembles" is 4-of-4 (→ docs).
+       Coverage, not score: score is useless here because a rare incidental
+       word ("news", df 1) scores HIGH while the terms that matter ("iceman",
+       in most chunks) score low. */
+    const coverage = topical.length ? known.length / topical.length : 0;
+    const grounded = hits.length > 0 && known.length > 0 && coverage >= 0.5;
 
     /* Context goes up only when the corpus actually has a claim on the
        question. Sending Valency's bio alongside "write a prime sieve" is

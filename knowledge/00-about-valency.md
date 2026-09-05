@@ -143,6 +143,14 @@ The site is a terminal. Visitors type slash-commands:
 - `/theme` — phosphor colour: green, amber or ice
 - `/banner`, `/clear`, `/date`, `/exit` — terminal housekeeping
 
+**Commands work with or without the leading slash, and in plain phrasing.**
+Typing `news`, `contact`, `publications`, or `show me the news` opens the
+same panel as `/news`, `/contact`, `/publications` — the terminal recognises
+a bare route name (and simple wrappers like "show me", "open", "take me to")
+and serves it directly, without asking the AI. A longer question that only
+mentions a route ("what's the latest news about X") is treated as a question,
+not a command.
+
 Anything typed that is *not* a command is sent to the AI assistant. It looks
 in these documents first and answers from them when it can, citing which ones.
 When the documents don't cover the question it answers from its own general

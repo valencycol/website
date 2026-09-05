@@ -152,10 +152,25 @@ const RAG = {
   /* Session uploads — read in the browser, never sent anywhere except
      as retrieved context. Gone on reload. */
   addSessionDoc(name, text) {
-    this.chunks = this.chunks.filter(c => !(c.session && c.doc === name));
-    this.docs = this.docs.filter(d => !(d.session && d.file === name));
+    this.dropSessionDoc(name);
     this.addDoc(name, name, text, '', true);
     this.reindex();
+  },
+
+  /* Drop one session document, or every one when name is omitted. Only ever
+     touches session uploads — the files under knowledge/ are not removable
+     from the browser, and a visitor should not be able to blank the corpus.
+     Returns the names actually removed. */
+  dropSessionDoc(name) {
+    const gone = this.docs
+      .filter(d => d.session && (!name || d.file === name))
+      .map(d => d.file);
+    if (!gone.length) return gone;
+    const drop = new Set(gone);
+    this.chunks = this.chunks.filter(c => !(c.session && drop.has(c.doc)));
+    this.docs   = this.docs.filter(d => !(d.session && drop.has(d.file)));
+    this.reindex();
+    return gone;
   },
 };
 
@@ -197,6 +212,113 @@ function tokenize(s) {
   }
   return bag;
 }
+/* ============================================================
+   Task-type router
+
+   The question is not "how complex is this?" — complexity is the wrong
+   axis. "What separates Iceman from Maverick?" is a long, hard answer
+   that should work; "write FizzBuzz" is trivial for the model and should
+   not. What separates them is the KIND of work being asked for.
+
+   So every input is routed into one of four kinds before anything else
+   happens. Three of them never touch the network:
+
+     greeting   "hi"                      → answered here
+     meta       "what model are you?"     → answered here, from MODEL_CARD
+     offlimits  "write a prime sieve"     → refused here
+     normal     everything else           → retrieval, then the model
+   ============================================================ */
+
+/* Facts about the assistant itself. Legitimate questions with fixed
+   answers — no reason to spend a model call, and no reason to refuse. */
+const MODEL_CARD = [
+  [/\b(which|what)\s+(ai\s+)?(model|llm|engine)\b|\bwhat\s+are\s+you\s+(running|built)\s+on\b|\bwhich\s+ai\b/i,
+   "I'm openai/gpt-oss-20b, served by Groq, behind a Cloudflare Worker that holds the API key — "
+   + "this site is static, so the key can't live in the page. My answers are grounded in the documents under /sources."],
+
+  [/\b(who|what)\s+(made|built|created|wrote|designed)\s+(you|this)\b|\bwhose\s+(site|website)\b/i,
+   "This is Valency Oscar Colaco's site. I'm the terminal assistant built into it — I answer from his documents and nothing else. /about has the long version."],
+
+  [/\bare\s+you\s+(chatgpt|gpt|claude|gemini|an?\s+(real\s+)?(human|person|bot|ai|llm|robot|chatbot))\b|\bare\s+you\s+sentient\b/i,
+   "A language model, not a person — gpt-oss-20b on Groq. I only know what's in Valency's documents, which makes me a narrow one."],
+
+  [/\bwhat\s+can\s+you\s+(do|help|answer)\b|\bwhat\s+do\s+you\s+know\b|\bhow\s+do\s+you\s+work\b|\bwhat\s+are\s+you\s+for\b/i,
+   "I answer questions about Valency's research, publications and this website — grounded in the files listed by /sources. "
+   + "Type /fun for questions worth asking, or /help for the full command list. Anything outside those documents, I decline."],
+
+  [/\b(do|will)\s+you\s+(store|save|keep|remember|log|train)\b|\b(my|the)\s+(data|privacy|uploads?)\b|\bis\s+this\s+private\b/i,
+   "Nothing is stored. Files you add with /upload are read in your browser for this session only and never leave it. "
+   + "Questions go to Groq via the site's worker to be answered, and aren't logged here."],
+];
+
+/* Work we don't do, however easy it would be. Two signals must coincide:
+   a verb that asks for something to be PRODUCED, and an artifact type we
+   have no business producing. That pairing is what keeps "write a short
+   intro slide about Iceman" (fine — the artifact is prose about the
+   corpus) apart from "write a script that does X" (not fine).
+
+   Some artifacts are off limits on their own, because no phrasing of them
+   is ever in remit: a named programming language, a code fence, LeetCode. */
+const MAKE_VERB = /\b(write|generate|create|produce|build|implement|code|program|develop|make|give|show|draft|compose|design|refactor|debug|fix|optimi[sz]e|convert|translate|solve|calculate|compute|prove|derive)\b/i;
+
+const OFFLIMITS_ARTIFACT = /\b(code|script|program|programme|function|method|class|algorithm|snippet|repo|repository|app|application|website|api|query|regex|command|one-?liner|essay|poem|haiku|sonnet|song|lyrics|story|novel|joke|limerick|recipe|workout|diet|itinerary|cv|r[ée]sum[ée]|cover\s+letter|email|tweet|caption|homework|assignment|proof|equation|integral|derivative)\b/i;
+
+/* No verb needed — these are never in remit at any phrasing. */
+const OFFLIMITS_ALONE = new RegExp([
+  '```',
+  // a named programming language or framework
+  '\\b(python|javascript|typescript|java|c\\+\\+|c#|golang|rust|ruby|php|kotlin|swift|scala|perl|matlab|sql|bash|shell|powershell|html|css|react|django|flask|numpy|pandas|pytorch|tensorflow)\\b',
+  // classic exercise names
+  '\\bleet\\s?code\\b', '\\bfizz\\s?buzz\\b', '\\bprime\\s+numbers?\\b', '\\bfibonacci\\b',
+  '\\bsort(ing)?\\s+(a|an|the)\\s+(list|array)\\b',
+  // homework, at any phrasing
+  '\\b(homework|assignment|exam|quiz)\\b',
+  // arithmetic and calculus asked bare — "what is the derivative of x squared",
+  // "17 * 43". Note `integral` is NOT listed alone: "an integral part of" is a
+  // perfectly ordinary phrase.
+  '\\bwhat(\'?s| is)\\s+(the\\s+)?(derivative|integral|square\\s+root|factorial|logarithm)\\s+of\\b',
+  '\\d+\\s*[+\\-*/×÷^]\\s*\\d+',
+  '\\b\\d+\\s+(times|plus|minus|divided\\s+by|multiplied\\s+by)\\s+\\d+\\b',
+  // translation, but only when a language is named — "how does this translate
+  // to automotive security?" is a legitimate idiom and must survive
+  '\\btranslat(e|ing|ion)\\b[\\s\\S]{0,40}\\b(german|french|spanish|swedish|japanese|chinese|mandarin|hindi|arabic|portuguese|italian|russian|korean|dutch|polish|turkish|greek|hebrew|latin)\\b',
+  '\\b(german|french|spanish|swedish|japanese|chinese|hindi|arabic|italian|russian|korean)\\b[\\s\\S]{0,20}\\btranslat',
+].join('|'), 'i');
+
+function classify(query) {
+  const q = String(query).trim();
+  if (GREETING.test(q)) return { kind: 'greeting' };
+
+  for (const [re, answer] of MODEL_CARD) {
+    if (re.test(q)) return { kind: 'meta', answer };
+  }
+
+  if (OFFLIMITS_ALONE.test(q)) return { kind: 'offlimits' };
+
+  /* The verb and the artifact must be two different words. `code` is both a
+     verb and a noun, so "what code did he release?" would otherwise satisfy
+     the pairing on its own and be read as a request to write some. */
+  const verb = q.match(MAKE_VERB);
+  const artifact = q.match(OFFLIMITS_ARTIFACT);
+  if (verb && artifact && verb.index !== artifact.index) return { kind: 'offlimits' };
+
+  return { kind: 'normal' };
+}
+
+const OFFLIMITS_REPLIES = [
+  "Not what I'm for. I answer questions about Valency's research and this site — I don't write code or do general tasks. Try /fun.",
+  "That's a job for a general assistant, and I'm not one. I only answer from Valency's documents — /sources lists them.",
+  "I'll pass on that. My remit is Valency's work and this website; anything else and you want a different tool.",
+  "No — writing that isn't something I do. Ask me about the research instead, or /help for what this terminal can do.",
+];
+let lastOff = -1;
+function pickOfflimits() {
+  let i;
+  do { i = Math.floor(Math.random() * OFFLIMITS_REPLIES.length); } while (i === lastOff && OFFLIMITS_REPLIES.length > 1);
+  lastOff = i;
+  return OFFLIMITS_REPLIES[i];
+}
+
 /* ── The ask ───────────────────────────────────────────────── */
 
 const Chat = {
@@ -207,14 +329,29 @@ const Chat = {
      while the model is still reasoning and nothing is renderable yet.
      Returns { text, cites } or throws. */
   async ask(question, onToken, onStatus) {
-    /* "hi" is not an out-of-scope question, and refusing it reads as broken.
-       Answer it here rather than spending a call on it. */
-    if (GREETING.test(question.trim())) {
+    const route = classify(question);
+
+    /* Greetings and questions about the assistant itself are legitimate and
+       have fixed answers. Refusing them, as this used to, reads as broken. */
+    if (route.kind === 'greeting') {
       const msg = "Hello. I answer questions about Valency's research, publications and this site "
                 + "— from his documents only. Try /fun for ideas, or /help for commands.";
       if (onToken) await typeOut(msg, onToken);
       return { text: msg, cites: [], local: true };
     }
+    if (route.kind === 'meta') {
+      if (onToken) await typeOut(route.answer, onToken);
+      return { text: route.answer, cites: [], local: true };
+    }
+    /* Work requests are rejected outright, before retrieval and before the
+       network. Nothing in the corpus could make "write a prime sieve" in
+       remit, so there is nothing to look up. */
+    if (route.kind === 'offlimits') {
+      const msg = pickOfflimits();
+      if (onToken) await typeOut(msg, onToken);
+      return { text: msg, cites: [], local: true };
+    }
+
     if (!RAG.ready) await RAG.load();
 
     const hits = RAG.search(question, 6);

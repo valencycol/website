@@ -335,14 +335,30 @@ const COMMANDS = {
     async run(_, t) {
       t.print('loading knowledge base…', 'dim');
       try { await RAG.load(); } catch (e) { t.print(e.message, 'err'); return; }
-      t.print('KNOWLEDGE BASE', 'hd');
-      t.html('<div class="docs-list">' + RAG.docs.map(d =>
-        '<div class="doc-row"><span class="ok">[ok]</span><span class="nm">' + esc(d.title) +
-        (d.session ? ' <span style="color:var(--amber)">(this session only)</span>' : '') +
-        '</span><span class="sz">' + d.chunks + ' chunks · ' + Math.round(d.chars / 1024) + ' KB</span></div>'
-      ).join('') + '</div>');
-      t.print(RAG.docs.length + ' documents · ' + RAG.chunks.length + ' chunks indexed', 'ok');
-      t.print('The assistant answers from these and nothing else. /upload adds your own.', 'dim sp');
+      renderSources(t);
+    }
+  },
+
+  'forget': {
+    desc: 'remove an uploaded document — name, or "all"',
+    async run(arg, t) {
+      await RAG.load().catch(() => {});
+      const session = RAG.docs.filter(d => d.session);
+      if (!session.length) { t.print('nothing to forget — no documents uploaded this session.', 'dim sp'); return; }
+      const a = (arg || '').trim();
+      if (!a) {
+        t.print('usage: /forget <filename>   or   /forget all', 'dim');
+        t.print('uploaded: ' + session.map(d => d.file).join(', '), 'dim sp');
+        return;
+      }
+      const gone = RAG.dropSessionDoc(a.toLowerCase() === 'all' ? undefined : a);
+      if (!gone.length) {
+        t.print('no uploaded document called "' + a + '"', 'err');
+        t.print('uploaded: ' + session.map(d => d.file).join(', '), 'dim sp');
+        return;
+      }
+      gone.forEach(n => t.print('[removed] ' + n, 'ok'));
+      t.print(RAG.chunks.length + ' chunks left in the corpus.', 'dim sp');
     }
   },
 
@@ -447,6 +463,43 @@ const COMMANDS = {
   },
 };
 
+/* Renders the corpus listing, with a remove control on anything the visitor
+   added themselves. Files under knowledge/ have no control — they are part of
+   the site, not the session, and are not the visitor's to drop. */
+function renderSources(t) {
+  t.print('KNOWLEDGE BASE', 'hd');
+  const rows = RAG.docs.map(d =>
+    '<div class="doc-row" data-doc="' + esc(d.file) + '">' +
+      '<span class="ok">[ok]</span>' +
+      '<span class="nm">' + esc(d.title) +
+        (d.session ? ' <span class="tag-session">session</span>' : '') +
+      '</span>' +
+      '<span class="sz">' + d.chunks + (d.chunks === 1 ? ' chunk · ' : ' chunks · ') +
+        (d.chars < 1024 ? d.chars + ' B' : Math.round(d.chars / 1024) + ' KB') + '</span>' +
+      (d.session ? '<button class="rm" data-rm="' + esc(d.file) + '" title="Remove from this session">remove</button>'
+                 : '<span class="rm-spacer"></span>') +
+    '</div>').join('');
+  const el = t.html('<div class="docs-list">' + rows + '</div>');
+
+  el.querySelectorAll('[data-rm]').forEach(btn =>
+    btn.addEventListener('click', () => {
+      const name = btn.dataset.rm;
+      const gone = RAG.dropSessionDoc(name);
+      if (!gone.length) return;
+      Term.echo('/forget ' + name);
+      Term.print('[removed] ' + name, 'ok');
+      Term.print(RAG.chunks.length + ' chunks left in the corpus.', 'dim sp');
+      renderSources(Term);          // reprint so the listing matches reality
+    }));
+
+  const session = RAG.docs.filter(d => d.session).length;
+  t.print(RAG.docs.length + (RAG.docs.length === 1 ? ' document · ' : ' documents · ') +
+          RAG.chunks.length + ' chunks indexed', 'ok');
+  t.print(session
+    ? 'The assistant answers from these and nothing else. /upload adds more, /forget removes yours.'
+    : 'The assistant answers from these and nothing else. /upload adds your own.', 'dim sp');
+}
+
 /* Suggested prompts — printed by /fun and shown under the prompt. */
 const FUN = [
   'Which paper should I read first?',
@@ -460,6 +513,9 @@ const FUN = [
   'Summarise Valency in three bullet points for an intro slide',
   'Is any of this work relevant to automotive security?',
   'What can this website actually do?',
+  'What model are you running on?',
+  'Would Valency beat a random forest in a fight?',
+  'Sell me on reading the thesis',
 ];
 
 /* ============================================================
@@ -551,7 +607,8 @@ async function ingestFiles(files) {
     }
     try {
       RAG.addSessionDoc(f.name, await f.text());
-      Term.print('[ok] ' + f.name + ' — indexed (' + Math.round(f.size / 1024) + ' KB)', 'ok');
+      Term.print('[ok] ' + f.name + ' — indexed (' +
+        (f.size < 1024 ? f.size + ' B' : Math.round(f.size / 1024) + ' KB') + ')', 'ok');
       added++;
     } catch (e) {
       Term.print('[err] ' + f.name + ' — ' + e.message, 'err');

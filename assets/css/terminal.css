@@ -300,10 +300,26 @@ button{font-family:inherit;color:inherit;cursor:pointer;background:none;border:n
 .dropzone.show{display:grid}
 .dropzone p{color:var(--acc);font-size:15px;letter-spacing:.1em;text-transform:uppercase}
 .docs-list{display:grid;gap:2px;margin:8px 0 14px}
-.doc-row{display:flex;gap:10px;align-items:baseline;font-size:12.5px}
+.doc-row{display:flex;gap:10px;align-items:baseline;font-size:12.5px;padding:2px 0}
 .doc-row .ok{color:var(--acc);flex:none}
 .doc-row .nm{color:var(--ink)}
-.doc-row .sz{color:var(--ink3);margin-left:auto;font-size:11px}
+.doc-row .sz{color:var(--ink3);margin-left:auto;font-size:11px;white-space:nowrap}
+.tag-session{
+  color:var(--amber);border:1px solid var(--amber);border-radius:2px;
+  font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;padding:0 4px;margin-left:4px;
+}
+.doc-row .rm{
+  font:inherit;font-size:11px;flex:none;width:62px;text-align:center;
+  border:1px solid var(--stroke);border-radius:2px;padding:1px 0;color:var(--ink3);
+}
+.doc-row .rm:hover{border-color:var(--red);color:var(--red);background:rgba(255,59,92,.08)}
+.doc-row .rm-spacer{flex:none;width:62px}
+@media (max-width:720px){
+  .doc-row{flex-wrap:wrap;gap:6px}
+  .doc-row .sz{margin-left:0;width:100%;order:3}
+  .doc-row .rm{order:2;margin-left:auto}
+  .doc-row .rm-spacer{display:none}
+}
 
 /* ── Footer ────────────────────────────────────────────────── */
 .foot{flex:none;text-align:center;padding:10px 10px 0;font-size:11px;color:var(--ink3);letter-spacing:.04em}

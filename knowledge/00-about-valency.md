@@ -139,6 +139,7 @@ The site is a terminal. Visitors type slash-commands:
 - `/scholar` — open the Google Scholar profile
 - `/sources` — list the documents the assistant is allowed to read
 - `/upload` — add your own documents for the current session only
+- `/forget` — remove an uploaded document (`/forget all` clears them)
 - `/ask` — ask the assistant explicitly (or just type the question)
 - `/fun` — suggested questions worth asking
 - `/theme` — phosphor colour: green, amber or ice

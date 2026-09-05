@@ -46,6 +46,11 @@ the browser for that session only — nothing is stored, and they vanish on
 reload. Useful for "here's my CV, does it match your research?" without
 putting anyone's file on the server.
 
+They can be removed before then too: `/sources` shows a **remove** button
+beside anything uploaded this session, and `/forget <filename>` (or
+`/forget all`) does the same from the keyboard. Files in this folder have no
+remove control — they are part of the site, not the session.
+
 ## Size guidance
 
 The retriever chunks documents and sends only the best-matching chunks to the

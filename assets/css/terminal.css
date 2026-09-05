@@ -242,12 +242,12 @@ body.booting{overflow:hidden}
   transition:border-color .15s, box-shadow .15s;
 }
 .cmd-field:focus-within{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc-glow)}
-.ghost,#cmdline{
+.ac-ghost,#cmdline{
   font:inherit;font-size:15px;letter-spacing:normal;
   padding:5px 10px;border:0;
   white-space:pre;
 }
-.ghost{
+.ac-ghost{
   position:absolute;inset:0;pointer-events:none;overflow:hidden;
   display:flex;align-items:center;
 }
@@ -521,7 +521,7 @@ label{font-size:11px !important;letter-spacing:.1em;text-transform:uppercase;col
   .stream{padding:10px;min-height:0}
   .prompt{padding:9px 10px;gap:6px}
   .ps1{font-size:11px}
-  .ghost,#cmdline{font-size:16px}   /* 16px stops iOS zooming the page on focus */
+  .ac-ghost,#cmdline{font-size:16px}   /* 16px stops iOS zooming the page on focus */
   .go-btn{padding:6px 11px;font-size:11px}
   .hints{padding:0 10px 8px;gap:5px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
   .hints::-webkit-scrollbar{display:none}

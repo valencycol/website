@@ -71,7 +71,7 @@ Valency's work sits at the intersection of **adversarial machine learning** and
 ### 2026 — Improving SIEM Rules using Transformer-Based Rule Evasion Detection and Attribution
 - **Type:** Conference paper
 - **Authors:** Erik Nordström · Hannes Widén · Valency Oscar Colaco · Simin Nadjm-Tehrani
-- **Link:** https://doi.org/10.1007/978-3-032-33260-8_5
+- **Link:** https://link.springer.com/chapter/10.1007/978-3-032-33260-8_5
 - **Summary:** A transformer-based approach that detects SIGMA rule evasions
   with accuracy comparable to the state of the art (AMIDES, USENIX Security
   2024), at a false positive rate below 1%. Beyond detection it *attributes*
@@ -82,7 +82,7 @@ Valency's work sits at the intersection of **adversarial machine learning** and
 ### 2025 — Hardening Tree Ensembles: Real-Time and Effective Evasion Defences Beyond Adversarial Re-Training
 - **Type:** Licentiate thesis, Linköping University
 - **Author:** Valency Oscar Colaco
-- **Link:** https://www.diva-portal.org/smash/get/diva2:2013682/FULLTEXT01.pdf
+- **Link:** https://liu.diva-portal.org/smash/record.jsf?pid=diva2%3A2013682&dswid=-383
 - **Summary:** Shows that proactive defences such as adversarial retraining are
   ineffective for tree ensembles and can inadvertently make them more
   vulnerable to evasion attacks. Introduces Iceman and Maverick — two reactive
@@ -92,7 +92,7 @@ Valency's work sits at the intersection of **adversarial machine learning** and
 ### 2025 — Real-Time Evasion Detection in Tree Ensemble Automotive Intrusion Detection Systems
 - **Type:** Conference paper
 - **Authors:** Valency Oscar Colaco · Simin Nadjm-Tehrani
-- **Link:** https://www.ida.liu.se/labs/rtslab/publications/2025/maverick.pdf
+- **Link:** https://ieeexplore.ieee.org/document/11054177
 - **Summary:** Introduces Maverick. Identical detection accuracy to OC-Score
   (ECML PKDD 2023) with 85–563× faster detection, enabling real-time operation
   within automotive CAN network constraints.
@@ -100,14 +100,14 @@ Valency's work sits at the intersection of **adversarial machine learning** and
 ### 2024 — Fast Evasion Detection & Alert Management in Tree-Ensemble-Based Intrusion Detection Systems
 - **Type:** Conference paper
 - **Authors:** Valency Oscar Colaco · Simin Nadjm-Tehrani
-- **Link:** https://www.ida.liu.se/labs/rtslab/publications/2024/Iceman_IEEE.pdf
+- **Link:** https://ieeexplore.ieee.org/document/10849397
 - **Summary:** Introduces Iceman. >98% detection accuracy, 5–115× lower latency
   than OC-Score, plus quaternary attack annotations for effective alert triage.
 
 ### 2023 — Formal Verification of Tree Ensembles against Real-World Composite Geometric Perturbations
 - **Type:** Workshop paper (SafeAI)
 - **Authors:** Valency Oscar Colaco · Simin Nadjm-Tehrani
-- **Link:** https://www.ida.liu.se/labs/rtslab/publications/2023/SafeAI2023_Valency.pdf
+- **Link:** https://ceur-ws.org/Vol-3381/38.pdf
 - **Summary:** Extends VoTE to verify tree ensembles against composite
   geometric perturbations by introducing an abstraction-function-based
   robustness property checker. Shows that targeted data augmentation fails to

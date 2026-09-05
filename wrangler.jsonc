@@ -1,5 +1,24 @@
 {
+  // Deploy config for the chat worker.
+  //
+  //   wrangler deploy                     -> colaco-chat  (uses this file)
+  //   wrangler deploy feeds-worker.js --name colaco-feeds --no-bundle
+  //
+  // Declaring the KV binding here matters: `wrangler deploy` sends complete
+  // worker metadata, so a binding added only in the dashboard is REMOVED by
+  // the next deploy. Anything the worker needs belongs in this file.
   "name": "colaco-chat",
   "compatibility_date": "2026-08-28",
-  "main": "chat-worker.js"
+  "main": "chat-worker.js",
+
+  // Per-IP rate limiting. Without this binding the worker still runs, it
+  // just does not throttle — see rateLimit() in chat-worker.js.
+  "kv_namespaces": [
+    {
+      "binding": "CHAT_RL",
+      "id": "ca133c3ff0a1472485197d9d4d6f95dd"
+    }
+  ],
+
+  "observability": { "enabled": true }
 }

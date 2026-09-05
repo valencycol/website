@@ -1,0 +1,15 @@
+{
+  "//": "Documents the AI assistant may read. See README.md to add more.",
+  "documents": [
+    {
+      "file": "00-about-valency.md",
+      "title": "About Valency Colaco",
+      "tags": "bio biography who is valency background identity affiliation contact links scholar research focus iceman maverick vote publications papers thesis licentiate topics"
+    },
+    {
+      "file": "01-ai-agent-guide.md",
+      "title": "Configuring AI Coding Agents",
+      "tags": "ponytail llm coding agent prompt ladder yagni claude code cursor codex benchmark lines of code tokens"
+    }
+  ]
+}

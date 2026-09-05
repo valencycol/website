@@ -14,33 +14,10 @@
 //   https://news.google.com/rss/search?q=site:HOST&hl=en-US&gl=US&ceid=US:en
 // which republishes the articles as plain RSS this worker can fetch directly.
 
-// Origins allowed to call this worker.
-//
-// Exact matches first, then two narrow patterns for preview deployments.
-// Note what is deliberately NOT here: a bare `*.pages.dev` wildcard. That
-// would let anyone who creates a Cloudflare Pages project call this worker,
-// which for the chat worker means spending someone else's Groq quota. The
-// pattern is pinned to one project name instead.
 const ALLOWED_ORIGINS = new Set([
   'https://colaco.se',
   'https://www.colaco.se',
-  'https://valencycol.github.io',   // GitHub Pages preview (project or user site)
 ]);
-
-// Set this to your Cloudflare Pages project name to enable per-branch preview
-// URLs like https://terminal-edition.<project>.pages.dev. Leave '' to disable.
-const CF_PAGES_PROJECT = '';
-
-function isAllowedOrigin(origin) {
-  if (!origin) return false;
-  if (ALLOWED_ORIGINS.has(origin)) return true;
-  // Local development on any port.
-  if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return true;
-  // One specific Pages project: its own URL and its per-branch previews.
-  if (CF_PAGES_PROJECT &&
-      new RegExp('^https://([a-z0-9-]+\\.)?' + CF_PAGES_PROJECT + '\\.pages\\.dev$').test(origin)) return true;
-  return false;
-}
 
 // Only these upstream hosts may be proxied. Keep this tight — it is what
 // stops the worker from being an open proxy. Add one line per feed host.
@@ -138,7 +115,7 @@ function ageSeconds(res) {
 
 function corsHeaders(origin) {
   return {
-    'Access-Control-Allow-Origin': isAllowedOrigin(origin) ? origin : 'https://colaco.se',
+    'Access-Control-Allow-Origin': ALLOWED_ORIGINS.has(origin) ? origin : 'https://colaco.se',
     'Vary': 'Origin',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Access-Control-Max-Age': '86400',

@@ -1,0 +1,3328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Valency Colaco</title>
+<meta name="description" content="Valency Colaco — Cybersecurity & AI/ML Researcher based in Sweden. Ground News top stories with media-bias breakdown, security intel, arcade games, and a direct line to my inbox.">
+<meta property="og:title" content="Valency Colaco">
+<meta property="og:description" content="News · Cybersecurity intel · Games · Say hello.">
+<meta property="og:url" content="https://colaco.se/">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#05070d">
+<link rel="canonical" href="https://colaco.se/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%236ab7ff'/%3E%3Cstop offset='1' stop-color='%23a679ff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='%230a0f1f'/%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)' opacity='.22'/%3E%3Ctext x='32' y='43' font-family='Arial,Helvetica,sans-serif' font-size='32' font-weight='700' text-anchor='middle' fill='url(%23g)'%3EV%3C/text%3E%3C/svg%3E">
+
+<link rel="preload" href="assets/fonts/space-grotesk-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+
+<style>
+/* Space Grotesk — self-hosted variable font (OFL-1.1, github.com/floriankarsten/space-grotesk).
+   Same family name as before, so --font-display needs no changes. */
+@font-face{
+  font-family:'Space Grotesk'; font-style:normal; font-display:swap; font-weight:300 700;
+  src:url('assets/fonts/space-grotesk-latin-ext-wght-normal.woff2') format('woff2-variations');
+  unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+@font-face{
+  font-family:'Space Grotesk'; font-style:normal; font-display:swap; font-weight:300 700;
+  src:url('assets/fonts/space-grotesk-latin-wght-normal.woff2') format('woff2-variations');
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+</style>
+
+<!-- Matter.js — open-source 2D rigid-body physics engine (MIT, brm.io/matter-js). Powers the Plinko board. -->
+<script defer src="assets/vendor/matter.min.js"></script>
+<style>
+/* ============================================================
+   COLACO.SE — Liquid Glass
+   Tokens
+   ============================================================ */
+:root{
+  --bg0:#05070d;
+  --bg1:#0a0f1f;
+  --ink:#f2f5ff;
+  --ink2:rgba(226,232,250,.64);
+  --ink3:rgba(226,232,250,.38);
+  --blue:#6ab7ff;
+  --violet:#a679ff;
+  --teal:#3fe0c5;
+  --pink:#ff6b9d;
+  --gold:#ffd166;
+  --lime:#9be85b;
+  --red:#ff5d5d;
+  --glass:rgba(255,255,255,.06);
+  --glass-2:rgba(255,255,255,.10);
+  --stroke:rgba(255,255,255,.14);
+  --stroke-2:rgba(255,255,255,.26);
+  --r-lg:28px;
+  --r-md:18px;
+  --r-sm:12px;
+  --font-display:"Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-body:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Inter, sans-serif;
+  --font-mono:ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --shadow-card:0 24px 48px -16px rgba(0,0,0,.55);
+  --sheen:inset 0 1px 0 rgba(255,255,255,.26), inset 0 -1px 0 rgba(255,255,255,.05);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font-body);
+  background:var(--bg0);
+  color:var(--ink);
+  min-height:100vh;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+  line-height:1.55;
+}
+body.modal-open{overflow:hidden}
+::selection{background:rgba(106,183,255,.35)}
+a{color:inherit}
+button{font-family:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:6px}
+
+/* ============================================================
+   Aurora background — the liquid behind the glass
+   ============================================================ */
+.aurora{position:fixed;inset:0;z-index:-2;background:
+  radial-gradient(120% 90% at 80% -10%, #101a3a 0%, transparent 60%),
+  radial-gradient(100% 80% at 0% 100%, #0c1730 0%, transparent 55%),
+  linear-gradient(180deg,var(--bg0),var(--bg1));}
+.blob{position:fixed;z-index:-1;border-radius:50%;filter:blur(90px);opacity:.5;mix-blend-mode:screen;pointer-events:none;will-change:transform}
+.blob-1{width:52vmax;height:52vmax;left:-14vmax;top:-16vmax;background:radial-gradient(circle at 35% 35%, rgba(106,183,255,.55), transparent 62%);animation:drift1 14s ease-in-out infinite alternate, blobPulse 7s ease-in-out infinite alternate}
+.blob-2{width:44vmax;height:44vmax;right:-12vmax;top:8vmax;background:radial-gradient(circle at 60% 40%, rgba(166,121,255,.5), transparent 62%);animation:drift2 18s ease-in-out infinite alternate, blobPulse 9s ease-in-out -3s infinite alternate}
+.blob-3{width:40vmax;height:40vmax;left:22vmax;bottom:-18vmax;background:radial-gradient(circle at 50% 50%, rgba(63,224,197,.42), transparent 62%);animation:drift3 12s ease-in-out infinite alternate, blobPulse 6s ease-in-out -2s infinite alternate}
+.blob-4{width:30vmax;height:30vmax;right:14vmax;bottom:-6vmax;background:radial-gradient(circle at 50% 50%, rgba(255,107,157,.34), transparent 62%);animation:drift1 22s ease-in-out infinite alternate-reverse, blobPulse 8s ease-in-out -5s infinite alternate}
+@keyframes drift1{from{transform:translate(0,0) scale(1)}50%{transform:translate(8vmax,11vmax) scale(1.09)}to{transform:translate(14vmax,5vmax) scale(1.2)}}
+@keyframes drift2{from{transform:translate(0,0) scale(1.05)}50%{transform:translate(-11vmax,4vmax) scale(.9)}to{transform:translate(-8vmax,13vmax) scale(1.03)}}
+@keyframes drift3{from{transform:translate(0,0) scale(.95)}50%{transform:translate(10vmax,-4vmax) scale(1.14)}to{transform:translate(5vmax,-12vmax) scale(1.03)}}
+@keyframes blobPulse{from{opacity:.42}to{opacity:.62}}
+.grain{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.05;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+
+/* Aurora curtains — dancing bands of light across the upper sky */
+.aurora-ribbons{position:fixed;left:-12%;right:-12%;top:-14%;height:72vh;z-index:-1;pointer-events:none;overflow:hidden;transform:skewY(-7deg);animation:skyPulse 9s ease-in-out infinite alternate, skyBreathe 13s ease-in-out infinite alternate;
+
+-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 22%,#000 56%,transparent 92%);
+mask-image:linear-gradient(180deg,transparent 0,#000 22%,#000 56%,transparent 92%);}
+
+.ribbon{position:absolute;top:-16%;bottom:-16%;left:-45%;width:190%;mix-blend-mode:screen;pointer-events:none;will-change:transform;animation:ribbonDrift var(--dur,17s) ease-in-out infinite alternate}
+.ribbon.r1{opacity:.22;--dur:17s;
+  background:repeating-linear-gradient(90deg, rgba(63,224,197,0) 0%, rgba(63,224,197,.5) 4.5%, rgba(106,183,255,.14) 8%, rgba(106,183,255,.5) 11%, rgba(166,121,255,.16) 14.5%, rgba(166,121,255,.5) 17.5%, rgba(63,224,197,0) 20%);}
+.ribbon.r2{opacity:.16;--dur:23s;
+  background:repeating-linear-gradient(90deg, rgba(106,183,255,0) 0%, rgba(106,183,255,.42) 5.5%, rgba(63,224,197,.1) 10.5%, rgba(63,224,197,.4) 15%, rgba(106,183,255,0) 20%);}
+.ribbon.r3{opacity:.13;--dur:19s;
+  background:repeating-linear-gradient(90deg, rgba(166,121,255,0) 0% 3%, rgba(166,121,255,.35) 7%, rgba(255,107,157,0) 10.5% 13%, rgba(255,107,157,.28) 16%, rgba(166,121,255,0) 19% 20%);}
+
+@keyframes ribbonDrift{
+  0%{transform:translateX(calc(var(--dir,1) * -10%)) translateY(0) scaleY(1)}
+  50%{transform:translateX(calc(var(--dir,1) * 1%)) translateY(1.4vh) scaleY(1.05)}
+  100%{transform:translateX(calc(var(--dir,1) * 12%)) translateY(-1vh) scaleY(.97)}
+}
+@keyframes skyPulse{from{opacity:.8}to{opacity:1}}
+@keyframes skyBreathe{from{transform:skewY(-7deg) scaleY(1)}to{transform:skewY(-7deg) scaleY(1.06)}}
+
+@media (max-width:720px){.ribbon.r3{display:none}}
+
+/* Starfield canvas — twinkle, drift, flares, shooting stars (script at end of body) */
+#bg-stars{position:fixed;inset:0;z-index:-1;pointer-events:none}
+
+/* ============================================================
+   Glass primitives
+   ============================================================ */
+.glass{
+  background:linear-gradient(155deg, rgba(255,255,255,.11), rgba(255,255,255,.035));
+  -webkit-backdrop-filter:blur(22px) saturate(170%);
+  backdrop-filter:blur(22px) saturate(170%);
+  border:1px solid var(--stroke);
+  border-radius:var(--r-lg);
+  box-shadow:var(--shadow-card), var(--sheen);
+}
+.btn{
+  display:inline-flex;align-items:center;gap:.5rem;justify-content:center;
+  padding:.72rem 1.35rem;border-radius:999px;font-weight:600;font-size:.95rem;
+  border:1px solid var(--stroke);text-decoration:none;
+  background:linear-gradient(155deg, rgba(255,255,255,.13), rgba(255,255,255,.04));
+  -webkit-backdrop-filter:blur(14px) saturate(160%);
+  backdrop-filter:blur(14px) saturate(160%);
+  box-shadow:var(--sheen);
+  transition:transform .2s ease, box-shadow .25s ease, border-color .25s ease, background .25s ease;
+}
+.btn:hover{transform:translateY(-2px);border-color:var(--stroke-2);box-shadow:var(--sheen),0 12px 28px -10px rgba(0,0,0,.6)}
+.btn:active{transform:translateY(0) scale(.98)}
+.btn.primary{border-color:rgba(106,183,255,.55);background:linear-gradient(155deg, rgba(106,183,255,.32), rgba(166,121,255,.18));}
+.btn.primary:hover{box-shadow:var(--sheen),0 12px 32px -8px rgba(106,183,255,.45)}
+.btn.ghost{background:transparent;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.chip-link{display:inline-flex;align-items:center;gap:.35rem;font-size:.78rem;font-weight:600;color:var(--ink2);text-decoration:none;padding:.3rem .7rem;border-radius:999px;border:1px solid var(--stroke);background:rgba(255,255,255,.05);transition:color .2s,border-color .2s}
+.chip-link:hover{color:var(--ink);border-color:var(--stroke-2)}
+
+/* ============================================================
+   Dock (top nav)
+   ============================================================ */
+.dock{
+  position:fixed;top:max(14px, env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:60;
+  display:flex;align-items:center;gap:.35rem;padding:.4rem .5rem;border-radius:999px;
+  max-width:calc(100vw - 24px);
+}
+.dock .brand{flex:none;display:flex;align-items:center;gap:.55rem;padding:.3rem .8rem .3rem .35rem;text-decoration:none;font-weight:700;font-family:var(--font-display);letter-spacing:.01em}
+.monogram{width:34px;height:34px;border-radius:12px;display:grid;place-items:center;font-family:var(--font-display);font-weight:700;font-size:.95rem;
+  background:linear-gradient(140deg, rgba(106,183,255,.35), rgba(166,121,255,.3));
+  border:1px solid rgba(255,255,255,.28);box-shadow:var(--sheen);}
+.dock nav{display:flex;gap:.2rem;min-width:0;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.dock nav::-webkit-scrollbar{display:none}
+.dock nav a{flex:none;display:flex;align-items:center;gap:.42rem;padding:.5rem .85rem;border-radius:999px;text-decoration:none;font-size:.88rem;font-weight:600;color:var(--ink2);border:1px solid transparent;transition:all .2s}
+.dock nav a svg{width:16px;height:16px;flex:none}
+.dock nav a:hover{color:var(--ink);background:rgba(255,255,255,.07)}
+.dock nav a.active{color:var(--ink);background:linear-gradient(155deg, rgba(255,255,255,.16), rgba(255,255,255,.05));border-color:var(--stroke);box-shadow:var(--sheen)}
+@media (max-width:940px){
+  .dock nav a span{display:none}
+  .dock nav a{padding:.55rem .7rem}
+}
+@media (max-width:560px){
+  .dock .brand span{display:none}
+  .dock{gap:.2rem}
+  .dock nav{gap:.1rem}
+  .dock nav a{padding:.5rem .55rem}
+}
+
+/* ============================================================
+   Layout / views
+   ============================================================ */
+main{max-width:1100px;margin:0 auto;padding:0 20px}
+.view{display:none;padding-top:110px;padding-bottom:60px;min-height:100vh;animation:viewIn .45s ease both}
+.view.active{display:block}
+@keyframes viewIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.view-head{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.6rem}
+.view-head h2{font-family:var(--font-display);font-size:clamp(1.7rem,4vw,2.5rem);font-weight:700;letter-spacing:-.02em}
+.greet-roller{display:inline-block;overflow:hidden;vertical-align:bottom;height:1.15em;line-height:1.15em;position:relative}
+.greet-roller .greet{display:inline-block;color:var(--violet);will-change:transform,opacity;line-height:inherit;white-space:nowrap}
+.greet-roller .greet.roll{animation:greetRoll .55s cubic-bezier(.45,0,.2,1) both}
+@keyframes greetRoll{0%{transform:translateY(105%);opacity:0}55%{opacity:1}100%{transform:translateY(0);opacity:1}}
+.view-head p{color:var(--ink2);max-width:52ch;margin-top:.3rem}
+.eyebrow{font-size:.72rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--ink3)}
+.eyebrow .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:.5rem;vertical-align:1px}
+
+/* ============================================================
+   Hero
+   ============================================================ */
+#view-home{display:none}
+#view-home.active{display:block}
+.hero{min-height:calc(100vh - 110px);display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:1.4rem;padding-bottom:2rem}
+.hero .monogram{width:88px;height:88px;border-radius:28px;font-size:2rem;animation:float 6s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.hero h1{font-family:var(--font-display);font-weight:700;font-size:clamp(2.08rem,6.4vw,3.68rem);letter-spacing:-.03em;line-height:1.04;
+  background:linear-gradient(115deg,#fff 30%, var(--blue) 55%, var(--violet) 80%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.hero .tag{font-size:clamp(1rem,2.4vw,1.2rem);color:var(--ink2);font-weight:500}
+.hero .loc{display:inline-flex;align-items:center;gap:.45rem;font-size:.85rem;color:var(--ink3);padding:.4rem 1rem;border-radius:999px;border:1px solid var(--stroke);background:rgba(255,255,255,.04)}
+.hero .cta-row{display:flex;gap:.8rem;flex-wrap:wrap;justify-content:center;margin-top:.4rem}
+.hero .greet-line{display:flex;align-items:center;justify-content:center;min-height:1.3em;font-family:var(--font-display);font-weight:700;font-size:clamp(2.6rem,8vw,4.6rem);letter-spacing:-.03em;line-height:1.04}
+.hero .greet-line .greet-roller{height:1.3em;line-height:1.3em;vertical-align:baseline}
+.hero .greet-line .greet{line-height:1.3em;background:linear-gradient(115deg,#fff 30%, var(--blue) 55%, var(--violet) 80%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+
+.scroll-hint{margin-top:1.6rem;color:var(--ink3);font-size:1.4rem;animation:bounce 2.2s infinite;cursor:pointer;text-decoration:none;transition:color .2s}
+.scroll-hint:hover{color:var(--ink2)}
+
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(8px)}}
+
+/* Option cards */
+.options{display:grid;grid-template-columns:repeat(2,1fr);gap:1.1rem;padding-bottom:2rem}
+@media (max-width:760px){.options{grid-template-columns:1fr}}
+.card{
+  position:relative;overflow:hidden;padding:1.7rem 1.6rem 1.5rem;border-radius:var(--r-lg);
+  text-align:left;text-decoration:none;display:flex;flex-direction:column;gap:.85rem;
+  transition:transform .3s cubic-bezier(.2,.8,.3,1.1), border-color .3s, box-shadow .3s;
+}
+.card::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(105deg, transparent 38%, rgba(255,255,255,.15) 50%, transparent 62%);
+  background-size:240% 100%;background-position:130% 0;transition:background-position .9s ease;}
+.card:hover{transform:translateY(-5px)}
+.card:hover::after{background-position:-40% 0}
+.card:hover{border-color:color-mix(in srgb, var(--accent) 55%, transparent);box-shadow:var(--shadow-card),var(--sheen),0 0 44px -12px color-mix(in srgb, var(--accent) 45%, transparent)}
+.card .icon{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;flex:none;
+  background:linear-gradient(150deg, color-mix(in srgb, var(--accent) 34%, transparent), color-mix(in srgb, var(--accent) 10%, transparent));
+  border:1px solid color-mix(in srgb, var(--accent) 45%, rgba(255,255,255,.2));box-shadow:var(--sheen);}
+.card .icon svg{width:24px;height:24px;stroke:var(--accent)}
+.card h3{font-family:var(--font-display);font-size:1.35rem;font-weight:700;letter-spacing:-.01em}
+.card p{color:var(--ink2);font-size:.94rem}
+.card .go{margin-top:auto;display:inline-flex;align-items:center;gap:.4rem;font-weight:600;font-size:.9rem;color:var(--accent)}
+.card .go svg{width:15px;height:15px;transition:transform .25s}
+.card:hover .go svg{transform:translateX(4px)}
+.card[data-accent="blue"]{--accent:var(--blue)}
+.card[data-accent="teal"]{--accent:var(--teal)}
+.card[data-accent="pink"]{--accent:var(--pink)}
+.card[data-accent="violet"]{--accent:var(--violet)}
+.card[data-accent="gold"]{--accent:var(--gold)}
+.card[data-accent="lime"]{--accent:var(--lime)}
+
+/* ============================================================
+   Research papers + Ponytail
+   ============================================================ */
+.papers{display:flex;flex-direction:column;gap:1.1rem}
+.paper-card{padding:1.5rem 1.6rem;border-radius:var(--r-lg);display:flex;flex-direction:column;gap:.6rem;transition:transform .25s,border-color .25s}
+.paper-card:hover{transform:translateY(-2px);border-color:var(--stroke-2)}
+.paper-meta{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+.paper-year{font-family:var(--font-mono);font-weight:700;font-size:.78rem;color:var(--ink);padding:.18rem .6rem;border-radius:999px;border:1px solid var(--stroke);background:rgba(255,255,255,.06)}
+.paper-type{font-size:.74rem;letter-spacing:.04em;text-transform:uppercase;color:var(--ink3);font-weight:700}
+.paper-card h3{font-family:var(--font-display);font-size:1.2rem;font-weight:700;line-height:1.35;letter-spacing:-.01em}
+.paper-card h3 a{text-decoration:none}
+.paper-card h3 a:hover{text-decoration:underline;text-underline-offset:3px}
+.paper-authors{color:var(--ink2);font-size:.9rem;font-weight:600}
+.paper-abstract{color:var(--ink3);font-size:.9rem;line-height:1.6}
+.paper-link{align-self:flex-start;margin-top:.2rem;display:inline-flex;align-items:center;gap:.35rem;font-weight:600;font-size:.88rem;text-decoration:none;color:var(--blue)}
+.paper-link:hover{text-decoration:underline;text-underline-offset:3px}
+
+.ponytail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.1rem}
+@media (max-width:760px){.ponytail-grid{grid-template-columns:1fr}}
+.ponytail-grid .card{padding:1.7rem 1.6rem 1.5rem}
+.ladder{list-style:none;padding:0;margin:.4rem 0 0;display:flex;flex-direction:column;gap:.45rem}
+.ladder li{color:var(--ink2);font-size:.92rem;line-height:1.45;padding-left:.2rem}
+.ladder li b{color:var(--ink);font-family:var(--font-mono);margin-right:.35rem}
+.benchmark{color:var(--ink3);font-size:.82rem;font-family:var(--font-mono);margin-top:.4rem}
+
+/* Ponytail modal */
+.ponytail-panel{width:min(720px,100%)}
+.ponytail-body{display:flex;flex-direction:column;gap:.85rem}
+.ponytail-body h4{font-family:var(--font-display);font-size:1.02rem;font-weight:700;margin-top:.4rem}
+.pt-lead{color:var(--ink2);font-size:.94rem}
+.pt-hint{color:var(--ink3);font-size:.82rem;margin:-.2rem 0 .1rem}
+.pt-hint code,.pt-foot code{font-family:var(--font-mono);background:rgba(255,255,255,.08);padding:.05rem .35rem;border-radius:5px;font-size:.85em}
+.pt-foot{margin-top:.5rem}
+.code-block{position:relative;background:rgba(3,6,14,.66);border:1px solid var(--stroke);border-radius:var(--r-sm);padding:.95rem 1.05rem;overflow:auto;margin:0;font-family:var(--font-mono);font-size:.82rem;line-height:1.6;color:var(--ink2)}
+.code-block code{font-family:inherit;color:inherit;white-space:pre}
+.prompt-wrap{position:relative}
+.prompt-block{max-height:340px}
+.prompt-block code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere}
+.copy-btn{align-self:flex-start;margin-top:.55rem}
+.copy-btn.copied{background:var(--teal);border-color:var(--teal)}
+
+/* ============================================================
+   Feed items (news + security)
+   ============================================================ */
+.feed{display:flex;flex-direction:column;gap:.9rem}
+.feed-item{padding:1.15rem 1.3rem;border-radius:var(--r-md);display:flex;flex-direction:column;gap:.5rem;transition:transform .25s,border-color .25s}
+.feed-item:hover{transform:translateY(-2px);border-color:var(--stroke-2)}
+.feed-meta{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;font-size:.76rem;color:var(--ink3)}
+.src-chip{display:inline-flex;align-items:center;gap:.4rem;font-weight:700;font-size:.74rem;letter-spacing:.02em;color:var(--ink2);padding:.22rem .65rem;border-radius:999px;border:1px solid var(--stroke);background:rgba(255,255,255,.05)}
+.src-chip i{width:7px;height:7px;border-radius:50%;background:var(--c,#fff)}
+.feed-item h3{font-size:1.04rem;font-weight:650;line-height:1.4;letter-spacing:-.005em}
+.feed-item h3 a{text-decoration:none}
+.feed-item h3 a:hover{text-decoration:underline;text-decoration-color:var(--stroke-2);text-underline-offset:3px}
+.feed-item .snippet{color:var(--ink2);font-size:.9rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.feed-item .row{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.2rem}
+.feed-thumb-wrap{width:100%;height:clamp(150px,28vw,210px);margin-bottom:.6rem;overflow:hidden;border-radius:calc(var(--r-md) - 6px);background:linear-gradient(135deg,rgba(255,255,255,.06),rgba(255,255,255,.02));border:1px solid var(--stroke)}
+.feed-thumb{width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .35s ease}
+.feed-thumb.loaded{opacity:1}
+.bias-bar{display:flex;height:1.55rem;margin-top:.25rem;border-radius:999px;overflow:hidden;border:1px solid var(--stroke);background:rgba(255,255,255,.04)}
+.bias-seg{display:flex;align-items:center;justify-content:center;font-size:.67rem;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;min-width:0;letter-spacing:.02em}
+.bias-seg span{padding:0 .3rem;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+.bias-left{background:linear-gradient(180deg,#5b8cff,#2f6bd6)}
+.bias-center{background:linear-gradient(180deg,#9aa3b2,#6b7280)}
+.bias-right{background:linear-gradient(180deg,#ff7a8a,#d63a4d)}
+.bias-legend{display:flex;gap:.85rem;flex-wrap:wrap;align-items:center;font-size:.73rem;color:var(--ink3);margin-top:.4rem}
+.bias-legend .bl{display:inline-flex;align-items:center;gap:.32rem}
+.bias-legend .bl::before{content:"";width:.55rem;height:.55rem;border-radius:50%;display:inline-block}
+.bias-legend .bl-left::before{background:#4a7dff}
+.bias-legend .bl-center::before{background:#7c8694}
+.bias-legend .bl-right::before{background:#e8485a}
+.bias-legend .bl-total{margin-left:auto;color:var(--ink2);font-weight:600}
+.blindspot-badge{display:inline-flex;align-items:center;gap:.3rem;font-size:.68rem;font-weight:700;padding:.2rem .55rem;border-radius:999px;background:rgba(255,209,102,.14);color:var(--gold);border:1px solid rgba(255,209,102,.38)}
+.feed-note{color:var(--ink3);font-size:.8rem;margin-top:1rem;text-align:center}
+.skeleton{height:104px;border-radius:var(--r-md);background:linear-gradient(100deg, rgba(255,255,255,.05) 40%, rgba(255,255,255,.11) 50%, rgba(255,255,255,.05) 60%);background-size:220% 100%;animation:shimmer 1.4s linear infinite;border:1px solid var(--stroke)}
+@keyframes shimmer{to{background-position:-120% 0}}
+.error-panel{padding:1.6rem;border-radius:var(--r-md);text-align:center;display:flex;flex-direction:column;gap:.7rem;align-items:center}
+.error-panel p{color:var(--ink2);max-width:46ch}
+.tabs{display:inline-flex;gap:.25rem;padding:.3rem;border-radius:999px}
+.tabs button{padding:.5rem 1.05rem;border-radius:999px;border:1px solid transparent;background:transparent;font-weight:600;font-size:.86rem;color:var(--ink2);transition:all .2s}
+.tabs button:hover{color:var(--ink)}
+.tabs button.active{color:var(--ink);background:linear-gradient(155deg, rgba(255,255,255,.16), rgba(255,255,255,.05));border-color:var(--stroke);box-shadow:var(--sheen)}
+.cve-id{font-family:var(--font-mono);font-size:.76rem;font-weight:600;color:var(--gold);padding:.2rem .55rem;border-radius:8px;border:1px solid rgba(255,209,102,.35);background:rgba(255,209,102,.08)}
+
+/* ============================================================
+   Games hub
+   ============================================================ */
+.games-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.1rem}
+@media (max-width:700px){.games-grid{grid-template-columns:1fr}}
+.game-tile{position:relative;overflow:hidden;padding:1.5rem;border-radius:var(--r-lg);display:flex;gap:1.1rem;align-items:center;text-align:left;transition:transform .3s cubic-bezier(.2,.8,.3,1.1),border-color .3s,box-shadow .3s;background:linear-gradient(155deg, rgba(255,255,255,.11), rgba(255,255,255,.035));-webkit-backdrop-filter:blur(22px) saturate(170%);backdrop-filter:blur(22px) saturate(170%);border:1px solid var(--stroke);box-shadow:var(--shadow-card),var(--sheen)}
+.game-tile:hover{transform:translateY(-5px) scale(1.01);border-color:color-mix(in srgb, var(--accent) 55%, transparent);box-shadow:var(--shadow-card),var(--sheen),0 0 44px -12px color-mix(in srgb, var(--accent) 50%, transparent)}
+.game-tile .icon{width:58px;height:58px;border-radius:18px;display:grid;place-items:center;flex:none;background:linear-gradient(150deg, color-mix(in srgb, var(--accent) 36%, transparent), color-mix(in srgb, var(--accent) 10%, transparent));border:1px solid color-mix(in srgb, var(--accent) 50%, rgba(255,255,255,.2));box-shadow:var(--sheen)}
+.game-tile .icon svg{width:28px;height:28px;stroke:var(--accent)}
+.game-tile h3{font-family:var(--font-display);font-size:1.25rem;font-weight:700}
+.game-tile p{color:var(--ink2);font-size:.88rem;margin-top:.15rem}
+.game-tile .best{font-size:.76rem;color:var(--ink3);margin-top:.35rem;font-family:var(--font-mono)}
+.game-tile[data-accent="gold"]{--accent:var(--gold)}
+.game-tile[data-accent="blue"]{--accent:var(--blue)}
+.game-tile[data-accent="teal"]{--accent:var(--teal)}
+.game-tile[data-accent="pink"]{--accent:var(--pink)}
+
+/* Game modal */
+.modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(4,6,12,.6);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.modal.show{display:flex;animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal-panel{width:min(560px,100%);max-height:calc(100vh - 32px);overflow:auto;padding:1.3rem 1.3rem 1.5rem;animation:panelIn .3s cubic-bezier(.2,.8,.3,1.1)}
+.modal-panel.wide{width:min(1020px,100%)}
+@keyframes panelIn{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
+.modal-top{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1rem}
+.modal-top h3{font-family:var(--font-display);font-size:1.3rem;font-weight:700}
+.close-btn{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--stroke);background:rgba(255,255,255,.07);font-size:1rem;transition:all .2s}
+.close-btn:hover{background:rgba(255,255,255,.14);transform:rotate(90deg)}
+.stage-hint{color:var(--ink3);font-size:.8rem;text-align:center;margin-top:.8rem}
+canvas.game-canvas{display:block;margin:0 auto;max-width:100%;border-radius:var(--r-md);border:1px solid var(--stroke);background:linear-gradient(180deg,#0a1122,#070b16);touch-action:none}
+.game-hud{display:flex;justify-content:center;gap:.7rem;flex-wrap:wrap;margin-bottom:.9rem}
+.hud-pill{display:flex;flex-direction:column;align-items:center;min-width:86px;padding:.45rem .9rem;border-radius:14px;border:1px solid var(--stroke);background:rgba(255,255,255,.06);box-shadow:var(--sheen)}
+.hud-pill .lbl{font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);font-weight:700}
+.hud-pill .val{font-family:var(--font-mono);font-weight:700;font-size:1.05rem}
+.game-over-layer{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.8rem;border-radius:var(--r-md);background:rgba(5,7,13,.72);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);animation:fadeIn .3s}
+.game-over-layer h4{font-family:var(--font-display);font-size:1.6rem}
+.canvas-wrap{position:relative;width:fit-content;max-width:100%;margin:0 auto}
+
+/* 2048 */
+.g2-board{--gap:10px;position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:var(--gap);width:min(420px,86vw);aspect-ratio:1;margin:0 auto;padding:var(--gap);border-radius:var(--r-md);background:rgba(255,255,255,.05);border:1px solid var(--stroke)}
+.g2-cell{border-radius:12px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07);display:grid;place-items:center;position:relative}
+.g2-tile{position:absolute;inset:0;border-radius:12px;display:grid;place-items:center;font-family:var(--font-display);font-weight:700;font-size:clamp(1.1rem,5vw,1.7rem);border:1px solid var(--stroke-2);box-shadow:var(--sheen);background:rgba(255,255,255,.12)}
+.g2-tile.pop{animation:tilePop .18s ease}
+.g2-tile.merged{animation:tileMerge .22s ease}
+@keyframes tilePop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes tileMerge{0%{transform:scale(1)}55%{transform:scale(1.18)}100%{transform:scale(1)}}
+.g2-tile[data-v="2"]{background:rgba(255,255,255,.10)}
+.g2-tile[data-v="4"]{background:rgba(255,255,255,.16)}
+.g2-tile[data-v="8"]{background:rgba(106,183,255,.28);border-color:rgba(106,183,255,.6)}
+.g2-tile[data-v="16"]{background:rgba(106,183,255,.42);border-color:rgba(106,183,255,.7)}
+.g2-tile[data-v="32"]{background:rgba(63,224,197,.34);border-color:rgba(63,224,197,.65)}
+.g2-tile[data-v="64"]{background:rgba(63,224,197,.5);border-color:rgba(63,224,197,.8)}
+.g2-tile[data-v="128"]{background:rgba(166,121,255,.4);border-color:rgba(166,121,255,.7)}
+.g2-tile[data-v="256"]{background:rgba(166,121,255,.56);border-color:rgba(166,121,255,.85)}
+.g2-tile[data-v="512"]{background:rgba(255,107,157,.45);border-color:rgba(255,107,157,.75)}
+.g2-tile[data-v="1024"]{background:rgba(255,209,102,.42);border-color:rgba(255,209,102,.75)}
+.g2-tile[data-v="2048"]{background:rgba(255,209,102,.62);border-color:#ffd166;box-shadow:var(--sheen),0 0 30px rgba(255,209,102,.55)}
+
+/* Slots */
+.sl-machine{display:flex;gap:.7rem;justify-content:center;margin:0 auto}
+.sl-reel{width:84px;height:84px;border-radius:16px;overflow:hidden;border:1px solid var(--stroke-2);background:linear-gradient(180deg,rgba(255,255,255,.13),rgba(255,255,255,.03));box-shadow:var(--sheen),inset 0 0 0 1px rgba(255,255,255,.06);position:relative}
+.sl-reel::before,.sl-reel::after{content:"";position:absolute;left:0;right:0;height:20px;z-index:2;pointer-events:none}
+.sl-reel::before{top:0;background:linear-gradient(180deg,rgba(5,7,13,.92),transparent)}
+.sl-reel::after{bottom:0;background:linear-gradient(0deg,rgba(5,7,13,.92),transparent)}
+.sl-reel.win{border-color:var(--gold);box-shadow:var(--sheen),0 0 0 2px rgba(255,209,102,.7),0 0 26px rgba(255,209,102,.5);animation:slWin .9s ease-in-out infinite}
+@keyframes slWin{0%,100%{box-shadow:var(--sheen),0 0 0 2px rgba(255,209,102,.7),0 0 18px rgba(255,209,102,.35)}50%{box-shadow:var(--sheen),0 0 0 2px rgba(255,209,102,.9),0 0 30px rgba(255,209,102,.65)}}
+.sl-strip{display:flex;flex-direction:column;will-change:transform}
+.sl-sym{height:84px;display:grid;place-items:center;font-family:var(--font-display);font-weight:700;font-size:2.4rem;line-height:1;color:var(--ink)}
+.sl-sym[data-s="7"]{color:var(--gold)}
+.sl-bets{display:flex;gap:.5rem;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:.9rem}
+.sl-bet{min-width:56px;padding:.5rem .85rem;border-radius:999px;border:1px solid var(--stroke);background:rgba(255,255,255,.06);font-family:var(--font-mono);font-weight:700;font-size:.9rem;cursor:pointer;transition:transform .18s,border-color .2s,background .2s,color .2s}
+.sl-bet:hover{transform:translateY(-2px)}
+.sl-bet.sel{border-color:var(--gold);background:rgba(255,209,102,.18);color:var(--gold)}
+.sl-actions{display:flex;justify-content:center;gap:.7rem;margin-top:1rem}
+.pk-rows{display:flex;gap:.45rem;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:.9rem}
+.pk-rows .pk-lab,.sl-bets .pk-lab{font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3);font-weight:700;margin-right:.15rem}
+#pk-drop{font-size:1.1rem;font-weight:700;padding:1rem 2.6rem;min-height:58px;min-width:220px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none}
+#plinko-stage .game-canvas{touch-action:manipulation}
+
+/* Video slots */
+.news-fresh{font-size:.7rem;color:var(--ink3);font-family:var(--font-mono);white-space:nowrap}
+.news-fresh.stale{color:var(--gold)}
+.vs-machine{display:flex;gap:.5rem;justify-content:center;margin:0 auto;padding:.5rem;border-radius:var(--r-md);background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02));border:1px solid var(--stroke-2);box-shadow:var(--sheen),inset 0 0 0 1px rgba(255,255,255,.05)}
+.vs-reel{width:min(64px,16vw);height:calc(3 * min(64px,16vw));border-radius:14px;overflow:hidden;position:relative;border:1px solid var(--stroke-2);background:linear-gradient(180deg,rgba(255,255,255,.13),rgba(255,255,255,.03));box-shadow:var(--sheen)}
+.vs-reel::before,.vs-reel::after{content:"";position:absolute;left:0;right:0;height:22%;z-index:3;pointer-events:none}
+.vs-reel::before{top:0;background:linear-gradient(180deg,rgba(5,7,13,.95),transparent)}
+.vs-reel::after{bottom:0;background:linear-gradient(0deg,rgba(5,7,13,.95),transparent)}
+.vs-strip{display:flex;flex-direction:column;will-change:transform}
+.vs-sym{height:min(64px,16vw);display:grid;place-items:center;font-size:clamp(1.5rem,7vw,2.2rem);line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4))}
+.vs-strip.vs-spinning .vs-sym{filter:blur(1.1px) drop-shadow(0 2px 4px rgba(0,0,0,.4));opacity:.96}
+.vs-reel{transition:box-shadow .25s}
+.vs-sym.win{animation:vsPop .5s ease infinite}
+@keyframes vsPop{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
+.vs-paytable{display:grid;grid-template-columns:repeat(2,1fr);gap:.25rem .8rem;margin:.6rem auto 0;max-width:460px;font-size:.72rem;color:var(--ink3);font-family:var(--font-mono)}
+.vs-paytable b{color:var(--ink2)}
+
+/* Roulette */
+.rt-wheel-wrap{display:flex;flex-direction:column;align-items:center;gap:.4rem;margin:0 auto;max-width:320px}
+.rt-table-wrap{max-width:580px;margin:0 auto}
+.rt-nums-wrap{display:flex;gap:3px;align-items:stretch}
+.rt-zero{flex:none;width:clamp(22px,8vw,34px);border-radius:8px;background:linear-gradient(180deg,rgba(63,224,197,.32),rgba(63,224,197,.16));border:1px solid rgba(63,224,197,.55);color:var(--ink);font-weight:700;font-family:var(--font-mono);font-size:clamp(.7rem,3vw,.95rem)}
+.rt-nums{display:grid;grid-template-columns:repeat(12,1fr);grid-template-rows:repeat(3,1fr);gap:3px;flex:1}
+.rt-cols{display:flex;flex-direction:column;gap:3px;flex:none;width:clamp(22px,7vw,30px)}
+.rt-cell{position:relative;border:1px solid var(--stroke-2);border-radius:6px;color:#fff;font-weight:700;font-size:clamp(.58rem,2.5vw,.82rem);font-family:var(--font-mono);cursor:pointer;transition:transform .12s,box-shadow .2s;min-height:30px;display:grid;place-items:center;padding:0;overflow:visible}
+.rt-cell:hover{transform:translateY(-1px)}
+.rt-cell.has-bet{box-shadow:0 0 0 2px var(--gold),0 0 14px rgba(255,209,102,.45)}
+.rt-num.red{background:linear-gradient(180deg,#c63a3a,#7e1f1f)}
+.rt-num.black{background:linear-gradient(180deg,#2a3450,#15192a)}
+.rt-colbet,.rt-outside{background:rgba(255,255,255,.08)}
+.rt-outside.red{background:linear-gradient(180deg,#c63a3a,#7e1f1f)}
+.rt-outside.black{background:linear-gradient(180deg,#2a3450,#15192a)}
+.rt-dozen{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-top:3px}
+.rt-even{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-top:3px}
+.rt-chip-badge{position:absolute;bottom:-7px;right:-7px;background:var(--gold);color:#0a0f1f;font-size:.6rem;font-weight:800;border-radius:999px;min-width:17px;height:17px;padding:0 3px;display:grid;place-items:center;border:1px solid #0a0f1f;box-shadow:0 2px 6px rgba(0,0,0,.5);line-height:1}
+
+/* X & O */
+.xo-board{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:8px;width:min(360px,86vw);aspect-ratio:1;margin:0 auto;padding:8px;border-radius:var(--r-md);background:rgba(255,255,255,.05);border:1px solid var(--stroke)}
+.xo-cell{border-radius:14px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.045);font-family:var(--font-display);font-weight:700;font-size:clamp(1.8rem,8vw,2.8rem);display:grid;place-items:center;cursor:pointer;transition:transform .14s,background .2s,border-color .2s;padding:0;overflow:hidden;color:var(--ink);line-height:1}
+.xo-cell:hover:not(.filled){background:rgba(255,255,255,.09);transform:scale(1.03)}
+.xo-cell.win{box-shadow:0 0 0 2px #fff,0 0 22px rgba(255,255,255,.45);background:rgba(255,209,102,.18)}
+
+/* ============================================================
+   Contact
+   ============================================================ */
+.contact-grid{display:grid;grid-template-columns:1fr;gap:1.1rem;max-width:680px}
+.form-card{padding:1.8rem}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:.9rem}
+@media (max-width:560px){.form-row{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:.4rem;margin-bottom:.9rem}
+.field label{font-size:.8rem;font-weight:600;color:var(--ink2);letter-spacing:.03em}
+.field input,.field textarea{
+  padding:.85rem 1rem;border-radius:14px;border:1px solid var(--stroke);color:var(--ink);
+  background:rgba(255,255,255,.055);font-family:inherit;font-size:.95rem;
+  transition:border-color .2s, background .2s, box-shadow .2s;
+}
+.field input::placeholder,.field textarea::placeholder{color:var(--ink3)}
+.field input:focus,.field textarea:focus{outline:none;border-color:rgba(106,183,255,.65);background:rgba(255,255,255,.08);box-shadow:0 0 0 4px rgba(106,183,255,.14)}
+.field textarea{min-height:150px;resize:vertical}
+.form-foot{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-top:.4rem}
+.captcha-note{display:flex;align-items:center;gap:.5rem;color:var(--ink3);font-size:.78rem}
+.captcha-note svg{width:15px;height:15px;flex:none;stroke:var(--teal)}
+.sent-banner{display:none;padding:1rem 1.2rem;border-radius:var(--r-md);border:1px solid rgba(63,224,197,.5);background:rgba(63,224,197,.12);color:var(--ink);font-weight:600;margin-bottom:1.1rem}
+.sent-banner.show{display:block;animation:viewIn .4s ease}
+.hp-field{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+
+/* ============================================================
+   Toast / footer / misc
+   ============================================================ */
+.toast{position:fixed;bottom:26px;left:50%;transform:translate(-50%,20px);z-index:200;padding:.8rem 1.4rem;border-radius:999px;font-weight:600;font-size:.9rem;opacity:0;pointer-events:none;transition:all .3s cubic-bezier(.2,.8,.3,1.1)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+footer{text-align:center;padding:2.5rem 20px 3rem;color:var(--ink3);font-size:.82rem}
+footer a{color:var(--ink2);text-decoration:none}
+footer a:hover{color:var(--ink)}
+.shake{animation:shake .4s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+noscript div{position:fixed;inset:0;background:var(--bg0);color:var(--ink);display:grid;place-items:center;padding:2rem;text-align:center;z-index:999}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important}
+  .blob{animation:none}
+  .ribbon,.aurora-ribbons{animation:none}
+}
+   
+</style>
+</head>
+<body>
+<noscript><div><p>colaco.se needs JavaScript for the live feeds and games. Please enable it and reload.</p></div></noscript>
+
+<div class="aurora" aria-hidden="true"></div>
+<div class="blob blob-1" aria-hidden="true"></div>
+<div class="blob blob-2" aria-hidden="true"></div>
+<div class="blob blob-3" aria-hidden="true"></div>
+
+<div class="blob blob-4" aria-hidden="true"></div>
+<div class="aurora-ribbons" aria-hidden="true"><i class="ribbon r1"></i><i class="ribbon r2"></i><i class="ribbon r3"></i></div>
+
+<script>document.querySelectorAll('.aurora-ribbons .ribbon').forEach(function(r){r.style.setProperty('--dir',Math.random()<.5?-1:1);r.style.animationDelay=(-Math.random()*8)+'s'});</script>
+   
+<canvas id="bg-stars" aria-hidden="true"></canvas>
+<div class="grain" aria-hidden="true"></div>
+
+<header class="dock glass" role="banner">
+  <a class="brand" href="#home"><span class="monogram">VC</span><span>Valency&nbsp;Colaco</span></a>
+  <nav aria-label="Primary">
+    <a href="#home" data-nav="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg><span>Home</span></a>
+    <a href="#news" data-nav="news"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.7 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.7-3.8-9S9.5 5.6 12 3Z"/></svg><span>News</span></a>
+    <a href="#security" data-nav="security"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3Z"/></svg><span>Security</span></a>
+    <a href="#games" data-nav="games"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="11" rx="5.5"/><path d="M8 11v3M6.5 12.5h3"/><circle cx="16" cy="11.4" r="0.9" fill="currentColor" stroke="none"/><circle cx="18.2" cy="13.6" r="0.9" fill="currentColor" stroke="none"/></svg><span>Games</span></a>
+    <a href="#research" data-nav="research"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v14"/><path d="M3 19h18M17 8h2a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2"/></svg><span>Research</span></a>
+    <a href="#ponytail" data-nav="ponytail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3Z"/></svg><span>Ponytail</span></a>
+    <a href="#contact" data-nav="contact"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m3.5 7 8.5 6 8.5-6"/></svg><span>Contact</span></a>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ============================ HOME ============================ -->
+  <section class="view" id="view-home" aria-label="Home">
+    <div class="hero">
+      <div class="greet-line" aria-label="Greeting">
+        <span class="greet-roller"><span class="greet" id="greet">Hello</span></span>
+      </div>
+      <h1>I&rsquo;m Valency Colaco</h1>
+      <p class="tag">Cybersecurity &amp; AI/ML Researcher</p>
+      <span class="loc"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 21s-7-5.6-7-11a7 7 0 1 1 14 0c0 5.4-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>Sweden</span>
+      <div class="cta-row">
+        <a class="btn primary" href="#options" data-scroll>Explore ↓</a>
+        <a class="btn" href="#contact">Say hello</a>
+      </div>
+      <a class="scroll-hint" href="#options" data-scroll aria-label="Scroll to options">⌄</a>
+    </div>
+
+    <div class="options" id="options">
+      <a class="card glass" data-accent="blue" href="#news">
+        <span class="eyebrow"><span class="dot" style="background:var(--blue)"></span>Live feed</span>
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.7 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.7-3.8-9S9.5 5.6 12 3Z"/></svg></span>
+        <h3>Get latest news</h3>
+        <p>Today's top stories from Ground News, each with a left / center / right media-bias breakdown so you see who's covering what — newest first.</p>
+        <span class="go">Open the wire <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span>
+      </a>
+
+      <a class="card glass" data-accent="teal" href="#security">
+        <span class="eyebrow"><span class="dot" style="background:var(--teal)"></span>Live feed</span>
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3Z"/><path d="m9 12 2 2 4-4.5"/></svg></span>
+        <h3>Cybersecurity updates</h3>
+        <p>Fresh patches, CVEs, exploited vulnerabilities and incident reports from The Hacker News, BleepingComputer, Krebs and CISA.</p>
+        <span class="go">Open the intel desk <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span>
+      </a>
+
+      <a class="card glass" data-accent="pink" href="#games">
+        <span class="eyebrow"><span class="dot" style="background:var(--pink)"></span>Arcade</span>
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="11" rx="5.5"/><path d="M8 11v3M6.5 12.5h3"/><circle cx="16" cy="11.4" r="0.9" fill="currentColor" stroke="none"/><circle cx="18.2" cy="13.6" r="0.9" fill="currentColor" stroke="none"/></svg></span>
+        <h3>Play a game</h3>
+        <p>Six games, zero downloads: pull the Slots, drop a Plinko puck, spin the Roulette wheel, chase 2048, play X &amp; O, or rage at Flappy Glass.</p>
+        <span class="go">Enter the arcade <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span>
+      </a>
+
+      <a class="card glass" data-accent="gold" href="#research">
+        <span class="eyebrow"><span class="dot" style="background:var(--gold)"></span>Publications</span>
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v14"/><path d="M3 19h18M17 8h2a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2"/></svg></span>
+        <h3>Read my research</h3>
+        <p>Formal verification of tree ensembles, real-time evasion detection, and ML security for safety-critical systems &mdash; five selected publications with quick summaries.</p>
+        <span class="go">Browse publications <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span>
+      </a>
+
+      <a class="card glass" data-accent="lime" href="#ponytail">
+        <span class="eyebrow"><span class="dot" style="background:var(--lime)"></span>Write less code</span>
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3Z"/></svg></span>
+        <h3>Configure AI agents</h3>
+        <p>A seven-rung ladder that makes your LLM coding agent lazy about the solution, never about the reading &mdash; minus 54% lines of code.</p>
+        <span class="go">See the integration guide <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span>
+      </a>
+
+      <a class="card glass" data-accent="violet" href="#contact">
+        <span class="eyebrow"><span class="dot" style="background:var(--violet)"></span>Direct line</span>
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m3.5 7 8.5 6 8.5-6"/></svg></span>
+        <h3>Send me a message</h3>
+        <p>A captcha-guarded form that lands straight in my inbox. Ideas, opportunities, corrections, hellos — all welcome.</p>
+        <span class="go">Write to me <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span>
+      </a>
+    </div>
+  </section>
+
+  <!-- ============================ NEWS ============================ -->
+  <section class="view" id="view-news" aria-label="Ground News top stories">
+    <div class="view-head">
+      <div>
+        <span class="eyebrow"><span class="dot" style="background:var(--blue)"></span>Ground News</span>
+        <h2>Top stories with media bias</h2>
+        <p>Ground News top stories, each with a left / center / right source breakdown so you can see who's covering what. Newest first.</p>
+      </div>
+      <span class="news-fresh" id="news-fresh" title="When the feed last refreshed"></span>
+    </div>
+    <div class="feed" id="news-feed" aria-live="polite"></div>
+    <p class="feed-note">Top stories and bias data sourced directly from Ground News. Each bar shows the share of coverage from Left, Center and Right-leaning outlets; the legend lists the source count per side.</p>
+  </section>
+
+  <!-- ============================ SECURITY ============================ -->
+  <section class="view" id="view-security" aria-label="Cybersecurity updates">
+    <div class="view-head">
+      <div>
+        <span class="eyebrow"><span class="dot" style="background:var(--teal)"></span>Intel desk</span>
+        <h2>Cybersecurity updates</h2>
+        <p>Vulnerabilities, exploits, patches and incidents — straight from the sources security teams actually read.</p>
+      </div>
+      <span class="news-fresh" id="sec-fresh" title="When the feed last refreshed"></span>
+    </div>
+    <div class="tabs glass" role="tablist" aria-label="Security feed type" style="margin-bottom:1.4rem">
+      <button class="active" data-tab="news" role="tab">News &amp; incidents</button>
+      <button data-tab="advisories" role="tab">CISA advisories</button>
+      <button data-tab="kev" role="tab">Exploited CVEs</button>
+    </div>
+    <div class="feed" id="sec-feed" aria-live="polite"></div>
+    <p class="feed-note">Sources: The Hacker News · BleepingComputer · Krebs on Security · SecurityWeek · CISA advisories · CISA Known Exploited Vulnerabilities catalog.</p>
+  </section>
+
+  <!-- ============================ GAMES ============================ -->
+  <section class="view" id="view-games" aria-label="Games">
+    <div class="view-head">
+      <div>
+        <span class="eyebrow"><span class="dot" style="background:var(--pink)"></span>Arcade</span>
+        <h2>Pick your poison</h2>
+        <p>Six glass-built games that run right here in the browser. High scores and chips are saved on this device.</p>
+      </div>
+    </div>
+    <div class="games-grid">
+      <button class="game-tile" data-accent="gold" data-game="slots">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M8 5v14M16 5v14"/><circle cx="6.4" cy="8" r=".9" fill="currentColor" stroke="none"/><circle cx="17.6" cy="16" r=".9" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r=".9" fill="currentColor" stroke="none"/></svg></span>
+        <span>
+          <h3>Slots</h3>
+          <p>Five reels, five paylines. Line up the symbols from the left and watch the chips roll in.</p>
+          <span class="best" data-best="slots"></span>
+        </span>
+      </button>
+      <button class="game-tile" data-accent="blue" data-game="plinko">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4" r="1.1" fill="currentColor" stroke="none"/><circle cx="9" cy="9" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="9" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="14" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="14" r="1" fill="currentColor" stroke="none"/><circle cx="18" cy="14" r="1" fill="currentColor" stroke="none"/><path d="M3 20h18"/></svg></span>
+        <span>
+          <h3>Plinko</h3>
+          <p>Real Matter.js physics. Pick 5&ndash;8 rows &mdash; and every tap rains another ball.</p>
+          <span class="best" data-best="plinko"></span>
+        </span>
+      </button>
+      <button class="game-tile" data-accent="pink" data-game="roulette">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.4"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg></span>
+        <span>
+          <h3>Roulette</h3>
+          <p>European single-zero. Lay your chips on the felt, then hit Spin to reveal the wheel.</p>
+          <span class="best" data-best="roulette"></span>
+        </span>
+      </button>
+      <button class="game-tile" data-accent="blue" data-game="g2048">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 3v18M3 12h18"/></svg></span>
+        <span>
+          <h3>2048</h3>
+          <p>Slide, merge, repeat. The tile you need is always one bad move away.</p>
+          <span class="best" data-best="g2048"></span>
+        </span>
+      </button>
+      <button class="game-tile" data-accent="teal" data-game="xo">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/><path d="M4 4l3 3M10 4l-3 3M4 10l3-3M10 10l-3-3"/><circle cx="17" cy="17" r="3.2"/></svg></span>
+        <span>
+          <h3>X &amp; O</h3>
+          <p>Each round the machine flips a coin: flawless minimax or pure chaos. Good luck telling which.</p>
+          <span class="best" data-best="xo"></span>
+        </span>
+      </button>
+      <button class="game-tile" data-accent="pink" data-game="flappy">
+        <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13c4.5 1 7.5-1 8-5 3 0 5.5 1.5 6.5 4l2 .8-2.2 1.4C17 18 13 19.5 9 18.5 6 17.8 4.3 15.6 4 13Z"/><circle cx="14.6" cy="10.6" r="0.7" fill="currentColor" stroke="none"/></svg></span>
+        <span>
+          <h3>Flappy Glass</h3>
+          <p>One button. Infinite frustration. Beat your best, then blame the pipes.</p>
+          <span class="best" data-best="flappy"></span>
+        </span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ============================ RESEARCH ============================ -->
+  <section class="view" id="view-research" aria-label="Research">
+    <div class="view-head">
+      <div>
+        <span class="eyebrow"><span class="dot" style="background:var(--blue)"></span>Publications</span>
+        <h2>Selected research</h2>
+        <p>Formal verification of tree ensembles, real-time evasion detection, and ML security in safety-critical systems. From my <a href="https://scholar.google.com/citations?user=xMG8t8oAAAAJ&amp;hl=en" target="_blank" rel="noopener">Google Scholar profile</a>.</p>
+      </div>
+    </div>
+
+    <div class="papers">
+   
+       <article class="paper-card glass">
+        <div class="paper-meta">
+          <span class="paper-year">2026</span>
+          <span class="paper-type">Conference paper</span>
+        </div>
+        <h3><a href="https://link.springer.com/chapter/10.1007/978-3-032-33260-8_5" target="_blank" rel="noopener">Improving SIEM Rules using Transformer-Based Rule Evasion Detection and Attribution</a></h3>
+        <p class="paper-authors">Erik Nordstr&ouml;m &middot; Hannes Wid&eacute;n &middot; Valency Oscar Colaco &middot; Simin Nadjm-Tehrani</p>
+        <p class="paper-abstract">A transformer-based approach that detects SIGMA rule evasions with accuracy comparable to the state of the art (AMIDES, USENIX 2024), achieves a false positive rate of less than 1%, attributes evasions to specific rules, and recommends fixes, several of which have been accepted into the SIGMA repository.</p>
+        <a class="paper-link" href="https://doi.org/10.1007/978-3-032-33260-8_5" target="_blank" rel="noopener">Read paper ↗</a>
+      </article>
+
+      <article class="paper-card glass">
+        <div class="paper-meta">
+          <span class="paper-year">2025</span>
+          <span class="paper-type">Licentiate thesis</span>
+        </div>
+        <h3><a href="https://scholar.google.com/citations?view_op=view_citation&amp;hl=en&amp;user=xMG8t8oAAAAJ&amp;citation_for_view=xMG8t8oAAAAJ:zYLM7Y9cAGgC" target="_blank" rel="noopener">Hardening Tree Ensembles: Real-Time and Effective Evasion Defences Beyond Adversarial Re-Training</a></h3>
+        <p class="paper-authors">Valency Oscar Colaco &middot; Link&ouml;ping University</p>
+        <p class="paper-abstract">This licentiate thesis shows that proactive defences such as adversarial retraining are ineffective for tree ensembles and can inadvertently make them more vulnerable to evasion attacks. Along these lines, it introduces Iceman and Maverick - two reactive prototype systems that advance the state of the art in evasion detection performance and speed, without modifying the underlying tree ensemble.</p>
+        <a class="paper-link" href="https://www.diva-portal.org/smash/get/diva2:2013682/FULLTEXT01.pdf" target="_blank" rel="noopener">Read full thesis ↗</a>
+      </article>
+
+      <article class="paper-card glass">
+        <div class="paper-meta">
+          <span class="paper-year">2025</span>
+          <span class="paper-type">Conference paper</span>
+        </div>
+        <h3><a href="https://scholar.google.com/citations?view_op=view_citation&amp;hl=en&amp;user=xMG8t8oAAAAJ&amp;citation_for_view=xMG8t8oAAAAJ:qjMakFHDy7sC" target="_blank" rel="noopener">Real-Time Evasion Detection in Tree Ensemble Automotive Intrusion Detection Systems</a></h3>
+        <p class="paper-authors">Valency Oscar Colaco &middot; Simin Nadjm-Tehrani</p>
+        <p class="paper-abstract">Maverick: an autoencoder-based detector for evasion attacks on tree-ensemble automotive IDSs - achieving identical detection accuracy to the state of the art (OC-Score, ECML PKDD 2023), while providing 85–563× faster detection speeds that enable real-time operation within the constraints of automotive CAN networks.</p>
+        <a class="paper-link" href="https://www.ida.liu.se/labs/rtslab/publications/2025/maverick.pdf" target="_blank" rel="noopener">Read paper ↗</a>
+      </article>
+
+      <article class="paper-card glass">
+        <div class="paper-meta">
+          <span class="paper-year">2024</span>
+          <span class="paper-type">Conference paper</span>
+        </div>
+        <h3><a href="https://scholar.google.com/citations?view_op=view_citation&hl=en&user=xMG8t8oAAAAJ&citation_for_view=xMG8t8oAAAAJ:u-x6o8ySG0sC" target="_blank" rel="noopener">Fast Evasion Detection &amp; Alert Management in Tree-Ensemble-Based Intrusion Detection Systems</a></h3>
+        <p class="paper-authors">Valency Oscar Colaco &middot; Simin Nadjm-Tehrani</p>
+        <p class="paper-abstract">Iceman: a counterexample-region-based detector for evasion attacks on tree-ensemble IDSs - achieving more than 98% detection accuracy, 5–115x lower latency than the state of the art (OC-Score, ECML PKDD 2023), and providing quaternary attack annotations for effective alert triage.</p>
+        <a class="paper-link" href="https://www.ida.liu.se/labs/rtslab/publications/2024/Iceman_IEEE.pdf" target="_blank" rel="noopener">Read paper ↗</a>
+      </article>
+
+      <article class="paper-card glass">
+        <div class="paper-meta">
+          <span class="paper-year">2023</span>
+          <span class="paper-type">Workshop paper</span>
+        </div>
+        <h3><a href="https://scholar.google.com/citations?view_op=view_citation&amp;hl=en&amp;user=xMG8t8oAAAAJ&amp;citation_for_view=xMG8t8oAAAAJ:d1gkVwhDpl0C" target="_blank" rel="noopener">Formal Verification of Tree Ensembles against Real-World Composite Geometric Perturbations</a></h3>
+        <p class="paper-authors">Valency Oscar Colaco &middot; Simin Nadjm-Tehrani</p>
+        <p class="paper-abstract">Extends VoTE to verify tree ensembles against composite geometric perturbations (affine transformations and pixel-wise lighting changes) by introducing a new abstraction-function-based robustness property checker. Shows that targeted data augmentation fails to improve robustness and can even reduce it.</p>
+        <a class="paper-link" href="https://www.ida.liu.se/labs/rtslab/publications/2023/SafeAI2023_Valency.pdf" target="_blank" rel="noopener">Read paper ↗</a>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ============================ PONYTAIL ============================ -->
+  <section class="view" id="view-ponytail" aria-label="Configure AI agents">
+    <div class="view-head">
+      <div>
+        <span class="eyebrow"><span class="dot" style="background:var(--pink)"></span>Write less, ship better</span>
+        <h2>Configure AI Agents to Write Code Efficiently</h2>
+        <p>An integration guide for <a href="https://github.com/DietrichGebert/ponytail" target="_blank" rel="noopener">ponytail</a> &mdash; a lightweight ruleset that makes your LLM coding agent lazy about the solution and never about the reading.</p>
+      </div>
+    </div>
+
+    <div class="ponytail-grid">
+      <div class="card glass" data-accent="pink">
+        <span class="eyebrow"><span class="dot" style="background:var(--pink)"></span>What it is</span>
+        <h3>A ladder of seven questions</h3>
+        <p>Before writing any new code, ponytail makes the agent climb a ladder &mdash; each rung asks whether the task can be solved with something that already exists. It writes the absolute minimum, only when nothing else fits.</p>
+        <ul class="ladder">
+          <li><b>1.</b> Does this need to exist? &rarr; YAGNI</li>
+          <li><b>2.</b> Already in the codebase? &rarr; reuse it</li>
+          <li><b>3.</b> In the stdlib? &rarr; use it</li>
+          <li><b>4.</b> A native platform feature? &rarr; use it</li>
+          <li><b>5.</b> An installed dependency? &rarr; use it</li>
+          <li><b>6.</b> Solvable in one line? &rarr; one line</li>
+          <li><b>7.</b> Only then: the minimum that works</li>
+        </ul>
+      </div>
+
+      <div class="card glass" data-accent="teal">
+        <span class="eyebrow"><span class="dot" style="background:var(--teal)"></span>Why it works</span>
+        <h3>Lazy, not negligent</h3>
+        <p>The agent is lazy about the solution but never about the reading &mdash; it scans the existing code and dependencies thoroughly before suggesting anything new. Trust-boundary validation, data-loss handling, security, and accessibility are never on the chopping block.</p>
+        <p class="benchmark"><b>Benchmark:</b> &minus;54% LOC &middot; &minus;22% tokens &middot; &minus;20% cost &middot; &minus;27% time &middot; 100% safe.</p>
+        <button class="btn primary" id="ponytail-open">Show me how to integrate it <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ CONTACT ============================ -->
+  <section class="view" id="view-contact" aria-label="Contact">
+    <div class="view-head">
+      <div>
+        <span class="eyebrow"><span class="dot" style="background:var(--violet)"></span>Direct line</span>
+        <h2>Say hello</h2>
+        <p>Fill this in and it lands in my inbox.</p>
+      </div>
+    </div>
+    <div class="contact-grid">
+      <div class="sent-banner" id="sent-banner">✓ Message sent — thanks! I'll get back to you soon.</div>
+      <form class="form-card glass" id="contact-form" action="https://formsubmit.co/valency007@gmail.com" method="POST">
+        <input type="hidden" name="_subject" value="New message via colaco.se">
+        <input type="hidden" name="_template" value="table">
+        <input type="hidden" name="_captcha" value="true">
+        <input type="hidden" name="_next" id="next-url" value="https://colaco.se/?sent=1#contact">
+        <div class="hp-field" aria-hidden="true"><input type="text" name="_honey" tabindex="-1" autocomplete="off"></div>
+        <div class="form-row">
+          <div class="field">
+            <label for="cf-name">Name</label>
+            <input id="cf-name" name="name" type="text" placeholder="Your name" required autocomplete="name">
+          </div>
+          <div class="field">
+            <label for="cf-email">Email</label>
+            <input id="cf-email" name="email" type="email" placeholder="you@example.com" required autocomplete="email">
+          </div>
+        </div>
+        <div class="field">
+          <label for="cf-subject">Subject</label>
+          <input id="cf-subject" name="subject" type="text" placeholder="What's this about?">
+        </div>
+        <div class="field">
+          <label for="cf-message">Message</label>
+          <textarea id="cf-message" name="message" placeholder="Write your message…" required></textarea>
+        </div>
+        <div class="form-foot">
+          <span class="captcha-note"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3Z"/><path d="m9 12 2 2 4-4.5"/></svg>Captcha-protected — you'll verify you're human on the next screen.</span>
+          <button class="btn primary" type="submit">Send message
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z"/></svg>
+          </button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============================ GAME MODAL ============================ -->
+<div class="modal" id="game-modal" role="dialog" aria-modal="true" aria-labelledby="game-modal-title">
+  <div class="modal-panel glass" id="game-panel" tabindex="-1">
+    <div class="modal-top">
+      <h3 id="game-modal-title">Game</h3>
+      <button class="close-btn" id="game-close" aria-label="Close game">✕</button>
+    </div>
+    <div id="game-stage"></div>
+  </div>
+</div>
+
+<!-- ============================ PONYTAIL MODAL ============================ -->
+<div class="modal" id="ponytail-modal" role="dialog" aria-modal="true" aria-labelledby="ponytail-title">
+  <div class="modal-panel glass ponytail-panel" tabindex="-1">
+    <div class="modal-top">
+      <h3 id="ponytail-title">Integrate ponytail with your LLM</h3>
+      <button class="close-btn" id="ponytail-close" aria-label="Close">&#10005;</button>
+    </div>
+    <div class="ponytail-body">
+      <p class="pt-lead">Three ways to wire ponytail into a coding agent. The fastest is the plugin; the most portable is pasting the prompt.</p>
+
+      <h4>1. Install as a plugin (Claude Code)</h4>
+      <pre class="code-block"><code>/plugin marketplace add DietrichGebert/ponytail
+/plugin install ponytail@ponytail</code></pre>
+      <p class="pt-hint">Run the two commands above as separate prompts. For Codex, swap <code>/plugin</code> for <code>codex plugin</code>.</p>
+
+      <h4>2. Toggle it on the fly</h4>
+      <pre class="code-block"><code>/ponytail            # default mode (full)
+/ponytail lite        # lighter guardrails
+/ponytail ultra       # strictest
+/ponytail off
+/ponytail-review      # review code against the ladder
+/ponytail-audit       # audit a path for over-engineering
+/ponytail-debt        # flag unnecessary complexity
+/ponytail-gain        # show savings vs. baseline
+/ponytail-help</code></pre>
+
+      <h4>3. Or paste this prompt into any LLM</h4>
+      <p class="pt-hint">No plugin support? Drop this into your system prompt, a <code>.cursorrules</code> / <code>AGENTS.md</code> file, or the first message of a chat.</p>
+      <div class="prompt-wrap">
+        <pre class="code-block prompt-block" id="ponytail-prompt"><code>Before writing any new code, you MUST climb this ladder in order and stop at the first rung that applies:
+
+1. Does this need to exist? If not, write nothing. (YAGNI)
+2. Is it already in the codebase? Reuse it. Do not duplicate.
+3. Is it in the standard library? Use that.
+4. Is it a native platform/language feature? Use that.
+5. Is there an already-installed dependency that does it? Use that.
+6. Can it be done in one line of existing code? Write one line.
+7. Only then: write the absolute minimum new code that works.
+
+Rules:
+- Be lazy about the solution, never about the reading. Always read the relevant existing code, dependencies, and docs before proposing anything new.
+- Prefer deleting over adding. Prefer composing over creating.
+- Lazy, not negligent: trust-boundary validation, data-loss handling, security, and accessibility are NEVER cut to save lines.
+- When you do add code, state which rung of the ladder you reached and why no earlier rung applied.
+- Default to the smallest change that solves the problem correctly.</code></pre>
+        <button class="btn primary copy-btn" id="ponytail-copy">Copy prompt</button>
+      </div>
+
+      <p class="benchmark pt-foot">Benchmark vs. unguarded agent: &minus;54% LOC &middot; &minus;22% tokens &middot; &minus;20% cost &middot; &minus;27% time &middot; 100% safe. <a href="https://github.com/DietrichGebert/ponytail" target="_blank" rel="noopener">View the repo &#8599;</a></p>
+    </div>
+  </div>
+</div>
+
+<div class="toast glass" id="toast" role="status"></div>
+
+<footer>
+  <p>© 2026 Valency Colaco · <a href="https://colaco.se">colaco.se</a> · Built with Liquid Glass, live feeds, and a dynamic rendering of Sweden's night sky.</p>
+</footer>
+
+<script>
+'use strict';
+/* ============================================================
+   colaco.se — core
+   ============================================================ */
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+}[c]));
+
+/* Safe storage: falls back to in-memory when localStorage is unavailable
+   (e.g. sandboxed previews). */
+const store = {
+  _m: {},
+  get(k, d) {
+    try { const v = localStorage.getItem(k); return v == null ? (k in this._m ? this._m[k] : d) : JSON.parse(v); }
+    catch (e) { return k in this._m ? this._m[k] : d; }
+  },
+  set(k, v) {
+    this._m[k] = v;
+    try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* in-memory only */ }
+  }
+};
+
+function timeAgo(date) {
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d)) return '';
+  const s = Math.max(0, (Date.now() - d.getTime()) / 1000);
+  if (s < 60) return 'just now';
+  const m = s / 60;   if (m < 60)  return Math.floor(m) + ' min ago';
+  const h = m / 60;   if (h < 24)  return Math.floor(h) + (h < 2 ? ' hour ago' : ' hours ago');
+  const dd = h / 24;  if (dd < 7)  return Math.floor(dd) + (dd < 2 ? ' day ago' : ' days ago');
+  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+}
+
+function stripHtml(html) {
+  const doc = new DOMParser().parseFromString(String(html || ''), 'text/html');
+  return (doc.body.textContent || '').replace(/\s+/g, ' ').trim();
+}
+
+let toastTimer = null;
+function toast(msg) {
+  const el = $('#toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+/* ============================================================
+   Router
+   ============================================================ */
+const VIEWS = ['home', 'news', 'security', 'games', 'research', 'ponytail', 'contact'];
+
+function route(force) {
+  let h = (location.hash || '#home').slice(1);
+  let scrollTarget = null;
+  if (h === 'options') { scrollTarget = 'options'; h = 'home'; }
+  if (!VIEWS.includes(h)) h = 'home';
+
+  VIEWS.forEach(v => {
+    $('#view-' + v).classList.toggle('active', v === h);
+    const link = $('[data-nav="' + v + '"]');
+    if (link) link.classList.toggle('active', v === h);
+  });
+
+  if (typeof GameModal !== 'undefined') GameModal.close();
+
+  if (scrollTarget) {
+    requestAnimationFrame(() => {
+      const t = document.getElementById(scrollTarget);
+      if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  } else {
+    window.scrollTo({ top: 0 });
+  }
+
+  if (h === 'news') News.load(force);
+  if (h === 'security') Sec.load(force);
+  if (h === 'games') refreshBestScores();
+}
+window.addEventListener('hashchange', () => route(false));
+
+/* ============================================================
+   Feed engine — fetches RSS/Atom/JSON/HTML through the first-party
+   Cloudflare Worker at feeds.colaco.se (allowlisted upstreams,
+   edge-cached, serves the last good copy if an upstream is down).
+   ============================================================ */
+const FEED_PROXY = 'https://feeds.colaco.se/?url=';
+/* maxAge (seconds, optional) asks the worker to revalidate anything older;
+   clamped server-side to [60, 86400]. Omit it to use the worker default. */
+const viaProxy = (u, maxAge) =>
+  FEED_PROXY + encodeURIComponent(u) + (maxAge ? '&max_age=' + maxAge : '');
+
+const RELAYS = [
+  { name: 'worker', raw: true, build: u => viaProxy(u), parse: parseFeed }
+];
+
+/* Fetch one URL through a single relay, with its own timeout. An external
+   AbortSignal lets a winning racer cancel the losers so the browser stops
+   doing work that's no longer needed. */
+async function relayFetch(build, url, externalSignal, timeoutMs) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
+  const onAbort = () => ctrl.abort();
+  if (externalSignal) {
+    if (externalSignal.aborted) ctrl.abort();
+    else externalSignal.addEventListener('abort', onAbort, { once: true });
+  }
+  try {
+    const res = await fetch(build(url), { signal: ctrl.signal, redirect: 'follow' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    if (!text || text.length < 40) throw new Error('Empty response');
+    return text;
+  } finally {
+    clearTimeout(t);
+    if (externalSignal) externalSignal.removeEventListener('abort', onAbort);
+  }
+}
+
+/* Fetch plain text through the worker with a timeout. Used for the CISA
+   KEV JSON (which isn't a feed, so parseFeed doesn't apply). */
+  
+async function fetchText(url, timeoutMs) {
+  timeoutMs = timeoutMs || 8000;
+  const race = new AbortController();
+  const attempts = RELAYS.filter(r => r.raw).map(r => relayFetch(r.build, url, race.signal, timeoutMs));
+  try {
+    const text = await Promise.any(attempts);
+    race.abort(); /* cancel the losers */
+    return text;
+  } catch (e) {
+    race.abort();
+    throw new Error('All relays failed for ' + url);
+  }
+}
+
+function pick(el, names) {
+  for (const n of names) {
+    const found = el.getElementsByTagName(n)[0];
+    if (found && found.textContent) return found.textContent.trim();
+  }
+  return '';
+}
+
+/* Resolve + validate an image URL. https only, to avoid mixed-content
+   blocking on a secure site; relative URLs resolve against the feed/link. */
+function resolveImgUrl(url, base) {
+  if (!url) return '';
+  try {
+    const u = new URL(url.trim(), base);
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return '';
+    if (u.protocol === 'http:') u.protocol = 'https:';
+    return u.href;
+  } catch (e) { return ''; }
+}
+
+/* Pull a thumbnail out of media/enclosure tags, falling back to the first
+   <img> embedded in the description/content HTML. */
+function extractImage(node, base) {
+  const tags = ['media:thumbnail', 'media:content', 'enclosure', 'media:group'];
+  for (const t of tags) {
+    const els = node.getElementsByTagName(t);
+    for (const el of Array.from(els)) {
+      const url = (el.getAttribute('url') || el.getAttribute('href') || '').trim();
+      if (!url) continue;
+      const type = (el.getAttribute('type') || el.getAttribute('medium') || '').toLowerCase();
+      const isImage = !type || type.indexOf('image') === 0 || type === 'img';
+      if (!isImage) continue;
+      const resolved = resolveImgUrl(url, base);
+      if (resolved) return resolved;
+    }
+  }
+  for (const descTag of ['description', 'content:encoded', 'content', 'summary']) {
+    const el = node.getElementsByTagName(descTag)[0];
+    if (!el || !el.textContent) continue;
+    const m = el.textContent.match(/<img[^>]+src=["']([^"']+)["']/i);
+    if (m && m[1]) {
+      const resolved = resolveImgUrl(m[1], base);
+      if (resolved) return resolved;
+    }
+  }
+  return '';
+}
+
+function parseFeed(xmlText, source) {
+  const doc = new DOMParser().parseFromString(xmlText, 'text/xml');
+  if (doc.querySelector('parsererror')) throw new Error('Bad XML from ' + source.name);
+  let nodes = Array.from(doc.getElementsByTagName('item'));       /* RSS  */
+  let atom = false;
+  if (!nodes.length) { nodes = Array.from(doc.getElementsByTagName('entry')); atom = true; } /* Atom */
+  return nodes.map(node => {
+    let link = '';
+    if (atom) {
+      const links = Array.from(node.getElementsByTagName('link'));
+      const alt = links.find(l => (l.getAttribute('rel') || 'alternate') === 'alternate') || links[0];
+      link = alt ? (alt.getAttribute('href') || '') : '';
+    } else {
+      link = pick(node, ['link', 'guid']);
+    }
+    const base = link || source.url;
+    const dateStr = pick(node, ['pubDate', 'published', 'updated', 'dc:date', 'date']);
+    return {
+      title: stripHtml(pick(node, ['title'])),
+      link: link.trim(),
+      date: dateStr ? new Date(dateStr) : new Date(0),
+      desc: stripHtml(pick(node, ['description', 'summary', 'content'])).slice(0, 260),
+      img: extractImage(node, base),
+      source: source.name,
+      color: source.color
+    };
+  }).filter(it => it.title && it.link);
+}
+
+/* Fetch + parse one source, racing relays so the first VALID feed wins
+   (a fast relay returning an HTML error page can't beat a slower good one,
+   because parsing/item-count is part of the race). */
+async function loadSource(src, perSource, timeoutMs) {
+  timeoutMs = timeoutMs || 8000;
+  const race = new AbortController();
+  const attempts = RELAYS.map(relay =>
+    relayFetch(relay.build, src.url, race.signal, timeoutMs).then(txt => {
+      const items = relay.parse(txt, src).slice(0, perSource);
+      if (!items.length) throw new Error('No items from ' + src.name);
+      return items;
+    })
+  );
+  try {
+    const items = await Promise.any(attempts);
+    race.abort(); /* cancel the losers */
+    return items;
+  } catch (e) {
+    race.abort();
+    throw e;
+  }
+}
+
+/* Merge + de-duplicate + cap a batch of feed items, newest first. */
+function mergeItems(arr, cap) {
+  const seen = new Set();
+  return arr.slice()
+    .sort((a, b) => b.date - a.date)
+    .filter(it => {
+      const key = it.title.toLowerCase().slice(0, 90);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, cap);
+}
+
+/* Load every source, but render progressively: as soon as a source resolves
+   its items are merged and onPartial fires, so the user sees results in ~1–2s
+   instead of waiting for the slowest source. A soft deadline stops the
+   skeletons/blank state even if some sources never come back. */
+async function loadSources(sources, perSource, cap, opts) {
+  const o = opts || {};
+  const softDeadline = o.softDeadline || 4500;
+  const perTimeout = o.timeout || 8000;
+  const status = sources.map(() => 'pending');
+  const collected = [];
+  let pending = sources.length;
+  let finalized = false;
+
+  const emit = () => {
+    if (!o.onPartial) return;
+    const failed = sources.filter((_, i) => status[i] !== 'ok').map(s => s.name);
+    o.onPartial(mergeItems(collected, cap), failed);
+  };
+
+  const allSettled = new Promise(resolve => {
+    sources.forEach((src, i) => {
+      loadSource(src, perSource, perTimeout).then(its => {
+        status[i] = 'ok';
+        collected.push(...its);
+        if (!finalized) emit();
+      }).catch(() => {
+        status[i] = 'fail';
+        if (!finalized) emit();
+      }).finally(() => { if (--pending === 0) resolve(); });
+    });
+  });
+
+  let timedOut = false;
+  const deadline = new Promise(r => setTimeout(() => { timedOut = true; r(); }, softDeadline));
+  await Promise.race([allSettled, deadline]);
+
+  if (timedOut && pending > 0) {
+    /* Don't keep the user waiting on stragglers; mark them unreachable for now. */
+    sources.forEach((s, i) => { if (status[i] === 'pending') status[i] = 'fail'; });
+    emit();
+  }
+  finalized = true;
+
+  if (!collected.length) throw new Error('No feeds reachable');
+  const failed = sources.filter((_, i) => status[i] !== 'ok').map(s => s.name);
+  return { items: mergeItems(collected, cap), failed };
+}
+
+/* ---------- rendering ---------- */
+function skeletons(el, n) {
+  el.innerHTML = Array.from({ length: n }, () => '<div class="skeleton"></div>').join('');
+}
+
+function errorPanel(el, retryFn, extra) {
+  el.innerHTML =
+    '<div class="error-panel glass">' +
+      '<p><strong>Couldn\u2019t reach the live feeds from here.</strong><br>' + esc(extra || '') +
+      ' This usually happens in sandboxed previews \u2014 the feeds load normally once the site is hosted (or opened directly in a browser).</p>' +
+      '<button class="btn primary" id="retry-btn">Try again</button>' +
+    '</div>';
+  $('#retry-btn', el).addEventListener('click', retryFn);
+}
+
+function renderItems(el, items, opts) {
+  const o = opts || {};
+  el.innerHTML = items.map(it => {
+    const cve = it.cve ? '<span class="cve-id">' + esc(it.cve) + '</span>' : '';
+    const thumb = it.img
+      ? '<div class="feed-thumb-wrap"><img class="feed-thumb" src="' + esc(it.img) +
+        '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"></div>'
+      : '';
+    return (
+      '<article class="feed-item glass' + (it.img ? ' has-thumb' : '') + '">' +
+        thumb +
+        '<div class="feed-meta">' +
+          '<span class="src-chip"><i style="--c:' + esc(it.color) + '"></i>' + esc(it.source) + '</span>' +
+          cve +
+          '<span>' + esc(timeAgo(it.date)) + '</span>' +
+        '</div>' +
+        '<h3><a href="' + esc(it.link) + '" target="_blank" rel="noopener">' + esc(it.title) + '</a></h3>' +
+        (it.desc ? '<p class="snippet">' + esc(it.desc) + '</p>' : '') +
+        '<div class="row">' +
+          '<a class="chip-link" target="_blank" rel="noopener" href="' + esc(it.link) + '">Read the story ↗</a>' +
+        '</div>' +
+      '</article>'
+    );
+  }).join('');
+  /* Per-image cleanup (generation-safe: each timer closes over its own img,
+     so a later render can't be touched by an earlier render's timer). */
+  el.querySelectorAll('.feed-thumb').forEach(img => {
+    const wrap = img.parentNode;
+    const timer = setTimeout(() => {
+      if (img.isConnected && !img.classList.contains('loaded') && wrap) wrap.remove();
+    }, 8000);
+    img.addEventListener('load', () => { clearTimeout(timer); img.classList.add('loaded'); }, { once: true });
+    img.addEventListener('error', () => { clearTimeout(timer); if (wrap) wrap.remove(); }, { once: true });
+  });
+  if (items._failed && items._failed.length) {
+    el.insertAdjacentHTML('beforeend',
+      '<p class="feed-note">Temporarily unreachable: ' + esc(items._failed.join(', ')) + '</p>');
+  }
+}
+
+function parseDateMs(s) {
+  if (!s) return null;
+  const t = Date.parse(s);
+  if (isNaN(t)) return null;
+  /* reject implausible values: before 2000 or more than 5 min in the future */
+  if (t < 946684800000) return null;
+  if (t > Date.now() + 300000) return null;
+  return t;
+}
+
+/* ============================================================
+   Ground News — top stories with left / center / right bias
+   ============================================================ */
+/* Ground News has no public RSS/API, so we read its server-rendered
+   homepage (Next.js / React Server Components). The top-story data —
+   title, publish time, description, thumbnail, and the full left/center/
+   right bias breakdown — is embedded inside self.__next_f.push(...) flight
+   chunks as escaped JSON. We decode those chunks, then walk each story's
+   blindspotData segment. */
+function parseGroundNews(html) {
+  const chunks = [];
+  const re = /self\.__next_f\.push\(\[1,"((?:[^"\\]|\\.)*)"\]\)/g;
+  let m;
+  while ((m = re.exec(html)) !== null) {
+    try { chunks.push(JSON.parse('"' + m[1] + '"')); } catch (e) {}
+  }
+  const flight = chunks.join('');
+  const g = (rx, s, grp) => { const x = rx.exec(s); return x ? x[grp || 1] : null; };
+  const bIdx = [];
+  let from = 0;
+  while (true) {
+    const i = flight.indexOf('blindspotData', from);
+    if (i < 0) break;
+    bIdx.push(i);
+    from = i + 1;
+  }
+  const slugify = t => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const clean = t => String(t == null ? '' : t)
+    .replace(/\\u0027/g, "'").replace(/\u0027/g, "'")
+    .replace(/&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&')
+    .replace(/\\[nrt]/g, ' ').replace(/\s+/g, ' ').trim();
+  const stories = [];
+  for (let k = 0; k < bIdx.length; k++) {
+    const start = bIdx[k];
+    const end = k + 1 < bIdx.length ? bIdx[k + 1] : flight.length;
+    const seg = flight.slice(start, Math.min(end, start + 16000));
+    const left = +g(/leftPercent":(\d+)/, seg) || 0;
+    const center = +g(/centerPercent":(\d+)/, seg) || 0;
+    const right = +g(/rightPercent":(\d+)/, seg) || 0;
+    if (!left && !center && !right) continue;
+    let title = g(/"start":"[^"]+","title":"((?:[^"\\]|\\.)*)"/, seg);
+    if (!title) title = g(/"generatedHeadline":"((?:[^"\\]|\\.)*)"/, seg);
+    if (!title || title.length < 10) continue;
+    const slug = g(/"start":"[^\"]+","title":"(?:[^\"\\]|\\.)*","slug":"([^\"]+)"/, seg);
+    const uids = flight.slice(Math.max(0, start - 300), start).match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g);
+    const sid = uids && uids.length ? uids[uids.length - 1] : '';
+    /* Freshness: the story's own `start` is the coverage-window start (often
+       hours old). Each source article in the segment also carries a `date`
+       (when that outlet published). We take the newest valid publish date —
+       the most recent coverage activity — so the "X hours ago" label reflects
+       the latest reporting, not when the story first began. */
+    const dateStr = g(/"start":"([^"]+)"/, seg);
+    let latestMs = dateStr ? parseDateMs(dateStr) : 0;
+    if (latestMs != null) {
+      let dmo;
+      const dre = /"date":"([0-9T:.\-+Z]+)"/g;
+      while ((dmo = dre.exec(seg)) !== null) {
+        const ms = parseDateMs(dmo[1]);
+        if (ms != null && ms > latestMs) latestMs = ms;
+      }
+    }
+    const desc = g(/"description":"((?:[^"\\]|\\.)*)"/, seg);
+    const img = g(/"fallbackMedia":\{"url":"([^"]+)"/, seg)
+             || g(/"url":"(https:\/\/groundnews[^"]+\/assets\/[^"]+)"/, seg);
+    const blindspotFor = g(/"blindspotFor":"([^"]+)"/, seg);
+    const profile = g(/"coverageProfileStatement":"((?:[^"\\]|\\.)*)"/, seg);
+    const lSrc = +g(/leftSrcCount":(\d+)/, seg) || 0;
+    const cSrc = +g(/cntrSrcCount":(\d+)/, seg) || 0;
+    const rSrc = +g(/rightSrcCount":(\d+)/, seg) || 0;
+    stories.push({
+      title: clean(title),
+      link: slug ? 'https://ground.news/article/' + slug : (sid ? 'https://ground.news/article/' + sid : 'https://ground.news/'),
+      date: latestMs != null ? new Date(latestMs) : new Date(),
+      desc: desc ? clean(stripHtml(desc)).slice(0, 240) : '',
+      img: img || '',
+      bias: { left: left, center: center, right: right },
+      src: { left: lSrc, center: cSrc, right: rSrc, total: lSrc + cSrc + rSrc },
+      blindspot: blindspotFor || '',
+      profile: profile ? clean(stripHtml(profile)) : ''
+    });
+  }
+  const seen = new Set();
+  const uniq = [];
+  for (const s of stories) {
+    /* dedup by headline, not link: the same story appears in several
+       flight segments and its slug/UUID sometimes resolves differently
+       between them, so keying on the link lets duplicates through */
+    const key = slugify(s.title).slice(0, 80);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    uniq.push(s);
+  }
+  uniq.sort((a, b) => b.date - a.date);
+  return uniq.slice(0, 12);
+}
+
+/* Fetch Ground News through the first-party worker, accepting only a
+   response that actually contains the story data (rejects challenge /
+   error pages).
+
+   Freshness is negotiated with the worker via max_age: background loads
+   accept an edge-cached copy up to 5 minutes old (fast, cheap, resilient);
+   a manual Refresh insists on ≤60s, the tightest the worker allows. Either
+   way the worker serves its last good copy if ground.news itself is down. */
+async function fetchGroundNews(force) {
+  const maxAge = force ? 60 : 300;
+  /* Two Ground News pages carry the blindspot story data: the homepage
+     (2.6MB, freshest, most stories) and /blindspot (410KB, smaller and
+     quicker). We prefer the homepage — giving it a short head start — but
+     let the smaller page join as a fallback so the feed always renders. */
+  const grab = (target, timeoutMs) =>
+    relayFetch(u => viaProxy(u, maxAge), target, null, timeoutMs).then(html => {
+      if (!html || html.indexOf('blindspotData') < 0) throw new Error('Not Ground News content');
+      return html;
+    });
+  const home = 'https://ground.news/';
+  const blind = 'https://ground.news/blindspot';
+  return new Promise((resolve, reject) => {
+    let resolved = false, pending = 2;
+    const timer = setTimeout(() => grab(blind, 12000).then(ok, no), 2500);
+    function ok(h) { if (!resolved) { resolved = true; clearTimeout(timer); resolve(h); } }
+    function no() { if (!resolved && --pending === 0) reject(new Error('Ground News fetch failed')); }
+    grab(home, 14000).then(ok, no);
+  });
+}
+
+function renderGroundItems(el, items) {
+  el.innerHTML = items.map(it => {
+    const thumb = it.img
+      ? '<div class="feed-thumb-wrap"><img class="feed-thumb" src="' + esc(it.img) +
+        '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"></div>'
+      : '';
+    const b = it.bias, s = it.src;
+    const blindspot = it.blindspot
+      ? '<span class="blindspot-badge" title="' + esc(it.profile || '') + '">Blindspot · under-covered by ' +
+        esc(it.blindspot.charAt(0).toUpperCase() + it.blindspot.slice(1)) + '</span>'
+      : '';
+    const biasBar =
+      '<div class="bias-bar" title="Left ' + b.left + '% · Center ' + b.center + '% · Right ' + b.right + '%">' +
+        (b.left   ? '<div class="bias-seg bias-left"   style="width:' + b.left   + '%"><span>L ' + b.left   + '%</span></div>' : '') +
+        (b.center ? '<div class="bias-seg bias-center" style="width:' + b.center + '%"><span>C ' + b.center + '%</span></div>' : '') +
+        (b.right  ? '<div class="bias-seg bias-right"  style="width:' + b.right  + '%"><span>R ' + b.right  + '%</span></div>' : '') +
+      '</div>';
+    const legend = '<div class="bias-legend">' +
+      '<span class="bl bl-left">Left ' + s.left + '</span>' +
+      '<span class="bl bl-center">Center ' + s.center + '</span>' +
+      '<span class="bl bl-right">Right ' + s.right + '</span>' +
+      (s.total ? '<span class="bl-total">' + s.total + ' sources</span>' : '') +
+    '</div>';
+    return (
+      '<article class="feed-item glass' + (it.img ? ' has-thumb' : '') + '">' +
+        thumb +
+        '<div class="feed-meta">' +
+          '<span class="src-chip"><i style="--c:#5b8cff"></i>Ground News</span>' +
+          blindspot +
+          '<span>' + esc(timeAgo(it.date)) + '</span>' +
+        '</div>' +
+        '<h3><a href="' + esc(it.link) + '" target="_blank" rel="noopener">' + esc(it.title) + '</a></h3>' +
+        (it.desc ? '<p class="snippet">' + esc(it.desc) + '</p>' : '') +
+        biasBar + legend +
+        '<div class="row"><a class="chip-link" target="_blank" rel="noopener" href="' + esc(it.link) + '">Read full coverage on Ground News ↗</a></div>' +
+      '</article>'
+    );
+  }).join('');
+  el.querySelectorAll('.feed-thumb').forEach(img => {
+    const wrap = img.parentNode;
+    const timer = setTimeout(() => {
+      if (img.isConnected && !img.classList.contains('loaded') && wrap) wrap.remove();
+    }, 8000);
+    img.addEventListener('load', () => { clearTimeout(timer); img.classList.add('loaded'); }, { once: true });
+    img.addEventListener('error', () => { clearTimeout(timer); if (wrap) wrap.remove(); }, { once: true });
+  });
+}
+
+const News = {
+  loaded: false,
+  loading: false,
+  async load(force) {
+    if (this.loading) return;
+    const el = $('#news-feed');
+    const freshEl = $('#news-fresh');
+    let cached = store.get('cache.ground.v2', null);
+    /* Migrate the previous cache schema so a fresh visit still shows the
+       last good batch while the relays are retried in the background. */
+    if (!cached) cached = store.get('cache.ground', null);
+    const FRESH = 2 * 60 * 1000;
+    const setFresh = (t, status) => {
+      if (!freshEl) return;
+      if (!t && status !== 'loading') { freshEl.textContent = ''; freshEl.classList.remove('stale'); return; }
+      if (status === 'loading') { freshEl.textContent = 'Fetching latest stories\u2026'; freshEl.classList.add('stale'); return; }
+      let s = 'Updated ' + timeAgo(new Date(t));
+      if (status === 'retrying') s += ' \u00b7 retrying';
+      else if (status === 'failed') s = 'Cached ' + timeAgo(new Date(t)) + ' \u00b7 refresh failed';
+      freshEl.classList.toggle('stale', status === 'retrying' || status === 'failed');
+      freshEl.textContent = s;
+    };
+    if (cached && cached.items) {
+      const items = cached.items.map(it => Object.assign({}, it, { date: new Date(it.date) }));
+      renderGroundItems(el, items);
+      this.loaded = true;
+      setFresh(cached.t, Date.now() - cached.t > FRESH ? 'retrying' : null);
+      if (!force && Date.now() - cached.t < FRESH) return;
+    } else {
+      setFresh(0);
+    }
+    this.loading = true;
+    if (!cached) { skeletons(el, 6); setFresh(Date.now(), 'loading'); }
+    /* Public CORS relays are flaky, so race them and retry a couple of
+       times \u2014 a transient failure shouldn't strand the visitor on a
+       stale batch for hours. */
+    let html = null, lastErr = null;
+    for (let attempt = 0; attempt < 3 && !html; attempt++) {
+      try { html = await fetchGroundNews(force); }
+      catch (e) { lastErr = e; if (attempt < 2) await new Promise(r => setTimeout(r, 900)); }
+    }
+    try {
+      if (!html) throw lastErr || new Error('no data');
+      const items = parseGroundNews(html);
+      if (items.length < 3) throw new Error('Only ' + items.length + ' stories parsed');
+      renderGroundItems(el, items);
+      store.set('cache.ground.v2', {
+        t: Date.now(),
+        items: items.map(it => Object.assign({}, it, { date: it.date.toISOString() }))
+      });
+      this.loaded = true;
+      setFresh(Date.now(), null);
+    } catch (e) {
+      if (!cached) {
+        el.innerHTML =
+          '<div class="error-panel glass">' +
+            '<p><strong>Ground News is temporarily unreachable.</strong><br>' +
+            'The live bias feed couldn\u2019t load just now \u2014 usually a short hiccup with the public relay. ' +
+            'Try again, or reload the page.</p>' +
+            '<button class="btn primary" id="gn-retry">Try again</button>' +
+            ' <a class="btn ghost" href="https://ground.news/" target="_blank" rel="noopener">Open Ground News \u2197</a>' +
+          '</div>';
+        const r = $('#gn-retry');
+        if (r) r.addEventListener('click', () => this.load(true));
+        setFresh(0);
+      } else {
+        /* keep showing the cached batch, but flag that the refresh failed */
+        setFresh(cached.t, 'failed');
+      }
+    }
+    this.loading = false;
+  }
+};
+
+/* ============================================================
+   Cybersecurity desk
+   ============================================================ */
+const SEC_NEWS_SOURCES = [
+  { name: 'The Hacker News',  color: '#ff6b9d', url: 'https://feeds.feedburner.com/TheHackersNews' },
+  { name: 'BleepingComputer', color: '#6ab7ff', url: 'https://news.google.com/rss/search?q=when:7d%20site:bleepingcomputer.com&hl=en-US&gl=US&ceid=US:en' },
+  { name: 'Krebs on Security',color: '#3fe0c5', url: 'https://krebsonsecurity.com/feed/' },
+  { name: 'SecurityWeek',     color: '#ffd166', url: 'https://www.securityweek.com/feed/' }
+];
+const SEC_ADVISORY_SOURCES = [
+  { name: 'CISA Advisories', color: '#3fe0c5', url: 'https://www.cisa.gov/cybersecurity-advisories/all.xml' }
+];
+const KEV_URL = 'https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json';
+
+const Sec = {
+  tab: 'news',
+  cache: {},
+  times: {},
+  reqId: 0,
+  init() {
+    $$('#view-security .tabs button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        $$('#view-security .tabs button').forEach(b => b.classList.toggle('active', b === btn));
+        this.tab = btn.dataset.tab;
+        this.load();
+      });
+    });
+  },
+  /* freshness indicator mirroring the Ground News `news-fresh` chip */
+  setFresh(t, status) {
+    const el = $('#sec-fresh');
+    if (!el) return;
+    if (!t && status !== 'loading') { el.textContent = ''; el.classList.remove('stale'); return; }
+    if (status === 'loading') { el.textContent = 'Fetching latest intel\u2026'; el.classList.add('stale'); return; }
+    let s = 'Updated ' + timeAgo(new Date(t));
+    if (status === 'retrying') s += ' \u00b7 retrying';
+    else if (status === 'failed') s = 'Cached ' + timeAgo(new Date(t)) + ' \u00b7 refresh failed';
+    el.classList.toggle('stale', status === 'retrying' || status === 'failed');
+    el.textContent = s;
+  },
+  async load(force) {
+    const el = $('#sec-feed');
+    const tab = this.tab;
+    const cached = this.cache[tab];
+    if (!force && cached) { renderItems(el, cached); this.setFresh(this.times[tab], null); return; }
+    const token = ++this.reqId;
+    skeletons(el, 6);
+    this.setFresh(Date.now(), 'loading');
+    const alive = () => token === this.reqId && this.tab === tab;
+    try {
+      let items;
+      if (tab === 'kev') {
+        items = await this.loadKev();
+        if (alive()) { this.cache[tab] = items; this.times[tab] = Date.now(); renderItems(el, items); this.setFresh(this.times[tab], null); }
+      } else {
+        const sources = tab === 'advisories' ? SEC_ADVISORY_SOURCES : SEC_NEWS_SOURCES;
+        const onPartial = (partial, failed) => {
+          if (!alive()) return;
+          partial._failed = failed;
+          renderItems(el, partial);
+        };
+        const res = await loadSources(sources, tab === 'advisories' ? 15 : 8, 18, { onPartial });
+        items = res.items;
+        items._failed = res.failed;
+        this.cache[tab] = items;
+        this.times[tab] = Date.now();
+        if (alive()) { renderItems(el, items); this.setFresh(this.times[tab], null); }
+      }
+    } catch (e) {
+      if (alive()) { errorPanel(el, () => this.load(true), ''); this.setFresh(this.times[tab] || 0, 'failed'); }
+    }
+  },
+  async loadKev() {
+    const raw = await fetchText(KEV_URL, 12000);
+    const data = JSON.parse(raw);
+    const vulns = (data.vulnerabilities || [])
+      .sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded))
+      .slice(0, 14);
+    return vulns.map(v => ({
+      title: (v.vendorProject ? v.vendorProject + ' ' : '') + (v.product ? v.product + ' — ' : '') + (v.vulnerabilityName || v.cveID),
+      link: 'https://nvd.nist.gov/vuln/detail/' + encodeURIComponent(v.cveID),
+      date: new Date(v.dateAdded),
+      desc: (v.shortDescription || '').slice(0, 260) + (v.requiredAction ? ' Required action: ' + v.requiredAction : ''),
+      source: 'CISA KEV',
+      color: '#ff5d5d',
+      cve: v.cveID
+    }));
+  }
+};
+
+/* ============================================================
+   Contact form
+   ============================================================ */
+function initContact() {
+  const next = $('#next-url');
+  if (next && /^https?:$/.test(location.protocol)) {
+    next.value = location.origin + location.pathname + '?sent=1#contact';
+  }
+  const params = new URLSearchParams(location.search);
+  if (params.get('sent') === '1') {
+    $('#sent-banner').classList.add('show');
+    toast('Message sent — thank you!');
+    history.replaceState(null, '', location.pathname + location.hash);
+  }
+  $('#contact-form').addEventListener('submit', () => {
+    toast('Opening the captcha check…');
+  });
+}
+
+/* Multilingual greeting roller — cycles "Hello" through 13 languages,
+   each new word rolling up into place like a meter. */
+const GREETINGS = [
+  'Hello', 'Hej', 'Hola', 'नमस्ते', 'مرحباً', '你好',
+  'こんにちは', 'Hallo', 'Ciao', 'Cześć', 'Bonjour', 'Hei', 'สวัสดี'
+];
+function startGreetRoller() {
+  const el = $('#greet');
+  if (!el) return;
+  let i = 0;
+  el.textContent = GREETINGS[0];
+  setInterval(() => {
+    i = (i + 1) % GREETINGS.length;
+    el.classList.remove('roll');
+    void el.offsetWidth; /* force reflow so the animation restarts */
+    el.textContent = GREETINGS[i];
+    el.classList.add('roll');
+  }, 2000);
+}
+
+/* ============================================================
+   Best-score chips on the games hub
+   ============================================================ */
+function refreshBestScores() {
+  const map = {
+    slots:   () => store.get('credits', 1000) + ' chips',
+    plinko:  () => store.get('credits', 1000) + ' chips',
+    roulette: () => store.get('credits', 1000) + ' chips',
+    g2048:   () => 'Best: ' + store.get('g2.best', 0),
+    xo:      () => 'Wins: ' + store.get('xo.wins', 0),
+    flappy:  () => 'Best: ' + store.get('fl.best', 0)
+  };
+  $$('[data-best]').forEach(el => {
+    const fn = map[el.dataset.best];
+    if (fn) el.textContent = fn();
+  });
+}
+/* ============================================================
+   Arcade — modal manager + four games
+   ============================================================ */
+function rr(ctx, x, y, w, h, r) { /* roundRect with fallback */
+  if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); return; }
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function attachSwipe(el, cb) {
+  let sx = 0, sy = 0, active = false;
+  const start = e => { const t = e.touches[0]; sx = t.clientX; sy = t.clientY; active = true; };
+  const end = e => {
+    if (!active) return; active = false;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - sx, dy = t.clientY - sy;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 28) return;
+    cb(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
+  };
+  el.addEventListener('touchstart', start, { passive: true });
+  el.addEventListener('touchend', end, { passive: true });
+  return () => { el.removeEventListener('touchstart', start); el.removeEventListener('touchend', end); };
+}
+
+const GameModal = {
+  active: null,
+  init() {
+    this.overlay = $('#game-modal');
+    this.panel = $('#game-panel');
+    this.titleEl = $('#game-modal-title');
+    this.stage = $('#game-stage');
+    $('#game-close').addEventListener('click', () => this.close());
+    this.overlay.addEventListener('click', e => { if (e.target === this.overlay) this.close(); });
+    document.addEventListener('keydown', e => {
+      if (!this.active) return;
+      if (e.key === 'Escape') { this.close(); return; }
+      const t = e.target;
+      if ((e.key === ' ' || e.key === 'Enter') && t && t.closest && t.closest('button, a, input, textarea')) return;
+      if (this.active.onKey) this.active.onKey(e);
+    });
+  },
+  open(id) {
+    const g = GAMES[id];
+    if (!g) return;
+    this.close();
+    this.active = g;
+    this.titleEl.textContent = g.title;
+    this.panel.classList.toggle('wide', !!g.wide);
+    this.stage.innerHTML = '';
+    this.overlay.classList.add('show');
+    document.body.classList.add('modal-open');
+    g.init(this.stage);
+    this.panel.focus({ preventScroll: true });
+  },
+  close() {
+    if (this.active && this.active.destroy) this.active.destroy();
+    this.active = null;
+    if (this.overlay) {
+      this.overlay.classList.remove('show');
+      this.stage.innerHTML = '';
+    }
+    document.body.classList.remove('modal-open');
+    refreshBestScores();
+  }
+};
+
+
+const PonytailModal = {
+  init() {
+    this.overlay = $('#ponytail-modal');
+    this.panel = $('.ponytail-panel');
+    if (!this.overlay) return;
+    $('#ponytail-open').addEventListener('click', () => this.open());
+    $('#ponytail-close').addEventListener('click', () => this.close());
+    this.overlay.addEventListener('click', e => { if (e.target === this.overlay) this.close(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && this.overlay.classList.contains('show')) this.close(); });
+    const copyBtn = $('#ponytail-copy');
+    copyBtn.addEventListener('click', () => this.copyPrompt(copyBtn));
+  },
+  open() {
+    this.overlay.classList.add('show');
+    document.body.classList.add('modal-open');
+    if (this.panel) this.panel.focus({ preventScroll: true });
+  },
+  close() {
+    if (this.overlay) this.overlay.classList.remove('show');
+    document.body.classList.remove('modal-open');
+  },
+  copyPrompt(btn) {
+    const code = $('#ponytail-prompt');
+    const text = code ? code.textContent : '';
+    const done = () => { btn.textContent = 'Copied ✓'; btn.classList.add('copied'); showToast('Prompt copied to clipboard'); setTimeout(() => { btn.textContent = 'Copy prompt'; btn.classList.remove('copied'); }, 2200); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(() => this.fallbackCopy(text, done));
+    } else {
+      this.fallbackCopy(text, done);
+    }
+  },
+  fallbackCopy(text, done) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      done();
+    } catch (e) { showToast('Copy failed — select the text manually'); }
+  }
+};
+
+/* ============================================================
+   SLOTS — 5×3 video slot with 5 paylines
+   ============================================================
+   Each reel position is an independent weighted draw, so the paytable's
+   expected return is analytic. Payouts below (×line bet, stake included)
+   are tuned so the long-run return ≈ 95% of stake — a ~5% house edge,
+   verified by simulation (≈0.9505 RTP). Wins are paid left-to-right:
+   3, 4 or 5 matching symbols from the first reel on any of the five
+   paylines (top / middle / bottom rows + a V and an inverted-V). */
+const VS_SYMS = [
+  { k: '7',    e: '7\uFE0F\u20E3', w: 1,  name: 'Sevens' },
+  { k: 'DIA',  e: '\uD83D\uDC8E', w: 2,  name: 'Diamond' },
+  { k: 'STAR', e: '\u2B50',       w: 4,  name: 'Star' },
+  { k: 'BELL', e: '\uD83D\uDD14', w: 7,  name: 'Bell' },
+  { k: 'LEM',  e: '\uD83C\uDF4B', w: 12, name: 'Lemon' },
+  { k: 'CHER', e: '\uD83C\uDF52', w: 20, name: 'Cherry' }
+];
+const VS_W = VS_SYMS.reduce((s, x) => s + x.w, 0);
+const VS_PAY = {
+  '7':    { 3: 80, 4: 400, 5: 1500 },
+  'DIA':  { 3: 25, 4: 100, 5: 400 },
+  'STAR': { 3: 12, 4: 45,  5: 180 },
+  'BELL': { 3: 6,  4: 18,  5: 60 },
+  'LEM':  { 3: 5,  4: 15,  5: 36 },
+  'CHER': { 3: 3,  4: 10,  5: 26 }
+};
+/* row index per reel for each payline (0=top, 1=mid, 2=bottom) */
+const VS_LINES = [
+  [0, 0, 0, 0, 0], [1, 1, 1, 1, 1], [2, 2, 2, 2, 2],
+  [0, 1, 2, 1, 0], [2, 1, 0, 1, 2]
+];
+
+function vsPick() {
+  const r = Math.random() * VS_W;
+  let acc = 0;
+  for (const s of VS_SYMS) { acc += s.w; if (r < acc) return s; }
+  return VS_SYMS[VS_SYMS.length - 1];
+}
+/* grid: 5 reels × 3 rows; grid[reel] = [top, mid, bottom] symbols */
+function vsGrid() {
+  return Array.from({ length: 5 }, () => [vsPick(), vsPick(), vsPick()]);
+}
+/* evaluate every payline; returns { wins, total }. A line pays when the
+   first reel's symbol repeats on the next 2, 3 or 4 reels (k = match count). */
+function vsEval(grid, lineBet) {
+  const wins = [];
+  let total = 0;
+  VS_LINES.forEach((line, li) => {
+    const sym = grid[0][line[0]];
+    let k = 1;
+    while (k < 5 && grid[k][line[k]].k === sym.k) k++;
+    if (k >= 3) {
+      const amt = lineBet * VS_PAY[sym.k][k];
+      total += amt;
+      wins.push({ line: li, k, sym, amt, cells: line.slice(0, k).map((row, col) => ({ row, col })) });
+    }
+  });
+  return { wins, total };
+}
+
+const Slots = {
+  title: 'Slots',
+  init(stage) {
+    const BETS = [10, 25, 50, 100];
+    const REELS = 5, ROWS = 3;
+
+    stage.innerHTML =
+      '<div class="game-hud">' +
+        '<div class="hud-pill"><span class="lbl">Balance</span><span class="val" id="sl-balance">1000</span></div>' +
+        '<div class="hud-pill"><span class="lbl">Last win</span><span class="val" id="sl-win">0</span></div>' +
+        '<button class="btn" id="sl-reset" type="button">Reset bankroll</button>' +
+      '</div>' +
+      '<div class="canvas-wrap" style="width:fit-content">' +
+        '<div class="vs-machine" id="vs-machine"></div>' +
+        '<div class="game-over-layer" id="sl-over" style="display:none">' +
+          '<h4>You&rsquo;re broke</h4><p style="color:var(--ink2)">Out of chips &mdash; restart with 1,000?</p>' +
+          '<button class="btn primary" id="sl-retry" type="button">Restart</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="sl-bets" id="sl-bets"></div>' +
+      '<div class="sl-actions"><button class="btn primary" id="sl-spin" type="button">Spin</button></div>' +
+      '<p class="stage-hint">5 reels, 5 paylines. Match 3, 4 or 5 from the left reel on any line &mdash; five 7s is the jackpot.</p>';
+
+    const machine = $('#vs-machine', stage);
+    const betsWrap = $('#sl-bets', stage);
+    const balEl = $('#sl-balance', stage), winEl = $('#sl-win', stage);
+    const overEl = $('#sl-over', stage);
+    const spinBtn = $('#sl-spin', stage);
+
+    let balance = store.get('credits', 1000);
+    let bet = store.get('sl.bet', 25);
+    if (!BETS.includes(bet)) bet = 25;
+    let lastWin = 0;
+    let spinning = false;
+    const reels = [];
+
+    const symEl = s => { const d = document.createElement('div'); d.className = 'vs-sym'; d.textContent = s.e; return d; };
+    const cellH = () => reels[0] ? reels[0].reel.clientHeight / ROWS : 64;
+
+    for (let i = 0; i < REELS; i++) {
+      const reel = document.createElement('div');
+      reel.className = 'vs-reel';
+      const strip = document.createElement('div');
+      strip.className = 'vs-strip';
+      reel.appendChild(strip);
+      machine.appendChild(reel);
+      reels.push({ reel, strip, current: [vsPick(), vsPick(), vsPick()], landedIndex: 0 });
+    }
+
+    const drawIdle = () => reels.forEach(r => {
+      r.strip.style.transition = 'none';
+      r.strip.innerHTML = '';
+      r.current.forEach(s => r.strip.appendChild(symEl(s)));
+      r.strip.classList.remove('vs-spinning');
+      r.landedIndex = 0;
+      r.strip.style.transform = 'translateY(0)';
+    });
+
+    const render = () => {
+      balEl.textContent = balance;
+      winEl.textContent = lastWin;
+      [].slice.call(betsWrap.children).forEach(b => b.classList.toggle('sel', +b.dataset.bet === bet));
+    };
+
+    const clearWins = () => reels.forEach(r =>
+      r.strip.querySelectorAll('.vs-sym.win').forEach(el => el.classList.remove('win')));
+
+    const finishSpin = grid => {
+      spinning = false;
+      spinBtn.disabled = false;
+      spinBtn.textContent = 'Spin';
+      const lineBet = Math.floor(bet / VS_LINES.length);
+      const { wins, total } = vsEval(grid, lineBet);
+      lastWin = Math.round(total);
+      balance += lastWin;
+      reels.forEach(r => r.strip.classList.remove('vs-spinning'));
+      if (lastWin > 0) {
+        wins.forEach(w => w.cells.forEach(({ row, col }) => {
+          const el = reels[col].strip.children[reels[col].landedIndex + row];
+          if (el) el.classList.add('win');
+        }));
+        const best = wins.reduce((a, b) => b.amt > a.amt ? b : a, wins[0]);
+        if (best.k === 5 && best.sym.k === '7') toast('JACKPOT! Five 7s  +' + lastWin + ' chips');
+        else toast(best.k + '× ' + best.sym.name + ' on ' + wins.length + ' line' + (wins.length > 1 ? 's' : '') + '  +' + lastWin);
+      }
+      store.set('credits', balance);
+      render();
+      if (balance < BETS[0]) overEl.style.display = 'flex';
+    };
+
+    const spin = () => {
+      if (spinning) return;
+      if (balance < bet) { toast('Not enough chips for that bet'); return; }
+      spinning = true;
+      clearWins();
+      balance -= bet; lastWin = 0; render();
+      spinBtn.disabled = true; spinBtn.textContent = 'Spinning\u2026';
+      const grid = vsGrid();
+      /* sub-pixel-accurate symbol height so every reel lands exactly aligned */
+      const firstSym = reels[0].strip.firstChild;
+      const h = firstSym ? firstSym.getBoundingClientRect().height : (reels[0].reel.clientHeight / ROWS || 64);
+      let landed = 0;
+      reels.forEach((r, i) => {
+        const targets = grid[i];
+        const filler = 22 + i * 5;            /* scrolling symbols before the targets */
+        const extras = 4;                     /* symbols after the targets, revealed by the landing overshoot */
+        const count = filler + 3 + extras;
+        /* reset to the top with no transition so the new spin always animates
+           a real change (otherwise a second consecutive spin could hang). */
+        r.strip.style.transition = 'none';
+        r.strip.style.transform = 'translateY(0)';
+        r.strip.innerHTML = '';
+        for (let k = 0; k < count; k++) {
+          const s = (k >= filler && k < filler + 3) ? targets[k - filler] : vsPick();
+          r.strip.appendChild(symEl(s));
+        }
+        r.landedIndex = filler;               /* visible window = indices [filler .. filler+2] = targets */
+        r.strip.classList.add('vs-spinning');
+        void r.strip.offsetWidth;            /* force reflow so the transform animates */
+        const landY = -filler * h;
+        const dur = 980 + i * 300;
+        /* strong ease-out with a tiny overshoot: reels brake, dip a hair past
+           the target (showing the extras), then settle — a tactile landing. */
+        r.strip.style.transition = 'transform ' + dur + 'ms cubic-bezier(.16,.66,.18,1.05)';
+        r.strip.style.transform = 'translateY(' + landY + 'px)';
+        /* finish once — on transitionend, or a safety timeout if the event
+           is missed (e.g. background tab / no transform change). */
+        let doneCalled = false, doneTimer = 0;
+        const done = () => {
+          if (doneCalled) return;
+          doneCalled = true;
+          clearTimeout(doneTimer);
+          r.strip.removeEventListener('transitionend', onEnd);
+          r.current = targets;
+          r.strip.classList.remove('vs-spinning');
+          landed++;
+          if (landed === REELS) finishSpin(grid);
+        };
+        const onEnd = ev => {
+          if (ev && ev.propertyName !== 'transform') return;
+          done();
+        };
+        r.strip.addEventListener('transitionend', onEnd);
+        doneTimer = setTimeout(done, dur + 200);
+      });
+    };
+
+    const resetBankroll = () => {
+      balance = 1000; lastWin = 0; spinning = false;
+      store.set('credits', balance);
+      overEl.style.display = 'none';
+      drawIdle(); render();
+      toast('Bankroll reset to 1,000');
+    };
+
+    drawIdle();
+    BETS.forEach(b => {
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'sl-bet'; btn.dataset.bet = b; btn.textContent = b;
+      btn.addEventListener('click', () => { if (spinning) return; bet = b; store.set('sl.bet', bet); render(); });
+      betsWrap.appendChild(btn);
+    });
+    render();
+    spinBtn.addEventListener('click', spin);
+    $('#sl-reset', stage).addEventListener('click', resetBankroll);
+    $('#sl-retry', stage).addEventListener('click', resetBankroll);
+
+    this.onKey = e => {
+      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); spin(); }
+    };
+    this.destroy = () => {};
+  }
+};
+
+
+/* ============================================================
+   2048
+   ============================================================ */
+const G2048 = {
+  title: '2048',
+  init(stage) {
+    stage.innerHTML =
+      '<div class="game-hud">' +
+        '<div class="hud-pill"><span class="lbl">Score</span><span class="val" id="g2-score">0</span></div>' +
+        '<div class="hud-pill"><span class="lbl">Best</span><span class="val" id="g2-best">0</span></div>' +
+        '<button class="btn" id="g2-new" type="button">New game</button>' +
+      '</div>' +
+      '<div class="canvas-wrap" style="width:min(420px,86vw)">' +
+        '<div class="g2-board" id="g2-board" style="touch-action:none"></div>' +
+        '<div class="game-over-layer" id="g2-over" style="display:none">' +
+          '<h4>Game over</h4><p id="g2-final" style="color:var(--ink2)"></p>' +
+          '<button class="btn primary" id="g2-retry" type="button">Play again</button>' +
+        '</div>' +
+      '</div>' +
+      '<p class="stage-hint">Arrow keys / WASD or swipe. Merge your way to 2048.</p>';
+
+    const board = $('#g2-board', stage);
+    const cells = [];
+    for (let i = 0; i < 16; i++) {
+      const c = document.createElement('div');
+      c.className = 'g2-cell';
+      board.appendChild(c);
+      cells.push(c);
+    }
+
+    const LINES = {
+      left:  [[0,1,2,3],[4,5,6,7],[8,9,10,11],[12,13,14,15]],
+      right: [[3,2,1,0],[7,6,5,4],[11,10,9,8],[15,14,13,12]],
+      up:    [[0,4,8,12],[1,5,9,13],[2,6,10,14],[3,7,11,15]],
+      down:  [[12,8,4,0],[13,9,5,1],[14,10,6,2],[15,11,7,3]]
+    };
+
+    let grid, score, best = store.get('g2.best', 0), over, reached2048;
+    const scoreEl = $('#g2-score', stage), bestEl = $('#g2-best', stage);
+    const overEl = $('#g2-over', stage);
+
+    const addRandom = () => {
+      const empty = grid.map((v, i) => v ? -1 : i).filter(i => i >= 0);
+      if (!empty.length) return -1;
+      const i = empty[Math.floor(Math.random() * empty.length)];
+      grid[i] = Math.random() < 0.9 ? 2 : 4;
+      return i;
+    };
+
+    const render = (fresh, merged) => {
+      for (let i = 0; i < 16; i++) {
+        const v = grid[i];
+        cells[i].innerHTML = v
+          ? '<div class="g2-tile' + (fresh.has(i) ? ' pop' : '') + (merged.has(i) ? ' merged' : '') + '" data-v="' + v + '">' + v + '</div>'
+          : '';
+      }
+      scoreEl.textContent = score;
+      bestEl.textContent = best;
+    };
+
+    const canMove = () => {
+      if (grid.includes(0)) return true;
+      for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) {
+        const i = r * 4 + c;
+        if (c < 3 && grid[i] === grid[i + 1]) return true;
+        if (r < 3 && grid[i] === grid[i + 4]) return true;
+      }
+      return false;
+    };
+
+    const move = dir => {
+      if (over) return;
+      let changed = false;
+      const merged = new Set();
+      LINES[dir].forEach(idxs => {
+        const compact = idxs.map(i => grid[i]).filter(Boolean);
+        const out = [];
+        const lockedMerge = new Set();
+        for (let k = 0; k < compact.length; k++) {
+          const last = out.length - 1;
+          if (last >= 0 && out[last] === compact[k] && !lockedMerge.has(last)) {
+            out[last] *= 2;
+            score += out[last];
+            lockedMerge.add(last);
+            merged.add(idxs[last]);
+            if (out[last] === 2048 && !reached2048) { reached2048 = true; toast('2048! Absolute legend. Keep going?'); }
+          } else out.push(compact[k]);
+        }
+        idxs.forEach((idx, pos) => {
+          const nv = out[pos] || 0;
+          if (grid[idx] !== nv) changed = true;
+          grid[idx] = nv;
+        });
+      });
+      if (!changed) return;
+      if (score > best) { best = score; store.set('g2.best', best); }
+      const fresh = new Set([addRandom()]);
+      render(fresh, merged);
+      if (!canMove()) {
+        over = true;
+        $('#g2-final', stage).textContent = 'Final score: ' + score;
+        overEl.style.display = 'flex';
+      }
+    };
+
+    const reset = () => {
+      grid = Array(16).fill(0);
+      score = 0; over = false; reached2048 = false;
+      overEl.style.display = 'none';
+      render(new Set([addRandom(), addRandom()]), new Set());
+    };
+    reset();
+
+    $('#g2-new', stage).addEventListener('click', reset);
+    $('#g2-retry', stage).addEventListener('click', reset);
+    const detachSwipe = attachSwipe(board, move);
+
+    const KEYMAP = {
+      ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down',
+      a: 'left', d: 'right', w: 'up', s: 'down'
+    };
+    this.onKey = e => {
+      const dir = KEYMAP[e.key];
+      if (dir) { e.preventDefault(); move(dir); }
+    };
+    this.destroy = () => { detachSwipe(); };
+  }
+};
+
+/* ============================================================
+   X & O
+   ============================================================ */
+const TicTacToe = {
+  title: 'X & O',
+  init(stage) {
+    stage.innerHTML =
+      '<div class="game-hud">' +
+        '<div class="hud-pill"><span class="lbl">Wins</span><span class="val" id="xo-wins">0</span></div>' +
+        '<div class="hud-pill"><span class="lbl">Draws</span><span class="val" id="xo-draws">0</span></div>' +
+        '<div class="hud-pill"><span class="lbl">Losses</span><span class="val" id="xo-losses">0</span></div>' +
+        '<button class="btn" id="xo-new" type="button">New round</button>' +
+      '</div>' +
+      '<div class="canvas-wrap" style="width:min(360px,86vw)">' +
+        '<div class="xo-board" id="xo-board"></div>' +
+        '<div class="game-over-layer" id="xo-over" style="display:none">' +
+          '<h4 id="xo-over-title"></h4><p id="xo-over-sub" style="color:var(--ink2)"></p>' +
+          '<button class="btn primary" id="xo-retry" type="button">Play again</button>' +
+        '</div>' +
+      '</div>' +
+      '<p class="stage-hint">Tap a square or press 1&ndash;9. You are X, the machine is O &mdash; and it flips a coin every round: unbeatable or clueless.</p>';
+
+    const board = $('#xo-board', stage);
+    const winsEl = $('#xo-wins', stage), drawsEl = $('#xo-draws', stage), lossesEl = $('#xo-losses', stage);
+    const overEl = $('#xo-over', stage), overTitle = $('#xo-over-title', stage), overSub = $('#xo-over-sub', stage);
+
+    const LINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+    let grid, turn, over;
+    let wins = store.get('xo.wins', 0), draws = store.get('xo.draws', 0), losses = store.get('xo.losses', 0);
+    const cells = [];
+
+    const renderScore = () => { winsEl.textContent = wins; drawsEl.textContent = draws; lossesEl.textContent = losses; };
+
+    const winner = g => {
+      for (let i = 0; i < LINES.length; i++) {
+        const a = LINES[i][0], b = LINES[i][1], c = LINES[i][2];
+        if (g[a] && g[a] === g[b] && g[a] === g[c]) return { p: g[a], line: [a, b, c] };
+      }
+      return g.every(v => v) ? { p: 'draw', line: null } : null;
+    };
+
+    const draw = () => cells.forEach((c, i) => {
+      c.className = 'xo-cell' + (grid[i] ? ' filled' : '');
+      c.textContent = grid[i] || '';
+      c.style.color = grid[i] === 'X' ? 'var(--teal)' : (grid[i] === 'O' ? 'var(--pink)' : '');
+    });
+
+    const endGame = res => {
+      over = true;
+      if (res.p === 'X') { wins++; store.set('xo.wins', wins); overTitle.textContent = 'You win!'; }
+      else if (res.p === 'O') { losses++; store.set('xo.losses', losses); overTitle.textContent = 'Machine wins'; }
+      else { draws++; store.set('xo.draws', draws); overTitle.textContent = 'Draw'; }
+      renderScore();
+      if (res.line) res.line.forEach(i => cells[i].classList.add('win'));
+      overSub.textContent = 'X ' + wins + ' \u00b7 O ' + losses + ' \u00b7 = ' + draws;
+      overEl.style.display = 'flex';
+    };
+
+    /* Two personalities, coin-flipped every round in reset():
+       - 'perfect': depth-aware minimax over the full game tree — provably
+         unbeatable (your best possible result is a draw).
+       - 'dumb':    a uniformly random empty square. No blocking, no plan.
+       Which one you're facing is never shown — that's the game. */
+    let mode = 'perfect';
+
+    const minimax = (g, isOTurn, depth) => {
+      const res = winner(g);
+      if (res) {
+        if (res.p === 'O') return 10 - depth;   /* prefer faster wins   */
+        if (res.p === 'X') return depth - 10;   /* prefer slower losses */
+        return 0;
+      }
+      if (isOTurn) {
+        let best = -Infinity;
+        for (let i = 0; i < 9; i++) if (!g[i]) { g[i] = 'O'; best = Math.max(best, minimax(g, false, depth + 1)); g[i] = ''; }
+        return best;
+      }
+      let best = Infinity;
+      for (let i = 0; i < 9; i++) if (!g[i]) { g[i] = 'X'; best = Math.min(best, minimax(g, true, depth + 1)); g[i] = ''; }
+      return best;
+    };
+
+    const bestMove = () => {
+      const g = grid.slice();
+      let best = -Infinity, mv = -1;
+      for (let i = 0; i < 9; i++) if (!g[i]) {
+        g[i] = 'O';
+        const s = minimax(g, false, 0);
+        g[i] = '';
+        if (s > best) { best = s; mv = i; }
+      }
+      return mv;
+    };
+
+    const randomMove = () => {
+      const free = [];
+      for (let i = 0; i < 9; i++) if (!grid[i]) free.push(i);
+      return free.length ? free[Math.floor(Math.random() * free.length)] : -1;
+    };
+
+    const aiMove = () => (mode === 'perfect' ? bestMove() : randomMove());
+
+    const place = (i, mark) => { grid[i] = mark; draw(); };
+
+    const playerMove = i => {
+      if (over || grid[i] || turn !== 'X') return;
+      place(i, 'X');
+      let res = winner(grid);
+      if (res) { endGame(res); return; }
+      turn = 'O';
+      setTimeout(() => {
+        const m = aiMove();
+        if (m >= 0) place(m, 'O');
+        res = winner(grid);
+        if (res) { endGame(res); return; }
+        turn = 'X';
+      }, 360);
+    };
+
+    const reset = () => {
+      grid = Array(9).fill('');
+      turn = 'X'; over = false;
+      mode = Math.random() < 0.5 ? 'perfect' : 'dumb';  /* 50/50 each round */
+      overEl.style.display = 'none';
+      draw();
+    };
+
+    for (let i = 0; i < 9; i++) {
+      const c = document.createElement('button');
+      c.type = 'button'; c.className = 'xo-cell';
+      c.addEventListener('click', () => playerMove(i));
+      board.appendChild(c); cells.push(c);
+    }
+    $('#xo-new', stage).addEventListener('click', reset);
+    $('#xo-retry', stage).addEventListener('click', reset);
+    renderScore(); reset();
+
+    this.onKey = e => {
+      const n = parseInt(e.key, 10);
+      if (n >= 1 && n <= 9) { e.preventDefault(); playerMove(n - 1); }
+      else if ((e.key === ' ' || e.key === 'Enter') && over) { e.preventDefault(); reset(); }
+    };
+    this.destroy = () => {};
+  }
+};
+
+
+/* ============================================================
+   FLAPPY GLASS
+   ============================================================ */
+const Flappy = {
+  title: 'Flappy Glass',
+  init(stage) {
+    const W = 380, H = 560, GROUND = 54;
+    stage.innerHTML =
+      '<div class="game-hud">' +
+        '<div class="hud-pill"><span class="lbl">Score</span><span class="val" id="fl-score">0</span></div>' +
+        '<div class="hud-pill"><span class="lbl">Best</span><span class="val" id="fl-best">0</span></div>' +
+      '</div>' +
+      '<div class="canvas-wrap">' +
+        '<canvas id="fl-canvas" class="game-canvas" style="width:min(380px,86vw);aspect-ratio:380/560"></canvas>' +
+        '<div class="game-over-layer" id="fl-over" style="display:none">' +
+          '<h4>Splat.</h4><p id="fl-final" style="color:var(--ink2)"></p>' +
+          '<button class="btn primary" id="fl-retry" type="button">One more go</button>' +
+        '</div>' +
+      '</div>' +
+      '<p class="stage-hint">Tap, click or press Space to flap. Mind the glass.</p>';
+
+    const canvas = $('#fl-canvas', stage);
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    const scoreEl = $('#fl-score', stage), bestEl = $('#fl-best', stage);
+    const overEl = $('#fl-over', stage), finalEl = $('#fl-final', stage);
+
+    const G = 1650, FLAP = -430, SPEED = 172, GAP = 168, PW = 70, BX = 96, BR = 15;
+    let mode, y, vy, pipes, score, deadAt, last = 0, raf = 0, t = 0;
+    let best = store.get('fl.best', 0);
+    bestEl.textContent = best;
+
+    const reset = () => {
+      mode = 'ready'; y = H / 2 - 40; vy = 0; pipes = []; score = 0;
+      scoreEl.textContent = '0';
+      overEl.style.display = 'none';
+    };
+    reset();
+
+    const die = () => {
+      mode = 'dead'; deadAt = performance.now();
+      if (score > best) { best = score; store.set('fl.best', best); bestEl.textContent = best; }
+      finalEl.textContent = 'Score: ' + score + ' · Best: ' + best;
+      overEl.style.display = 'flex';
+    };
+
+    const flap = () => {
+      if (mode === 'dead') {
+        if (performance.now() - deadAt > 450) { reset(); }
+        return;
+      }
+      if (mode === 'ready') mode = 'play';
+      vy = FLAP;
+    };
+
+    const update = dt => {
+      if (mode !== 'play') return;
+      vy += G * dt;
+      y += vy * dt;
+      if (!pipes.length || pipes[pipes.length - 1].x < W - 232) {
+        const margin = 90;
+        pipes.push({ x: W + 30, gapY: margin + Math.random() * (H - GROUND - margin * 2), passed: false });
+      }
+      pipes.forEach(p => { p.x -= SPEED * dt; });
+      while (pipes.length && pipes[0].x < -PW) pipes.shift();
+      pipes.forEach(p => {
+        if (!p.passed && p.x + PW < BX - BR) { p.passed = true; score++; scoreEl.textContent = score; }
+        if (BX + BR > p.x && BX - BR < p.x + PW) {
+          if (y - BR < p.gapY - GAP / 2 || y + BR > p.gapY + GAP / 2) die();
+        }
+      });
+      if (y + BR > H - GROUND || y - BR < 0) die();
+    };
+
+    const drawPipe = (x, gy) => {
+      ctx.fillStyle = 'rgba(63,224,197,.28)';
+      ctx.strokeStyle = 'rgba(63,224,197,.7)';
+      ctx.lineWidth = 1.5;
+      const topH = gy - GAP / 2, botY = gy + GAP / 2;
+      rr(ctx, x, -12, PW, topH + 12, 10); ctx.fill(); ctx.stroke();
+      rr(ctx, x - 5, topH - 16, PW + 10, 16, 7); ctx.fill(); ctx.stroke();
+      rr(ctx, x, botY, PW, H - GROUND - botY + 12, 10); ctx.fill(); ctx.stroke();
+      rr(ctx, x - 5, botY, PW + 10, 16, 7); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,.22)';
+      ctx.fillRect(x + 6, 0, 3, topH - 16);
+      ctx.fillRect(x + 6, botY + 16, 3, H - GROUND - botY - 16);
+    };
+
+    const draw = now => {
+      ctx.clearRect(0, 0, W, H);
+      /* ambient glass orbs */
+      ctx.fillStyle = 'rgba(106,183,255,.08)';
+      ctx.beginPath(); ctx.arc(70 - (t * 12 % 500), 130, 60, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(330 - (t * 20 % 700), 320, 85, 0, Math.PI * 2); ctx.fill();
+      pipes.forEach(p => drawPipe(p.x, p.gapY));
+      /* ground */
+      ctx.fillStyle = 'rgba(255,255,255,.06)';
+      ctx.fillRect(0, H - GROUND, W, GROUND);
+      ctx.strokeStyle = 'rgba(255,255,255,.28)';
+      ctx.beginPath(); ctx.moveTo(0, H - GROUND); ctx.lineTo(W, H - GROUND); ctx.stroke();
+      /* bird */
+      const by = mode === 'ready' ? y + Math.sin(now / 260) * 7 : y;
+      const tilt = mode === 'play' ? Math.max(-0.5, Math.min(0.9, vy / 600)) : 0;
+      ctx.save();
+      ctx.translate(BX, by);
+      ctx.rotate(tilt);
+      const bg = ctx.createRadialGradient(-5, -5, 2, 0, 0, BR + 2);
+      bg.addColorStop(0, '#ffffff'); bg.addColorStop(1, '#ffb2cb');
+      ctx.beginPath(); ctx.arc(0, 0, BR, 0, Math.PI * 2);
+      ctx.fillStyle = bg;
+      ctx.shadowColor = 'rgba(255,107,157,.65)'; ctx.shadowBlur = 16;
+      ctx.fill(); ctx.shadowBlur = 0;
+      ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 1.5; ctx.stroke();
+      const wingUp = vy < 0 || mode === 'ready';
+      ctx.fillStyle = 'rgba(255,255,255,.85)';
+      ctx.beginPath();
+      ctx.ellipse(-4, wingUp ? -3 : 4, 8, 4.5, wingUp ? -0.5 : 0.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#0a0f1f';
+      ctx.beginPath(); ctx.arc(6, -4, 2.4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#ffd166';
+      ctx.beginPath(); ctx.moveTo(BR - 2, -1); ctx.lineTo(BR + 7, 2); ctx.lineTo(BR - 2, 5); ctx.closePath(); ctx.fill();
+      ctx.restore();
+      /* score + hints */
+      ctx.textAlign = 'center';
+      if (mode === 'play') {
+        ctx.fillStyle = 'rgba(255,255,255,.9)';
+        ctx.font = '700 44px "Space Grotesk", sans-serif';
+        ctx.fillText(String(score), W / 2, 78);
+      }
+      if (mode === 'ready') {
+        ctx.fillStyle = 'rgba(255,255,255,.85)';
+        ctx.font = '700 24px "Space Grotesk", sans-serif';
+        ctx.fillText('Tap to flap', W / 2, H / 2 + 60);
+        ctx.font = '500 13px -apple-system, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,.5)';
+        ctx.fillText('Space works too', W / 2, H / 2 + 84);
+      }
+    };
+
+    const loop = now => {
+      if (!last) last = now;
+      const dt = Math.min(0.032, (now - last) / 1000);
+      last = now;
+      t += dt;
+      update(dt);
+      draw(now);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+
+    const onPointer = e => { e.preventDefault(); flap(); };
+    canvas.addEventListener('pointerdown', onPointer);
+    $('#fl-retry', stage).addEventListener('click', reset);
+
+    this.onKey = e => {
+      if (e.key === ' ' || e.key === 'ArrowUp') { e.preventDefault(); flap(); }
+    };
+    this.destroy = () => { cancelAnimationFrame(raf); canvas.removeEventListener('pointerdown', onPointer); };
+  }
+};
+
+/* ============================================================
+   PLINKO
+   ============================================================ */
+/* ---- Plinko maths: binomial landing odds + payout normalisation ----
+   Bucket k of an n-row board is hit with probability C(n,k)/2^n. On this
+   board the balls tend to fan out toward the edges, so the high multipliers
+   are placed in the CENTRE (the rarer landing zone) and decay toward the
+   edges. Payouts follow an exponential curve peaking at the centre, get a
+   0.3x edge floor, then are normalised so the expected return is ~97% of
+   stake. Works for any row count, so the rows selector can offer 5–8
+   without hand-made tables. */
+function plinkoProbs(n) {
+  const c = [1];
+  for (let r = 0; r < n; r++) for (let k = r; k >= 0; k--) c[k + 1] = (c[k + 1] || 0) + c[k];
+  const total = Math.pow(2, n);
+  return c.map(x => x / total);
+}
+function plinkoMultipliers(rows) {
+  const p = plinkoProbs(rows);
+  const half = rows / 2, R = 2.35, RTP = 0.97, FLOOR = 0.3;
+  /* peak at the centre (k = half), decay toward the edges */
+  let m = p.map((_, k) => Math.pow(R, half - Math.abs(k - half)));
+  const ev0 = m.reduce((s, x, k) => s + x * p[k], 0);
+  m = m.map(x => x * RTP / ev0);
+  for (let pass = 0; pass < 3; pass++) {
+    let floorEv = 0, freeEv = 0;
+    m.forEach((x, k) => { if (x <= FLOOR) floorEv += FLOOR * p[k]; else freeEv += x * p[k]; });
+    if (!freeEv) break;
+    const scale = (RTP - floorEv) / freeEv;
+    m = m.map(x => (x <= FLOOR ? FLOOR : x * scale));
+  }
+  return m.map(x => x >= 100 ? Math.round(x) : x >= 10 ? Math.round(x * 10) / 10 : Math.round(x * 100) / 100);
+}
+
+const Plinko = {
+  title: 'Plinko',
+  init(stage) {
+    /* Physics: Matter.js — the open-source MIT rigid-body engine
+       (brm.io/matter-js, © Liam Brummitt & contributors) that powers the
+       well-known browser Plinko implementations. Board geometry and the
+       payout normalisation above follow those projects. */
+    if (typeof Matter === 'undefined') {
+      stage.innerHTML =
+        '<div class="error-panel glass" style="max-width:420px;margin:0 auto">' +
+          '<p><strong>Physics engine still loading.</strong><br>Plinko runs on the open-source Matter.js engine, fetched from a CDN \u2014 give it a second (or check the connection) and try again.</p>' +
+          '<button class="btn primary" id="pk-retry-lib" type="button">Try again</button>' +
+        '</div>';
+      $('#pk-retry-lib', stage).addEventListener('click', () => { GameModal.close(); GameModal.open('plinko'); });
+      this.onKey = null;
+      this.destroy = () => {};
+      return;
+    }
+    const { Engine, Bodies, Body, Composite, Events } = Matter;
+
+    const ROW_OPTS = [5, 6, 7, 8];
+    const BETS = [10, 25, 50, 100];
+    const MAX_BALLS = 15;
+    const W = 380;
+
+    stage.innerHTML =
+      '<div class="game-hud">' +
+        '<div class="hud-pill"><span class="lbl">Balance</span><span class="val" id="pk-balance">1000</span></div>' +
+        '<div class="hud-pill"><span class="lbl">Last win</span><span class="val" id="pk-win">0</span></div>' +
+        '<div class="hud-pill"><span class="lbl">In play</span><span class="val" id="pk-inplay">0</span></div>' +
+        '<button class="btn" id="pk-reset" type="button">Reset bankroll</button>' +
+      '</div>' +
+      '<div class="canvas-wrap" style="width:fit-content">' +
+        '<canvas id="pk-canvas" class="game-canvas" style="width:min(380px,86vw)"></canvas>' +
+      '</div>' +
+      '<div class="pk-rows" id="pk-rows"><span class="pk-lab">Rows</span></div>' +
+      '<div class="sl-bets" id="pk-bets"><span class="pk-lab">Chips</span></div>' +
+      '<div class="sl-actions"><button class="btn primary" id="pk-drop" type="button">Drop</button></div>' +
+      '<p class="stage-hint">Every tap on the board (or Drop) releases another ball \u2014 stack up to ' + MAX_BALLS + ' at once. More rows, spicier edges.</p>';
+
+    const canvas = $('#pk-canvas', stage);
+    const balEl = $('#pk-balance', stage), winEl = $('#pk-win', stage), inplayEl = $('#pk-inplay', stage);
+    const rowsWrap = $('#pk-rows', stage), betsWrap = $('#pk-bets', stage);
+    const dropBtn = $('#pk-drop', stage);
+    const ctx = canvas.getContext('2d');
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+
+    let balance = store.get('credits', 1000);
+    let bet = store.get('pk.bet', 25);
+    if (!BETS.includes(bet)) bet = 25;
+    let rows = store.get('pk.rows', 6);
+    if (!ROW_OPTS.includes(rows)) rows = 6;
+    let lastWin = 0;
+
+    /* board state (rebuilt when the row count changes) */
+    let engine = null;
+    let pegs = [], balls = [], flashes = [];
+    let mults = [];
+    let gapX = 0, gapY = 0, pegR = 0, ballR = 0;
+    let topY = 40, firstPegY = 64, bucketY = 0, bucketH = 26, boardH = 0, firstBucketLeft = 0;
+    let raf = 0;
+
+    const teardownEngine = () => {
+      if (!engine) return;
+      Events.off(engine);
+      Composite.clear(engine.world, false);
+      Engine.clear(engine);
+      engine = null;
+    };
+
+    const build = () => {
+      teardownEngine();
+      mults = plinkoMultipliers(rows);
+      gapX = Math.min(38, (W - 32) / (rows + 1));
+      gapY = Math.max(26, Math.min(34, 420 / rows));
+      pegR = Math.max(2.2, gapX * 0.13);
+      ballR = Math.max(3.5, gapX * 0.16);
+      const lastPegY = firstPegY + (rows - 1) * gapY;
+      bucketY = lastPegY + gapY * 0.9;
+      boardH = Math.round(bucketY + bucketH + 12);
+      firstBucketLeft = W / 2 - (rows + 1) / 2 * gapX;
+
+      canvas.width = W * dpr;
+      canvas.height = boardH * dpr;
+      canvas.style.aspectRatio = W + '/' + boardH;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      engine = Engine.create();
+      engine.gravity.y = 1.0;
+
+      pegs = [];
+      flashes = new Array(rows + 1).fill(0);
+      const statics = [];
+      for (let r = 0; r < rows; r++) {
+        for (let i = 0; i <= r; i++) {
+          const x = W / 2 + (i - r / 2) * gapX;
+          const y = firstPegY + r * gapY;
+          pegs.push({ x, y, glow: 0 });
+          statics.push(Bodies.circle(x, y, pegR, {
+            isStatic: true, restitution: 0.35, friction: 0, label: 'peg:' + (pegs.length - 1)
+          }));
+        }
+      }
+      const wallOff = (rows - 1) / 2 * gapX + gapX * 0.9;
+      statics.push(Bodies.rectangle(W / 2 - wallOff, boardH / 2, 10, boardH * 2, { isStatic: true, label: 'wall' }));
+      statics.push(Bodies.rectangle(W / 2 + wallOff, boardH / 2, 10, boardH * 2, { isStatic: true, label: 'wall' }));
+      Composite.add(engine.world, statics);
+
+      Events.on(engine, 'collisionStart', e => {
+        for (const pair of e.pairs) {
+          const lbl = pair.bodyA.label.indexOf('peg:') === 0 ? pair.bodyA.label
+                    : pair.bodyB.label.indexOf('peg:') === 0 ? pair.bodyB.label : null;
+          if (lbl) { const peg = pegs[+lbl.slice(4)]; if (peg) peg.glow = 1; }
+        }
+      });
+    };
+
+    const render = () => {
+      balEl.textContent = balance;
+      winEl.textContent = lastWin;
+      inplayEl.textContent = balls.length;
+      [].slice.call(betsWrap.querySelectorAll('.sl-bet')).forEach(b => b.classList.toggle('sel', +b.dataset.bet === bet));
+      [].slice.call(rowsWrap.querySelectorAll('.sl-bet')).forEach(b => b.classList.toggle('sel', +b.dataset.rows === rows));
+    };
+
+    const settle = (k, ballBet) => {
+      const mult = mults[k];
+      const win = Math.round(ballBet * mult);
+      balance += win;
+      lastWin = win;
+      flashes[k] = 1;
+      store.set('credits', balance);
+      render();
+      if (mult >= 5) toast('Landed ' + mult + '\u00d7  +' + win + ' chips');
+    };
+
+    const drop = () => {
+      if (!engine) return;
+      if (balls.length >= MAX_BALLS) { toast('Max ' + MAX_BALLS + ' balls in the air'); return; }
+      if (balance < bet) { toast('Not enough chips for that bet'); return; }
+      balance -= bet;
+      store.set('credits', balance);
+      const body = Bodies.circle(W / 2 + (Math.random() - 0.5) * gapX * 0.5, topY - 16, ballR, {
+        restitution: 0.4, friction: 0.0002, frictionAir: 0.012, density: 0.002, label: 'ball'
+      });
+      Body.setVelocity(body, { x: (Math.random() - 0.5) * 0.4, y: 0 });
+      Composite.add(engine.world, body);
+      balls.push({ body, bet });
+      render();
+    };
+
+    const drawBoard = () => {
+      ctx.clearRect(0, 0, W, boardH);
+      /* drop marker */
+      ctx.fillStyle = 'rgba(255,255,255,.35)';
+      ctx.beginPath();
+      ctx.moveTo(W / 2, topY - 4); ctx.lineTo(W / 2 - 6, topY - 14); ctx.lineTo(W / 2 + 6, topY - 14);
+      ctx.closePath(); ctx.fill();
+      /* pegs */
+      for (const p of pegs) {
+        if (p.glow > 0.04) {
+          ctx.beginPath(); ctx.arc(p.x, p.y, pegR + p.glow * 5, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(63,224,197,' + (0.45 * p.glow) + ')'; ctx.fill();
+          p.glow *= 0.88;
+        } else p.glow = 0;
+        ctx.beginPath(); ctx.arc(p.x, p.y, pegR, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.fill();
+      }
+      /* buckets */
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const baseFs = Math.max(6.5, Math.min(11, gapX * 0.40));
+      /* compact labels so they never overflow a narrow bucket: round big
+         multipliers, keep 1–2 decimals for small ones, then shrink-to-fit */
+      const fmt = m => m >= 10 ? String(Math.round(m))
+        : m >= 1 ? String(Math.round(m * 10) / 10)
+        : String(Math.round(m * 100) / 100);
+      for (let k = 0; k <= rows; k++) {
+        const x = firstBucketLeft + k * gapX;
+        const f = flashes[k];
+        if (f > 0.04) flashes[k] *= 0.92; else flashes[k] = 0;
+        const mult = mults[k];
+        ctx.fillStyle = f > 0.04 ? 'rgba(255,209,102,' + (0.35 + 0.6 * f) + ')'
+          : mult >= 10 ? 'rgba(255,209,102,.16)'
+          : mult >= 2 ? 'rgba(63,224,197,.13)'
+          : 'rgba(255,255,255,.05)';
+        rr(ctx, x + 1.5, bucketY, gapX - 3, bucketH, 6); ctx.fill();
+        ctx.fillStyle = f > 0.04 ? '#0a0f1f' : 'rgba(255,255,255,.55)';
+        const label = fmt(mult) + (gapX >= 34 ? '\u00d7' : '');
+        ctx.font = '700 ' + baseFs + 'px ui-monospace, SFMono-Regular, monospace';
+        const maxW = gapX - 4;
+        if (ctx.measureText(label).width > maxW) {
+          const fs = Math.max(5.5, baseFs * maxW / ctx.measureText(label).width);
+          ctx.font = '700 ' + fs + 'px ui-monospace, SFMono-Regular, monospace';
+        }
+        ctx.fillText(label, x + gapX / 2, bucketY + bucketH / 2);
+      }
+      /* balls */
+      for (const b of balls) {
+        const pos = b.body.position;
+        ctx.beginPath(); ctx.arc(pos.x, pos.y, ballR, 0, Math.PI * 2);
+        ctx.fillStyle = '#3fe0c5';
+        ctx.shadowColor = 'rgba(63,224,197,.85)'; ctx.shadowBlur = 12;
+        ctx.fill(); ctx.shadowBlur = 0;
+      }
+    };
+
+    const loop = () => {
+      if (engine) {
+        Engine.update(engine, 1000 / 60);
+        for (let i = balls.length - 1; i >= 0; i--) {
+          const b = balls[i];
+          const pos = b.body.position;
+          if (pos.y > bucketY - ballR * 0.2) {
+            let k = Math.floor((pos.x - firstBucketLeft) / gapX);
+            if (k < 0) k = 0; if (k > rows) k = rows;
+            Composite.remove(engine.world, b.body);
+            balls.splice(i, 1);
+            settle(k, b.bet);
+          } else if (pos.y > boardH + 80 || pos.x < -40 || pos.x > W + 40) {
+            /* escaped the board somehow — refund the stake */
+            balance += b.bet;
+            store.set('credits', balance);
+            Composite.remove(engine.world, b.body);
+            balls.splice(i, 1);
+            render();
+          }
+        }
+      }
+      drawBoard();
+      raf = requestAnimationFrame(loop);
+    };
+
+    /* controls */
+    ROW_OPTS.forEach(v => {
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'sl-bet'; btn.dataset.rows = v; btn.textContent = v;
+      btn.addEventListener('click', () => {
+        if (v === rows) return;
+        if (balls.length) { toast('Let the balls land first'); return; }
+        rows = v; store.set('pk.rows', rows);
+        build(); render();
+      });
+      rowsWrap.appendChild(btn);
+    });
+    BETS.forEach(b => {
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'sl-bet'; btn.dataset.bet = b; btn.textContent = b;
+      btn.addEventListener('click', () => { bet = b; store.set('pk.bet', bet); render(); });
+      betsWrap.appendChild(btn);
+    });
+
+    const onPointer = e => { e.preventDefault(); drop(); };
+    canvas.addEventListener('pointerdown', onPointer);
+    dropBtn.addEventListener('click', drop);
+    $('#pk-reset', stage).addEventListener('click', () => {
+      balls.forEach(b => { if (engine) Composite.remove(engine.world, b.body); });
+      balls = [];
+      balance = 1000; lastWin = 0;
+      store.set('credits', balance);
+      render();
+      toast('Bankroll reset to 1,000');
+    });
+
+    build();
+    render();
+    raf = requestAnimationFrame(loop);
+
+    this.onKey = e => {
+      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); drop(); }
+    };
+    this.destroy = () => {
+      cancelAnimationFrame(raf);
+      canvas.removeEventListener('pointerdown', onPointer);
+      /* refund any balls still in flight */
+      let refund = 0;
+      balls.forEach(b => { refund += b.bet; });
+      if (refund) { balance += refund; store.set('credits', balance); }
+      balls = [];
+      teardownEngine();
+    };
+  }
+};
+
+/* ============================================================
+   ROULETTE — European single-zero, mobile-first
+   ============================================================
+   37 pockets (0–36). The winning number is preselected uniformly
+   BEFORE the wheel animation starts — the spin only displays the
+   result, it never determines it. Every bet carries the same ~2.7%
+   house edge (1/37), the European-standard single-zero edge:
+     straight (one number)        35:1   → returns stake × 36
+     red / black / odd / even /
+     1–18 / 19–36                1:1    → returns stake × 2
+     dozens (1st/2nd/3rd 12) /
+     columns                     2:1    → returns stake × 3
+   Zero loses every outside bet — that's the edge. */
+const RT_WHEEL = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
+const RT_RED = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
+function rtColor(n){ return n===0 ? 'green' : (RT_RED.has(n) ? 'red' : 'black'); }
+/* profit per 1 staked; a winning bet returns stake × (odds+1) */
+const RT_ODDS = { straight:35, red:1, black:1, odd:1, even:1, low:1, high:1, dozen:2, col:2 };
+function rtBetWins(key, n){
+  if (key.indexOf('straight:') === 0) return n === +key.slice(9);
+  if (key === 'red')   return n!==0 && RT_RED.has(n);
+  if (key === 'black') return n!==0 && !RT_RED.has(n);
+  if (key === 'odd')   return n!==0 && n%2===1;
+  if (key === 'even')  return n!==0 && n%2===0;
+  if (key === 'low')   return n>=1 && n<=18;
+  if (key === 'high')  return n>=19 && n<=36;
+  if (key.indexOf('dozen:') === 0){ const d=+key.slice(6); return n>=(d-1)*12+1 && n<=d*12; }
+  if (key.indexOf('col:') === 0){ if (n===0) return false; const c=+key.slice(4), m=n%3; return (c===3?0:c)===m; }
+  return false;
+}
+function rtBetType(key){
+  if (key.indexOf('straight:')===0) return 'straight';
+  if (key.indexOf('dozen:')===0) return 'dozen';
+  if (key.indexOf('col:')===0) return 'col';
+  return key;
+}
+
+/* ============================================================
+   ROULETTE GAME
+   ============================================================ */
+const Roulette = {
+  title: 'Roulette',
+  init(stage) {
+    const CHIPS = [10, 25, 50, 100];
+    const TAU = Math.PI * 2, POCK = TAU / 37;
+    const COL = { green: '#3fe0c5', red: '#ff5d5d', black: '#161c2e', gold: '#ffd166' };
+
+    stage.innerHTML =
+      '<div class="game-hud">' +
+        '<div class="hud-pill"><span class="lbl">Balance</span><span class="val" id="rt-balance">1000</span></div>' +
+        '<div class="hud-pill"><span class="lbl">On table</span><span class="val" id="rt-staked">0</span></div>' +
+        '<div class="hud-pill"><span class="lbl">Last result</span><span class="val" id="rt-win">\u2014</span></div>' +
+        '<button class="btn" id="rt-reset" type="button">Reset bankroll</button>' +
+      '</div>' +
+      '<div class="rt-wheel-wrap" id="rt-wheel-wrap" style="display:none">' +
+        '<canvas id="rt-canvas" class="game-canvas" style="width:min(300px,82vw);aspect-ratio:1"></canvas>' +
+        '<p class="stage-hint" id="rt-wheel-hint">No more bets\u2026</p>' +
+      '</div>' +
+      '<div class="rt-table-wrap" id="rt-table-wrap">' +
+        '<div class="rt-nums-wrap">' +
+          '<button class="rt-cell rt-zero" type="button" data-bet="straight:0">0</button>' +
+          '<div class="rt-nums" id="rt-nums"></div>' +
+          '<div class="rt-cols" id="rt-cols"></div>' +
+        '</div>' +
+        '<div class="rt-dozen" id="rt-dozen"></div>' +
+        '<div class="rt-even" id="rt-even"></div>' +
+      '</div>' +
+      '<div class="sl-bets" id="rt-chips"><span class="pk-lab">Chip</span></div>' +
+      '<div class="sl-actions">' +
+        '<button class="btn" id="rt-clear" type="button">Clear</button>' +
+        '<button class="btn primary" id="rt-spin" type="button">Spin</button>' +
+      '</div>' +
+      '<p class="stage-hint">Place chips on the table, then Spin to reveal the wheel.</p>';
+
+    const numsEl = $('#rt-nums', stage), colsEl = $('#rt-cols', stage), dozenEl = $('#rt-dozen', stage), evenEl = $('#rt-even', stage);
+    const chipsWrap = $('#rt-chips', stage);
+    const balEl = $('#rt-balance', stage), stakedEl = $('#rt-staked', stage), winEl = $('#rt-win', stage);
+    const spinBtn = $('#rt-spin', stage), clearBtn = $('#rt-clear', stage);
+    const tableWrap = $('#rt-table-wrap', stage), wheelWrap = $('#rt-wheel-wrap', stage), wheelHint = $('#rt-wheel-hint', stage);
+    const canvas = $('#rt-canvas', stage);
+
+    let balance = store.get('credits', 1000);
+    let chip = store.get('rt.chip', 25);
+    if (!CHIPS.includes(chip)) chip = 25;
+    let bets = new Map();          /* betKey -> amount */
+    let state = 'betting';         /* betting | spinning | result */
+    let lastNet = null;
+    let winning = 0;
+    let rot = 0, raf = 0, spinAnim = null;
+    let spinState = null;
+    let ballAngle = -Math.PI / 2, ballR = 0, ballActive = false;
+
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const W = 300, H = 300;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    const ctx = canvas.getContext('2d'); ctx.scale(dpr, dpr);
+
+    const totalStaked = () => { let s = 0; bets.forEach(v => s += v); return s; };
+
+    const render = () => {
+      balEl.textContent = balance;
+      stakedEl.textContent = totalStaked();
+      winEl.textContent = lastNet == null ? '\u2014' : (lastNet >= 0 ? '+' + lastNet : '\u2212' + Math.abs(lastNet));
+      [].slice.call(chipsWrap.querySelectorAll('.sl-bet')).forEach(b => b.classList.toggle('sel', +b.dataset.chip === chip));
+      const cells = stage.querySelectorAll('[data-bet]');
+      cells.forEach(c => {
+        const amt = bets.get(c.dataset.bet) || 0;
+        let badge = c.querySelector('.rt-chip-badge');
+        if (amt > 0) {
+          c.classList.add('has-bet');
+          if (badge) badge.textContent = amt;
+          else { const d = document.createElement('span'); d.className = 'rt-chip-badge'; d.textContent = amt; c.appendChild(d); }
+        } else {
+          c.classList.remove('has-bet');
+          if (badge) badge.remove();
+        }
+      });
+      spinBtn.disabled = state === 'spinning' || (state === 'betting' && totalStaked() === 0);
+      clearBtn.disabled = (state !== 'betting') || totalStaked() === 0;
+      spinBtn.textContent = state === 'spinning' ? 'Spinning\u2026' : (state === 'result' ? 'New round' : 'Spin');
+      /* hide the chip selector while the wheel is spinning (and while the
+         result is shown) — chips are only meaningful at the betting stage */
+      chipsWrap.style.display = state === 'betting' ? '' : 'none';
+    };
+
+    const placeBet = key => {
+      if (state !== 'betting') return;
+      if (balance < totalStaked() + chip) { toast('Not enough chips for that chip'); return; }
+      bets.set(key, (bets.get(key) || 0) + chip);
+      render();
+    };
+    const clearBets = () => { if (state !== 'betting') return; bets.clear(); render(); };
+
+    /* number cells: top row 3,6,\u2026,36; mid 2,5,\u2026,35; bottom 1,4,\u2026,34 */
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 12; c++) {
+        const n = c * 3 + (3 - r);
+        const btn = document.createElement('button');
+        btn.type = 'button'; btn.className = 'rt-cell rt-num ' + rtColor(n);
+        btn.dataset.bet = 'straight:' + n; btn.textContent = n;
+        numsEl.appendChild(btn);
+      }
+    }
+    /* column 2:1 buttons: top row -> col 3, mid -> col 2, bottom -> col 1 */
+    for (let r = 0; r < 3; r++) {
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'rt-cell rt-colbet';
+      btn.dataset.bet = 'col:' + (3 - r); btn.textContent = '2:1';
+      colsEl.appendChild(btn);
+    }
+    [['1st 12', 'dozen:1'], ['2nd 12', 'dozen:2'], ['3rd 12', 'dozen:3']].forEach(([lbl, key]) => {
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'rt-cell rt-outside'; btn.dataset.bet = key; btn.textContent = lbl;
+      dozenEl.appendChild(btn);
+    });
+    [['1\u201318', 'low'], ['EVEN', 'even'], ['RED', 'red'], ['BLACK', 'black'], ['ODD', 'odd'], ['19\u201336', 'high']].forEach(([lbl, key]) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'rt-cell rt-outside' + (key === 'red' ? ' red' : '') + (key === 'black' ? ' black' : '');
+      btn.dataset.bet = key; btn.textContent = lbl;
+      evenEl.appendChild(btn);
+    });
+    CHIPS.forEach(v => {
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'sl-bet'; btn.dataset.chip = v; btn.textContent = v;
+      btn.addEventListener('click', () => { if (state !== 'betting') return; chip = v; store.set('rt.chip', chip); render(); });
+      chipsWrap.appendChild(btn);
+    });
+
+    stage.querySelectorAll('[data-bet]').forEach(el => el.addEventListener('click', () => placeBet(el.dataset.bet)));
+
+    const drawWheel = () => {
+      ctx.clearRect(0, 0, W, H);
+      const cx = W / 2, cy = H / 2, R = Math.min(W, H) / 2 - 4;
+      const rWedgeOut = R * 0.93, rHub = R * 0.45;
+      /* outer ball track (dark band the ball orbits on) */
+      ctx.fillStyle = '#070b16'; ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.fill();
+      /* pocket wedges */
+      for (let i = 0; i < 37; i++) {
+        const n = RT_WHEEL[i];
+        const a0 = -Math.PI / 2 + (i - 0.5) * POCK + rot, a1 = a0 + POCK;
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, rWedgeOut, a0, a1); ctx.closePath();
+        ctx.fillStyle = n === 0 ? COL.green : (RT_RED.has(n) ? COL.red : COL.black); ctx.fill();
+      }
+      /* hub */
+      ctx.fillStyle = 'rgba(10,15,31,.98)'; ctx.beginPath(); ctx.arc(cx, cy, rHub, 0, TAU); ctx.fill();
+      /* gold frets between pockets (what the ball bounces off) */
+      ctx.strokeStyle = 'rgba(255,209,102,.55)'; ctx.lineWidth = 1;
+      for (let i = 0; i < 37; i++) {
+        const ab = -Math.PI / 2 + (i - 0.5) * POCK + rot;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(ab) * rHub, cy + Math.sin(ab) * rHub);
+        ctx.lineTo(cx + Math.cos(ab) * rWedgeOut, cy + Math.sin(ab) * rWedgeOut);
+        ctx.stroke();
+      }
+      /* numbers, radial, in the outer part of each pocket */
+      for (let i = 0; i < 37; i++) {
+        const n = RT_WHEEL[i];
+        const mid = -Math.PI / 2 + i * POCK + rot;
+        ctx.save(); ctx.translate(cx, cy); ctx.rotate(mid);
+        ctx.fillStyle = '#fff'; ctx.font = '700 ' + Math.max(7, R * 0.072) + 'px ui-monospace, monospace';
+        ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+        ctx.fillText(String(n), rWedgeOut - 3, 0);
+        ctx.restore();
+      }
+      /* fixed diamond deflectors on the track */
+      const rDef = R * 0.945;
+      ctx.fillStyle = 'rgba(255,255,255,.9)';
+      for (let d = 0; d < 8; d++) {
+        const a = d * (TAU / 8) - Math.PI / 2;
+        const dx = cx + Math.cos(a) * rDef, dy = cy + Math.sin(a) * rDef;
+        ctx.save(); ctx.translate(dx, dy); ctx.rotate(Math.PI / 4);
+        ctx.beginPath(); ctx.rect(-2.3, -2.3, 4.6, 4.6); ctx.fill();
+        ctx.restore();
+      }
+      ctx.strokeStyle = 'rgba(255,255,255,.2)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, rHub, 0, TAU); ctx.stroke();
+      ctx.fillStyle = COL.gold; ctx.font = '700 16px "Space Grotesk", sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(state === 'result' ? String(winning) : 'RT', cx, cy);
+      /* the ball: orbits the outer track, spirals inward past the
+         deflectors, bounces off the frets, and settles into a pocket —
+         its resting place IS the result (no preselected winner, no pointer). */
+      if (ballActive) {
+        const bx = cx + Math.cos(ballAngle) * ballR;
+        const by = cy + Math.sin(ballAngle) * ballR;
+        const br = Math.max(3.5, R * 0.045);
+        ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.arc(bx + 1, by + 2, br, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.shadowColor = 'rgba(255,255,255,.6)'; ctx.shadowBlur = 6;
+        ctx.beginPath(); ctx.arc(bx, by, br, 0, TAU); ctx.fill(); ctx.shadowBlur = 0;
+        ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.beginPath(); ctx.arc(bx - br * 0.3, by - br * 0.3, br * 0.35, 0, TAU); ctx.fill();
+      }
+    };
+
+    const settle = () => {
+      state = 'result';
+      const staked = totalStaked();
+      balance -= staked;
+      let winnings = 0;
+      bets.forEach((amt, key) => { if (rtBetWins(key, winning)) winnings += amt * (RT_ODDS[rtBetType(key)] + 1); });
+      balance += winnings;
+      lastNet = winnings - staked;
+      store.set('credits', balance);
+      render();
+      const col = rtColor(winning);
+      wheelHint.textContent = 'Landed on ' + winning + ' (' + col + '). ' + (lastNet >= 0 ? '+' : '') + lastNet + ' chips.';
+      if (lastNet > 0) toast(winning + ' ' + col.toUpperCase() + ' \u2014 +' + lastNet + ' chips');
+      else if (lastNet < 0) toast(winning + ' ' + col.toUpperCase() + ' \u2014 ' + lastNet + ' chips');
+      else toast(winning + ' ' + col.toUpperCase() + ' \u2014 even');
+    };
+
+    const spin = () => {
+      if (state === 'result') {
+        bets.clear(); state = 'betting'; winning = 0; ballActive = false; spinState = null; spinAnim = null;
+        tableWrap.style.display = ''; wheelWrap.style.display = 'none'; render(); return;
+      }
+      if (state !== 'betting') return;
+      if (totalStaked() === 0) { toast('Place a bet first'); return; }
+      state = 'spinning'; render();
+      tableWrap.style.display = 'none'; wheelWrap.style.display = '';
+      wheelHint.textContent = 'No more bets\u2026';
+      /* Eased spin, after the open-source canvas-wheel pattern used by
+         Winwheel.js and the classic HTML5 wheel demos (e.g.
+         https://dougtesting.net/winwheel/docs/tut12_animation_details):
+         the wheel and ball counter-rotate and decelerate on an ease-out
+         curve. The winning pocket is preselected, then the ball's final
+         world angle is computed so it lands exactly in that pocket's
+         centre — so the resting place always matches the reported result,
+         with no visible snap (the easing arrives precisely on target). */
+      const Rm = Math.min(W, H) / 2 - 4;
+      const winnerIdx = Math.floor(Math.random() * 37);
+      winning = RT_WHEEL[winnerIdx];
+      const wheelTurns = 4 + Math.random() * 2;      /* 4–6 turns, clockwise */
+      const ballTurns  = 6 + Math.random() * 3;      /* 6–9 turns, the other way */
+      const startRot = rot;
+      const finalRot = startRot + wheelTurns * TAU;
+      /* pocket i is centred at world angle -π/2 + i*POCK + rot */
+      const ballAngleEnd   = -Math.PI / 2 + winnerIdx * POCK + finalRot;
+      const ballAngleStart = ballAngleEnd + ballTurns * TAU;   /* spin backward into place */
+      const ballTrackR  = Rm * 0.965;     /* outer track the ball orbits on */
+      const ballSettleR = Rm * 0.60;      /* inner pocket ring where it comes to rest */
+      spinState = {
+        t0: performance.now(),
+        duration: 4200 + Math.random() * 1200,   /* 4.2–5.4s */
+        startRot, finalRot,
+        ballAngleStart, ballAngleEnd,
+        ballTrackR, ballSettleR,
+        winnerIdx
+      };
+      ballR = ballTrackR;
+      ballAngle = ballAngleStart;
+      ballActive = true;
+      spinAnim = easedStep;
+    };
+
+    const easeOutQuart = t => 1 - Math.pow(1 - t, 4);
+    const easedStep = now => {
+      const s = spinState; if (!s) return;
+      let t = (now - s.t0) / s.duration;
+      if (t >= 1) {
+        rot = s.finalRot;
+        ballAngle = s.ballAngleEnd;
+        ballR = s.ballSettleR;
+        spinState = null; spinAnim = null;
+        state = 'result';
+        settle();
+        return;
+      }
+      const e = easeOutQuart(t);
+      rot = s.startRot + (s.finalRot - s.startRot) * e;
+      ballAngle = s.ballAngleStart + (s.ballAngleEnd - s.ballAngleStart) * e;
+      /* ball rides the outer track while fast, drops to the pocket ring as it slows */
+      ballR = s.ballTrackR + (s.ballSettleR - s.ballTrackR) * Math.pow(t, 2.2);
+      /* gentle damped bobble while it settles (decays to 0 at t=1, so the
+         resting radius is exact and there is no snap) */
+      ballR += Math.pow(1 - t, 2) * Math.sin(t * Math.PI * 7) * (s.ballTrackR - s.ballSettleR) * 0.06;
+    };
+
+    const masterLoop = () => {
+      if (spinAnim) spinAnim(performance.now());
+      drawWheel();
+      raf = requestAnimationFrame(masterLoop);
+    };
+
+    $('#rt-reset', stage).addEventListener('click', () => {
+      balance = 1000; bets.clear(); lastNet = null; winning = 0; state = 'betting'; rot = 0; spinAnim = null; ballActive = false; spinState = null;
+      tableWrap.style.display = ''; wheelWrap.style.display = 'none';
+      store.set('credits', balance); render(); toast('Bankroll reset to 1,000');
+    });
+    clearBtn.addEventListener('click', clearBets);
+    spinBtn.addEventListener('click', spin);
+
+    render();
+    raf = requestAnimationFrame(masterLoop);
+
+    this.onKey = e => {
+      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); spin(); }
+    };
+    this.destroy = () => { cancelAnimationFrame(raf); };
+  }
+};
+
+const GAMES = { slots: Slots, plinko: Plinko, roulette: Roulette, g2048: G2048, xo: TicTacToe, flappy: Flappy };
+
+/* ============================================================
+   Boot
+   ============================================================ */
+(function boot() {
+  GameModal.init();
+  PonytailModal.init();
+  Sec.init();
+  initContact();
+  startGreetRoller();
+  $$('.game-tile').forEach(tile =>
+    tile.addEventListener('click', () => GameModal.open(tile.dataset.game))
+  );
+  refreshBestScores();
+  route(true);
+})();
+
+</script>
+
+<script>
+/* ============================================================
+   bg-stars — living night sky: twinkling stars with random
+   flares, continuous left-to-right drift, frequent shooting
+   stars. Pauses when the tab is hidden; renders a static sky
+   under prefers-reduced-motion.
+   ============================================================ */
+(function () {
+  const canvas = document.getElementById('bg-stars');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const PALETTE = ['255,255,255', '176,215,255', '158,240,222', '208,182,255'];
+
+  // Pre-rendered glow sprite — far cheaper than per-frame gradients.
+  const sprite = document.createElement('canvas');
+  sprite.width = sprite.height = 64;
+  (function () {
+    const g = sprite.getContext('2d');
+    const rg = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    rg.addColorStop(0, 'rgba(255,255,255,1)');
+    rg.addColorStop(0.28, 'rgba(200,225,255,.5)');
+    rg.addColorStop(1, 'rgba(200,225,255,0)');
+    g.fillStyle = rg;
+    g.fillRect(0, 0, 64, 64);
+  })();
+
+  let W = 0, H = 0, lastW = 0, lastH = 0;
+  let stars = [], shots = [];
+  let nextShot = 0, raf = null, last = 0;
+
+  function seed() {
+    const n = Math.min(220, Math.round((W * H) / 7500));
+    stars = [];
+    for (let i = 0; i < n; i++) {
+      const z = 0.25 + Math.random() * 0.75;   // depth: far -> near
+      stars.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        z: z,
+        r: (0.5 + Math.random() * 1.1) * z + 0.3,
+        tw: Math.random() * Math.PI * 2,       // twinkle phase
+        ts: 0.8 + Math.random() * 1.8,         // twinkle speed
+        flare: 0,                              // brief brightening burst
+        c: PALETTE[(Math.random() * PALETTE.length) | 0]
+      });
+    }
+  }
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // Reseed only on real size changes (mobile URL bars fire tiny resizes).
+    if (!stars.length || Math.abs(W - lastW) > 60 || Math.abs(H - lastH) > 160) {
+      seed(); lastW = W; lastH = H;
+    }
+    if (reduceMotion) drawStatic();
+  }
+
+  function spawnShot(now) {
+     
+    const dir = 1;                             // always left-to-right
+    const speed = 420 + Math.random() * 320;   // px/s
+    const angle = (18 + Math.random() * 14) * Math.PI / 180;
+    shots.push({
+      x: Math.random() * W * 0.5,
+      y: Math.random() * H * 0.3,
+      vx: Math.cos(angle) * speed * dir,
+      vy: Math.sin(angle) * speed,
+      life: 0,
+      ttl: 0.8 + Math.random() * 0.6
+    });
+    nextShot = now + 2200 + Math.random() * 4500;
+  }
+
+  function step(now) {
+    raf = requestAnimationFrame(step);
+    const dt = Math.min((now - last) / 1000, 0.05) || 0.016;
+    last = now;
+    const t = now / 1000;
+
+    ctx.clearRect(0, 0, W, H);
+     
+    ctx.globalCompositeOperation = 'lighter';
+
+    // Roughly once a second, a random star flares up for a moment.
+    if (stars.length && Math.random() < dt * 0.9) {
+      stars[(Math.random() * stars.length) | 0].flare = 1;
+    }
+
+    for (const s of stars) {
+      s.x += s.z * 26 * dt;                    // continuous left-to-right; near stars move faster
+      if (s.x > W + 6) { s.x = -6; s.y = Math.random() * H; }
+
+      let a = 0.3 + 0.55 * s.z * (0.5 + 0.5 * Math.sin(s.tw + t * s.ts));
+      let d = s.r * 7;
+      if (s.flare > 0) {
+        a = Math.min(1, a + s.flare * 0.6);
+        d *= 1 + s.flare * 1.7;
+        s.flare = Math.max(0, s.flare - dt * 1.5);
+      }
+       
+      const ox = s.x, oy = s.y;
+       
+      ctx.globalAlpha = a;
+      ctx.drawImage(sprite, ox - d / 2, oy - d / 2, d, d);
+      ctx.fillStyle = 'rgba(' + s.c + ',' + Math.min(1, a + 0.15) + ')';
+      ctx.fillRect(ox - s.r / 2, oy - s.r / 2, s.r, s.r);
+    }
+    ctx.globalAlpha = 1;
+
+    if (now > nextShot && shots.length < 3) spawnShot(now);
+    for (let i = shots.length - 1; i >= 0; i--) {
+      const sh = shots[i];
+      sh.life += dt;
+      if (sh.life > sh.ttl || sh.x < -160 || sh.x > W + 160 || sh.y > H + 60) { shots.splice(i, 1); continue; }
+      sh.x += sh.vx * dt;
+      sh.y += sh.vy * dt;
+      const p = sh.life / sh.ttl;
+      const fade = p < 0.2 ? p / 0.2 : 1 - (p - 0.2) / 0.8;
+      const tailX = sh.x - sh.vx * 0.26, tailY = sh.y - sh.vy * 0.26;
+      const grad = ctx.createLinearGradient(sh.x, sh.y, tailX, tailY);
+      grad.addColorStop(0, 'rgba(255,255,255,' + (0.9 * fade) + ')');
+      grad.addColorStop(1, 'rgba(140,190,255,0)');
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1.8;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(sh.x, sh.y);
+      ctx.lineTo(tailX, tailY);
+      ctx.stroke();
+      ctx.globalAlpha = 0.9 * fade;            // glowing head
+      ctx.drawImage(sprite, sh.x - 9, sh.y - 9, 18, 18);
+      ctx.globalAlpha = 1;
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  function drawStatic() {
+    ctx.clearRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'lighter';
+    for (const s of stars) {
+      const d = s.r * 7;
+      ctx.globalAlpha = 0.25 + 0.5 * s.z;
+      ctx.drawImage(sprite, s.x - d / 2, s.y - d / 2, d, d);
+    }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  function start() {
+    if (raf !== null || reduceMotion) return;
+    last = performance.now();
+    nextShot = last + 1500 + Math.random() * 2000;
+    raf = requestAnimationFrame(step);
+  }
+  function stop() {
+    if (raf !== null) { cancelAnimationFrame(raf); raf = null; }
+  }
+
+  window.addEventListener('resize', resize, { passive: true });
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) { stop(); } else { start(); }
+  });
+
+  resize();
+  start();
+})();
+   
+</script>
+</body>
+</html>

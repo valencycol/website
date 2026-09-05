@@ -1,0 +1,409 @@
+/* ============================================================
+   colaco.se — TERMINAL
+   A CRT-styled shell. Loaded AFTER components.css so the tokens
+   here re-skin the inherited feed/game/paper components.
+   ============================================================ */
+
+:root{
+  /* Surfaces — near-black with a green cast, like phosphor at rest */
+  --bg0:#04070a;
+  --bg1:#070c11;
+  --bg2:#0b1118;
+  --panel:rgba(10,18,24,.82);
+
+  /* Phosphor */
+  --acc:#00ff9c;          /* primary — matrix green */
+  --acc-dim:#0b8f5c;
+  --acc-glow:rgba(0,255,156,.35);
+  --acc2:#22d3ee;         /* cyan — links, secondary chrome */
+  --amber:#ffb000;
+  --red:#ff3b5c;
+  --violet:#a679ff;
+
+  /* Text */
+  --ink:#eafff6;
+  --ink2:rgba(234,255,246,.78);
+  --ink3:rgba(234,255,246,.52);
+
+  /* Component tokens inherited by components.css */
+  --blue:var(--acc2);
+  --teal:var(--acc);
+  --pink:var(--violet);
+  --gold:var(--amber);
+  --lime:var(--acc);
+  --glass:rgba(0,255,156,.035);
+  --glass-2:rgba(0,255,156,.07);
+  --stroke:rgba(0,255,156,.20);
+  --stroke-2:rgba(0,255,156,.42);
+  --r-lg:6px; --r-md:5px; --r-sm:4px;
+
+  --font-mono:ui-monospace,"SF Mono",SFMono-Regular,"JetBrains Mono","Cascadia Code",Menlo,Consolas,monospace;
+  --font-body:var(--font-mono);
+  --font-display:var(--font-mono);
+  --shadow-card:0 18px 40px -20px rgba(0,0,0,.9);
+  --sheen:none;
+}
+
+/* Amber CRT — /theme amber */
+:root[data-theme="amber"]{
+  --acc:#ffb734; --acc-dim:#a06a10; --acc-glow:rgba(255,183,52,.35);
+  --acc2:#ffe6ad; --ink:#fdf3e2; --ink2:rgba(253,243,226,.78); --ink3:rgba(253,243,226,.52);
+  --glass:rgba(255,183,52,.04); --glass-2:rgba(255,183,52,.08);
+  --stroke:rgba(255,183,52,.22); --stroke-2:rgba(255,183,52,.44);
+  --bg0:#0a0703; --bg1:#100b05; --bg2:#160f07; --panel:rgba(22,15,7,.85);
+}
+/* Ice CRT — /theme ice */
+:root[data-theme="ice"]{
+  --acc:#5ad8ff; --acc-dim:#0e6f92; --acc-glow:rgba(90,216,255,.35);
+  --acc2:#d3f2ff; --ink:#eafaff; --ink2:rgba(234,250,255,.78); --ink3:rgba(234,250,255,.52);
+  --glass:rgba(90,216,255,.04); --glass-2:rgba(90,216,255,.08);
+  --stroke:rgba(90,216,255,.22); --stroke-2:rgba(90,216,255,.44);
+  --bg0:#03080c; --bg1:#060d13; --bg2:#0a141b; --panel:rgba(10,20,27,.85);
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;background:var(--bg0)}
+body{
+  font-family:var(--font-mono);
+  font-size:15px;
+  line-height:1.65;
+  background:var(--bg0);
+  color:var(--ink);
+  min-height:100vh;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+  font-variant-ligatures:none;
+}
+body.modal-open{overflow:hidden}
+a{color:var(--acc2);text-decoration:none;border-bottom:1px solid transparent}
+a:hover{border-bottom-color:currentColor}
+button{font-family:inherit;color:inherit;cursor:pointer;background:none;border:none}
+::selection{background:var(--acc);color:var(--bg0)}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+
+/* ── CRT atmosphere ──────────────────────────────────────────
+   Scanlines and flicker are OFF by default. They are a full-page
+   overlay, so they dim every glyph and the photograph along with
+   them — authentic, and genuinely harder to read. `/crt on` brings
+   them back for anyone who wants the effect. */
+#matrix{position:fixed;inset:0;z-index:0;opacity:.07;pointer-events:none}
+.crt{position:fixed;inset:0;z-index:60;pointer-events:none}
+
+/* A gentle vignette is the one effect that costs no legibility:
+   it darkens the far corners, never the content column. */
+.crt::after{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 145% 115% at 50% 50%,
+    transparent 62%, rgba(0,0,0,.34) 100%);
+}
+
+/* opt-in: html[data-crt="on"] */
+:root[data-crt="on"] .crt::before{
+  content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(to bottom,
+    rgba(0,0,0,0) 0 2px, rgba(0,0,0,.22) 2px 4px);
+  mix-blend-mode:multiply;
+}
+:root[data-crt="on"] #matrix{opacity:.16}
+.flicker{position:fixed;inset:0;z-index:61;pointer-events:none;
+  background:var(--acc);opacity:0;mix-blend-mode:overlay}
+:root[data-crt="on"] .flicker{animation:flicker 7s infinite}
+@keyframes flicker{
+  0%,96%,100%{opacity:0}
+  97%{opacity:.018}
+  98%{opacity:.004}
+  99%{opacity:.012}
+}
+
+/* ── Shell layout ──────────────────────────────────────────── */
+.shell{
+  position:relative;z-index:2;max-width:1100px;margin:0 auto;
+  padding:20px 18px 14px;
+  height:100vh;height:100dvh;          /* dvh so the iOS URL bar can't hide the prompt */
+  display:flex;flex-direction:column;gap:10px;
+}
+
+/* ── Window chrome (used by the shell and by every modal) ──── */
+.win{
+  border:1px solid var(--stroke);
+  border-radius:var(--r-md);
+  background:linear-gradient(180deg,var(--bg1),var(--bg0));
+  box-shadow:var(--shadow-card), 0 0 0 1px rgba(0,0,0,.5), inset 0 0 90px rgba(0,255,156,.02);
+  display:flex;flex-direction:column;min-height:0;
+}
+.win-bar{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 12px;border-bottom:1px solid var(--stroke);
+  background:var(--bg2);border-radius:var(--r-md) var(--r-md) 0 0;
+  flex:none;
+}
+.win-dots{display:flex;gap:6px;flex:none}
+.win-dots i{width:10px;height:10px;border-radius:50%;display:block;border:1px solid rgba(0,0,0,.4)}
+.win-dots i:nth-child(1){background:#ff5f57}
+.win-dots i:nth-child(2){background:#febc2e}
+.win-dots i:nth-child(3){background:#28c840}
+.win-title{
+  font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.win-meta{margin-left:auto;display:flex;align-items:center;gap:12px;flex:none;font-size:11px;color:var(--ink3)}
+.led{display:inline-flex;align-items:center;gap:5px}
+.led::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--acc);box-shadow:0 0 6px var(--acc);animation:pulse 2.4s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+
+/* ── Header ────────────────────────────────────────────────── */
+.head{display:flex;align-items:center;gap:16px;padding:18px 16px;border-bottom:1px solid var(--stroke);flex-wrap:wrap}
+.avatar{
+  width:72px;height:72px;flex:none;border-radius:4px;
+  border:1px solid var(--stroke-2);
+  object-fit:cover;
+  image-rendering:auto;
+}
+.head-id{min-width:0;flex:1 1 260px}
+.head-id h1{font-size:20px;font-weight:700;letter-spacing:.01em;color:var(--acc)}
+.head-id .role{font-size:12.5px;color:var(--ink2)}
+.head-id .meta{font-size:11.5px;color:var(--ink3);margin-top:3px;display:flex;gap:12px;flex-wrap:wrap}
+.head-links{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+
+/* ── Output stream ─────────────────────────────────────────── */
+.stream{flex:1;overflow-y:auto;padding:16px;min-height:340px;scrollbar-width:thin;scrollbar-color:var(--acc-dim) transparent}
+.stream::-webkit-scrollbar{width:8px}
+.stream::-webkit-scrollbar-thumb{background:var(--acc-dim);border-radius:4px}
+.stream::-webkit-scrollbar-track{background:transparent}
+
+.line{margin-bottom:3px;white-space:pre-wrap;word-break:break-word}
+.line.sp{margin-bottom:12px}
+.line.dim{color:var(--ink3)}
+.line.ok{color:var(--acc)}
+.line.warn{color:var(--amber)}
+.line.err{color:var(--red)}
+.line.hd{color:var(--acc);font-weight:700;letter-spacing:.1em;text-transform:uppercase;font-size:12.5px;margin:16px 0 7px}
+
+/* echoed command */
+.echo{display:flex;gap:8px;margin:14px 0 8px;align-items:baseline;flex-wrap:wrap}
+.echo .ps1{color:var(--acc-dim);flex:none}
+.echo .cmd{color:var(--acc);font-weight:600}
+
+.ascii{color:var(--acc);font-size:clamp(6px,1.6vw,11.5px);line-height:1.12;white-space:pre;overflow-x:auto;margin-bottom:10px}
+
+/* ── Prompt ────────────────────────────────────────────────── */
+.term-prompt{border-top:1px solid var(--stroke);background:var(--bg2);border-radius:0 0 var(--r-md) var(--r-md);flex:none}
+.prompt{display:flex;align-items:center;gap:8px;padding:12px 16px}
+.ps1{color:var(--acc-dim);white-space:nowrap;flex:none;font-size:13px}
+.ps1 b{color:var(--acc);font-weight:600}
+#cmdline{
+  flex:1;min-width:0;background:none;border:none;outline:none;
+  font:inherit;font-size:15px;color:var(--ink);caret-color:transparent;padding:2px 0;
+}
+#cmdline::placeholder{color:var(--ink3)}
+.caret{width:9px;height:17px;background:var(--acc);flex:none;box-shadow:0 0 8px var(--acc-glow);animation:blink 1.05s step-end infinite;margin-left:-6px}
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+.prompt.busy .caret{animation:none;opacity:.3}
+
+/* autocomplete ghost + suggestion strip */
+.hints{display:flex;gap:6px;padding:0 16px 10px;flex-wrap:wrap;align-items:center}
+.hints .lbl{font-size:11px;color:var(--ink3);margin-right:2px}
+.chip{
+  font:inherit;font-size:11.5px;padding:3px 9px;border-radius:3px;
+  border:1px solid var(--stroke);color:var(--acc2);background:var(--glass);
+  transition:.14s;white-space:nowrap;
+}
+.chip:hover{border-color:var(--acc);color:var(--acc);background:var(--glass-2);box-shadow:0 0 12px -4px var(--acc-glow)}
+
+/* ── Command grid (printed by /help and the boot sequence) ─── */
+.cmd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:2px 22px;margin:6px 0 14px}
+.cmd-row{display:flex;gap:10px;align-items:baseline;padding:2px 0}
+.cmd-row b{color:var(--acc);font-weight:600;flex:none;min-width:150px}
+.cmd-row span{color:var(--ink2);font-size:13.5px}
+.cmd-row:hover b{color:#fff}
+
+/* ── Buttons ───────────────────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;gap:7px;
+  font:inherit;font-size:12.5px;padding:7px 14px;border-radius:3px;
+  border:1px solid var(--stroke-2);color:var(--acc);background:var(--glass);
+  cursor:pointer;transition:.15s;white-space:nowrap;
+}
+.btn:hover{background:var(--acc);color:var(--bg0);box-shadow:0 0 18px -4px var(--acc-glow)}
+.btn.primary{border-color:var(--acc);background:var(--glass-2)}
+.btn.primary:hover{background:var(--acc);color:var(--bg0)}
+.btn.ghost{border-color:var(--stroke);color:var(--ink2)}
+.btn svg{width:14px;height:14px}
+
+/* ── Modal ─────────────────────────────────────────────────── */
+.modal{
+  position:fixed;inset:0;z-index:120;display:none;
+  padding:max(16px,3vh) max(12px,3vw);
+  background:rgba(2,5,7,.86);backdrop-filter:blur(6px);
+}
+.modal.show{display:grid;place-items:center;animation:fade .18s ease}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.modal-panel{
+  width:min(980px,100%);max-height:94vh;
+  padding:0;overflow:hidden;          /* the .win chrome owns padding and scrolling */
+  animation:boot-in .2s cubic-bezier(.2,.9,.3,1);
+}
+.modal-panel.wide{width:min(1180px,100%)}
+@keyframes boot-in{from{opacity:0;transform:translateY(10px) scaleY(.985)}to{opacity:1;transform:none}}
+.modal-body{overflow-y:auto;padding:20px;min-height:0;scrollbar-width:thin;scrollbar-color:var(--acc-dim) transparent}
+.modal-body::-webkit-scrollbar{width:8px}
+.modal-body::-webkit-scrollbar-thumb{background:var(--acc-dim);border-radius:4px}
+.close-btn{
+  width:24px;height:24px;display:grid;place-items:center;flex:none;
+  border:1px solid var(--stroke);border-radius:3px;color:var(--ink2);font-size:12px;
+}
+.close-btn:hover{border-color:var(--red);color:var(--red)}
+.esc-hint{font-size:10.5px;color:var(--ink3);letter-spacing:.08em}
+
+/* ── Section headings inside modals ────────────────────────── */
+.sec-head{margin-bottom:18px;padding-bottom:12px;border-bottom:1px dashed var(--stroke)}
+.sec-head h2{font-size:15px;color:var(--acc);letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px}
+.sec-head p{font-size:13.5px;color:var(--ink2);max-width:90ch}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3);margin-bottom:6px;
+}
+.eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--acc);box-shadow:0 0 6px currentColor}
+
+/* ── Tabs (security desk) ──────────────────────────────────── */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.tabs button{
+  font:inherit;font-size:12px;padding:6px 13px;border-radius:3px;
+  border:1px solid var(--stroke);color:var(--ink2);background:transparent;transition:.14s;
+}
+.tabs button:hover{border-color:var(--stroke-2);color:var(--ink)}
+.tabs button.active{border-color:var(--acc);color:var(--acc);background:var(--glass-2);box-shadow:0 0 14px -6px var(--acc-glow)}
+
+/* ── Chat ──────────────────────────────────────────────────── */
+.msg{margin:10px 0 16px;max-width:78ch}
+.msg .who{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);margin-bottom:4px}
+.msg.ai .who{color:var(--acc2)}
+.msg.ai .body{
+  border-left:2px solid var(--acc2);padding:2px 0 2px 12px;
+  color:var(--ink);white-space:pre-wrap;word-break:break-word;
+}
+.msg.ai .body a{color:var(--acc)}
+.msg.ai.thinking .body{color:var(--ink3)}
+.cursor-blk{display:inline-block;width:8px;height:14px;background:var(--acc2);vertical-align:-2px;animation:blink 1.05s step-end infinite}
+.cites{margin-top:8px;font-size:11px;color:var(--ink3);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.cites b{color:var(--ink3);font-weight:400}
+.cite{border:1px solid var(--stroke);border-radius:3px;padding:1px 7px;color:var(--acc2)}
+
+/* ── Upload dropzone ───────────────────────────────────────── */
+.dropzone{
+  position:fixed;inset:0;z-index:150;display:none;place-items:center;
+  background:rgba(2,5,7,.9);border:2px dashed var(--acc);
+}
+.dropzone.show{display:grid}
+.dropzone p{color:var(--acc);font-size:15px;letter-spacing:.1em;text-transform:uppercase}
+.docs-list{display:grid;gap:2px;margin:8px 0 14px}
+.doc-row{display:flex;gap:10px;align-items:baseline;font-size:12.5px}
+.doc-row .ok{color:var(--acc);flex:none}
+.doc-row .nm{color:var(--ink)}
+.doc-row .sz{color:var(--ink3);margin-left:auto;font-size:11px}
+
+/* ── Footer ────────────────────────────────────────────────── */
+.foot{flex:none;text-align:center;padding:10px 10px 0;font-size:11px;color:var(--ink3);letter-spacing:.04em}
+.foot a{color:var(--ink2)}
+
+/* ── Toast ─────────────────────────────────────────────────── */
+.toast{
+  position:fixed;bottom:22px;left:50%;transform:translate(-50%,14px);z-index:200;
+  padding:9px 16px;border-radius:3px;font-size:12.5px;
+  border:1px solid var(--acc);background:var(--bg2);color:var(--acc);
+  box-shadow:0 0 24px -8px var(--acc-glow);
+  opacity:0;pointer-events:none;transition:.22s ease;
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* ── Re-skin of the inherited components ───────────────────── */
+.glass{
+  background:var(--glass);
+  border:1px solid var(--stroke);
+  border-radius:var(--r-sm);
+  backdrop-filter:none;box-shadow:none;
+}
+.glass::before,.glass::after{display:none !important}
+.feed-item{transition:.15s}
+.feed-item:hover{border-color:var(--stroke-2);background:var(--glass-2)}
+.feed-item h3{font-size:14.5px;line-height:1.45;font-weight:600}
+.feed-item h3 a{color:var(--ink)}
+.feed-item h3 a:hover{color:var(--acc)}
+.snippet{font-size:13.5px;color:var(--ink2);line-height:1.6}
+.src-chip{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase}
+.cve-id{font-family:var(--font-mono);color:var(--red);border-color:var(--red)}
+.chip-link{font-size:11.5px;color:var(--acc2)}
+.feed-thumb-wrap{filter:grayscale(.65) contrast(1.1)}
+.feed-thumb-wrap:hover{filter:none}
+.skeleton{background:linear-gradient(90deg,var(--glass),var(--glass-2),var(--glass));border-radius:3px}
+.paper-card h3{font-size:15px;line-height:1.45}
+.paper-card h3 a{color:var(--ink)}
+.paper-card h3 a:hover{color:var(--acc)}
+.paper-year,.paper-type{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase}
+.paper-abstract,.paper-authors{font-size:13.5px;line-height:1.6}
+.paper-link{font-size:12px;color:var(--acc)}
+input,textarea{
+  font-family:var(--font-mono) !important;font-size:13px !important;
+  background:var(--bg0) !important;border:1px solid var(--stroke) !important;
+  color:var(--ink) !important;border-radius:3px !important;
+}
+input:focus,textarea:focus{border-color:var(--acc) !important;box-shadow:0 0 0 1px var(--acc-glow) !important}
+label{font-size:11px !important;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3) !important}
+.game-canvas,.canvas-wrap{border-radius:3px}
+.hud-pill{font-family:var(--font-mono);font-size:11px}
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media (max-width:720px){
+  body{font-size:12px;line-height:1.5}
+  .shell{padding:8px 8px 8px;gap:6px}
+  .win-bar{padding:7px 10px}
+  .win-title{font-size:10px;letter-spacing:.08em}
+  .head{padding:12px 10px;gap:10px}
+  .avatar{width:44px;height:44px}
+  .head-id h1{font-size:15px}
+  .head-id .role{font-size:11.5px}
+  .head-id .meta{font-size:10.5px;gap:8px}
+
+  /* one scrollable row rather than two stacked rows of buttons */
+  .head-links{
+    margin-left:0;width:100%;flex-wrap:nowrap;overflow-x:auto;
+    scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px;
+  }
+  .head-links::-webkit-scrollbar{display:none}
+  .head-links .btn{font-size:11px;padding:6px 10px}
+
+  .stream{padding:10px;min-height:0}
+  .prompt{padding:9px 10px;gap:6px}
+  .ps1{font-size:11px}
+  #cmdline{font-size:16px}          /* 16px stops iOS zooming the page on focus */
+  .caret{height:15px;width:8px}
+  .hints{padding:0 10px 8px;gap:5px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  .hints::-webkit-scrollbar{display:none}
+  .ascii{font-size:12px;line-height:1.15}
+
+  .cmd-grid{grid-template-columns:1fr;gap:0}
+  .cmd-row{flex-direction:column;gap:0;padding:5px 0;border-bottom:1px solid rgba(0,255,156,.07)}
+  .cmd-row b{min-width:0}
+  .cmd-row span{font-size:11.5px}
+
+  .modal{padding:0}
+  .modal-panel,.modal-panel.wide{width:100%;max-height:100dvh;height:100dvh;border-radius:0;border:0}
+  .modal-body{padding:12px}
+  .sec-head h2{font-size:13.5px}
+  .tabs button{font-size:11px;padding:5px 10px}
+  .msg{max-width:100%}
+  .foot{font-size:10px;padding:6px 4px 0}
+  .foot .long{display:none}          /* the credits line is desktop-only */
+}
+
+/* Very narrow phones: the identity block goes full width under the avatar. */
+@media (max-width:400px){
+  .head{gap:8px}
+  .head-id{flex-basis:100%}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+  .caret,.cursor-blk{animation:none !important;opacity:1 !important}
+  #matrix{display:none}
+}

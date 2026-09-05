@@ -1,0 +1,10 @@
+# Secrets — never commit. The GROQ key lives in the Cloudflare Worker,
+# and .env is only the local copy you push there with `wrangler secret put`.
+.env
+.env.local
+.dev.vars
+
+# Tooling
+node_modules/
+.wrangler/
+.DS_Store

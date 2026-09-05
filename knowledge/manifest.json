@@ -7,9 +7,24 @@
       "tags": "bio biography who is valency background identity affiliation contact links scholar research focus iceman maverick vote publications papers thesis licentiate topics"
     },
     {
-      "file": "01-ai-agent-guide.md",
-      "title": "Configuring AI Coding Agents",
-      "tags": "ponytail llm coding agent prompt ladder yagni claude code cursor codex benchmark lines of code tokens"
+      "file": "02-vote-extension.md",
+      "title": "Formal Verification of Tree Ensembles against Composite Geometric Perturbations",
+      "tags": "vote formal verification tree ensembles robustness certification composite geometric perturbations affine transformation rotation translation scaling lighting pixel brightness abstraction function robustness property checker data augmentation safeai 2023 workshop provable guarantees adversarial"
+    },
+    {
+      "file": "03-iceman.md",
+      "title": "Iceman — Fast Evasion Detection & Alert Management in Tree-Ensemble IDS",
+      "tags": "iceman fast evasion detection alert management counterexample region tree ensemble intrusion detection system ids oc-score latency speed detection accuracy quaternary attack annotation alert triage alert fatigue ieee 2024 gradient boosting random forest"
+    },
+    {
+      "file": "04-maverick.md",
+      "title": "Maverick — Real-Time Evasion Detection in Automotive Tree-Ensemble IDS",
+      "tags": "maverick real-time evasion detection automotive intrusion detection can bus controller area network autoencoder tree ensemble ids oc-score speed latency 85 563 times faster ecml pkdd 2025 vehicle security anomaly detection"
+    },
+    {
+      "file": "05-ifip-dbsec.md",
+      "title": "Improving SIEM Rules using Transformer-Based Rule Evasion Detection and Attribution",
+      "tags": "siem sigma rules rule evasion detection attribution transformer bert amides usenix false positive rate fpr security information event management log detection engineering ifip dbsec 2026 nordstrom widen recommend fixes upstream repository"
     }
   ]
 }

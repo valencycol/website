@@ -80,6 +80,11 @@ const RAG = {
         id: file + '#' + i,
         doc: file, title, heading: p.heading, session: !!session,
         text, terms,
+        // Title + heading terms score much higher: a paper about Iceman
+        // rarely repeats "Iceman" in its body, and the word is now common
+        // across the corpus (the other papers cite it), so a body-only BM25
+        // buries the paper for its own name. A title match restores it.
+        titleTerms: tokenize(title + ' ' + (p.heading || '')),
         len: Object.values(terms).reduce((a, b) => a + b, 0) || 1,
       });
       n++;
@@ -140,6 +145,14 @@ const RAG = {
         const idf = Math.log(1 + (N - (this.df[t] || 0) + 0.5) / ((this.df[t] || 0) + 0.5));
         s += idf * (f * 2.2) / (f + 1.2 * (0.25 + 0.75 * c.len / avg));
       }
+      /* A query term appearing in the document title or section heading is
+         a strong relevance signal that df-based IDF can't see. Weight it
+         heavily so "what does iceman achieve" surfaces the Iceman paper, not
+         another paper that merely cites it. */
+      let titleHits = 0;
+      for (const t of qt) if (c.titleTerms[t]) titleHits += 1;
+      if (titleHits) s += titleHits * 3.5;
+
       /* a phrase hit is worth more than the sum of its words */
       if (s > 0 && c.text.toLowerCase().includes(query.toLowerCase().trim())) s *= 1.6;
       return { c, s };
@@ -320,13 +333,14 @@ const Chat = {
        question — sending doc context, suppressing the web search, and
        leaving the model to shrug. Requiring the known words to be at least
        HALF of the question's content words fixes it: "news from mumbai" is
-       1-of-3 (→ web search), while "what is Iceman" is 1-of-1 and "why is
-       adversarial retraining bad for tree ensembles" is 4-of-4 (→ docs).
+       1-of-3 (→ web), "who won the world cup" is 2-of-3 (→ web), while
+       "what is Iceman" is 1-of-1 and "adversarial retraining bad for tree
+       ensembles" is 4-of-5 (→ docs).
        Coverage, not score: score is useless here because a rare incidental
        word ("news", df 1) scores HIGH while the terms that matter ("iceman",
        in most chunks) score low. */
     const coverage = topical.length ? known.length / topical.length : 0;
-    const grounded = hits.length > 0 && known.length > 0 && coverage >= 0.6;
+    const grounded = hits.length > 0 && known.length > 0 && coverage >= 0.7;
 
     /* Context goes up only when the corpus actually has a claim on the
        question. Sending Valency's bio alongside "write a prime sieve" is

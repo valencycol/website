@@ -170,7 +170,7 @@ export default {
        so the answer can cite clickable links. */
     let webSources = [];
     let ctxHeader = 'CONTEXT — retrieved from Valency\'s documents. This is all you know:';
-    if (!context && env.LANGSEARCH_API_KEY) {
+    if (!context && env.LANGSEARCH_API_KEY && body.allowWeb !== false) {
       const web = await webSearch(question, env);
       if (web.context) {
         context = web.context;

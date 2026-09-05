@@ -208,6 +208,20 @@ const FORMAT = new Set(('bullet bullets point points slide slides deck summary s
 /* A bare greeting, with nothing else attached. */
 const GREETING = /^(hi|hey|hello|yo|hiya|howdy|greetings|good\s+(morning|afternoon|evening)|sup|hej|halla|hola)(\s+(there|all|everyone|folks|again))?[\s!.?]*$/i;
 
+/* A follow-up that refers back to the conversation rather than naming a new
+   subject — "translate the above", "summarise that", "in English", "explain
+   it". These must NOT be web-searched: the query is meaningless to a search
+   engine, and searching it throws away the conversation history the answer
+   actually needs. They pass through with history so the model handles them. */
+const REFERS_BACK = /\b(the above|above|previous|earlier|preceding|the (text|answer|list|passage|response|reply|message|paragraph)|last (one|answer|reply|message))\b/i;
+const META_ON_REF = /\b(translate|summari[sz]e|rewrite|rephrase|shorten|expand|elaborate|explain|rephrase)\b[\s\S]*\b(it|that|this|these|those|above)\b/i;
+const BARE_META   = /^(translate|summari[sz]e|rewrite|rephrase|shorten|expand|elaborate)( (it|that|this|the above|the text|the list))?[.?!\s]*$/i;
+const IN_LANGUAGE = /^(in|to|into)\s+(english|swedish|french|spanish|german|hindi|arabic|chinese|mandarin|japanese|italian|portuguese|russian|dutch)\b/i;
+function isFollowUp(q, historyLen) {
+  if (historyLen < 2) return false;   // needs a prior exchange to refer to
+  return REFERS_BACK.test(q) || META_ON_REF.test(q) || BARE_META.test(q) || IN_LANGUAGE.test(q);
+}
+
 /* Interrogatives and filler verbs. They carry no topic, but they are common
    enough in the corpus to score well, which is exactly the trap. */
 const ASK = new Set(('how why what who when where which whom whose tell explain describe '
@@ -309,6 +323,7 @@ const Chat = {
     }
     if (!RAG.ready) await RAG.load();
 
+    const followUp = isFollowUp(question, this.history.length);
     const hits = RAG.search(question, 6);
     const { topical, known } = RAG.anchors(question);
 
@@ -380,7 +395,7 @@ const Chat = {
       res = await fetch(CHAT_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, context, history: this.history.slice(-8),
+        body: JSON.stringify({ question, context, allowWeb: !followUp, history: this.history.slice(-8),
                                pass: (typeof Gate !== 'undefined' ? Gate.pass : '') }),
       });
     } catch (e) {
@@ -442,7 +457,7 @@ const Chat = {
     this.history.push({ role: 'user', content: question });
     this.history.push({ role: 'assistant', content: text });
     if (this.history.length > 16) this.history = this.history.slice(-16);
-    return { text, cites, grounded, sources };
+    return { text, cites, grounded, sources, followUp };
   },
 };
 

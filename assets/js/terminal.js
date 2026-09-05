@@ -287,10 +287,10 @@ const Term = {
           c.innerHTML = '<b>web:</b>' + sources.map(src =>
             '<a class="cite web" href="' + esc(src.url) + '" target="_blank" rel="noopener nofollow">' +
             esc(hostOf(src.url)) + '</a>').join('');
-        } else {
+        } else if (!followUp) {
           c.innerHTML = '<span class="cite ungrounded">general knowledge — not from Valency\u2019s documents</span>';
         }
-        wrap.appendChild(c);
+        if (c.innerHTML) wrap.appendChild(c);
       }
     } catch (err) {
       clearInterval(this._rlTimer);

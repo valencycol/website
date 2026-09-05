@@ -473,21 +473,30 @@ const News = {
        last good batch while the relays are retried in the background. */
     if (!cached) cached = store.get('cache.ground', null);
     const FRESH = 2 * 60 * 1000;
-    const setFresh = (t, status) => {
+    /* Report the age of the newest STORY, not when we fetched. The worker can
+       serve a stale edge copy (Ground News blocked at some Cloudflare PoPs)
+       while "just now" would wrongly imply the news is current. */
+    const STALE = 90 * 60 * 1000;   // Ground News refreshes ~hourly; older than this is stale
+    const newestMs = its => its && its.length
+      ? Math.max.apply(null, its.map(x => +new Date(x.date)).filter(n => n > 0)) : 0;
+    const setFresh = (t, status, items) => {
       if (!freshEl) return;
       if (!t && status !== 'loading') { freshEl.textContent = ''; freshEl.classList.remove('stale'); return; }
       if (status === 'loading') { freshEl.textContent = 'Fetching latest stories\u2026'; freshEl.classList.add('stale'); return; }
-      let s = 'Updated ' + timeAgo(new Date(t));
-      if (status === 'retrying') s += ' \u00b7 retrying';
-      else if (status === 'failed') s = 'Cached ' + timeAgo(new Date(t)) + ' \u00b7 refresh failed';
-      freshEl.classList.toggle('stale', status === 'retrying' || status === 'failed');
+      const top = newestMs(items);
+      const old = top && (Date.now() - top > STALE);
+      let s;
+      if (status === 'failed') s = 'Top story ' + timeAgo(new Date(top || t)) + ' \u00b7 refresh failed';
+      else if (top) s = 'Top story ' + timeAgo(new Date(top)) + (status === 'retrying' ? ' \u00b7 retrying' : '');
+      else s = 'Updated ' + timeAgo(new Date(t));
+      freshEl.classList.toggle('stale', old || status === 'retrying' || status === 'failed');
       freshEl.textContent = s;
     };
     if (cached && cached.items) {
       const items = cached.items.map(it => Object.assign({}, it, { date: new Date(it.date) }));
       renderGroundItems(el, items);
       this.loaded = true;
-      setFresh(cached.t, Date.now() - cached.t > FRESH ? 'retrying' : null);
+      setFresh(cached.t, Date.now() - cached.t > FRESH ? 'retrying' : null, items);
       if (!force && Date.now() - cached.t < FRESH) return;
     } else {
       setFresh(0);
@@ -512,7 +521,19 @@ const News = {
         items: items.map(it => Object.assign({}, it, { date: it.date.toISOString() }))
       });
       this.loaded = true;
-      setFresh(Date.now(), null);
+      setFresh(Date.now(), null, items);
+
+      /* If the freshest story is well past Ground News's hourly cadence, the
+         worker likely handed us a stale edge copy. Force one cache-bypassing
+         refetch (max_age=60) to make it try Ground News again. Once only. */
+      const top = newestMs(items);
+      if (!force && top && Date.now() - top > 2 * 60 * 60 * 1000 && !this._recovering) {
+        this._recovering = true;
+        this.loading = false;
+        setTimeout(() => this.load(true), 300);
+        return;
+      }
+      this._recovering = false;
     } catch (e) {
       if (!cached) {
         el.innerHTML =
@@ -528,7 +549,7 @@ const News = {
         setFresh(0);
       } else {
         /* keep showing the cached batch, but flag that the refresh failed */
-        setFresh(cached.t, 'failed');
+        setFresh(cached.t, 'failed', cached.items ? cached.items.map(it => Object.assign({}, it, { date: new Date(it.date) })) : null);
       }
     }
     this.loading = false;

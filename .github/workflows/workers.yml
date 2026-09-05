@@ -72,8 +72,20 @@ jobs:
             echo "run=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Are Cloudflare credentials configured?
+        id: creds
+        env:
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -n "$TOKEN" ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping worker deploy - CLOUDFLARE_API_TOKEN is not set. Add it under Settings > Secrets and variables > Actions to enable this."
+          fi
+
       - name: Deploy
-        if: steps.changed.outputs.run == 'true'
+        if: steps.changed.outputs.run == 'true' && steps.creds.outputs.ok == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -100,8 +112,20 @@ jobs:
             echo "run=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Are Cloudflare credentials configured?
+        id: creds
+        env:
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -n "$TOKEN" ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping worker deploy - CLOUDFLARE_API_TOKEN is not set. Add it under Settings > Secrets and variables > Actions to enable this."
+          fi
+
       - name: Deploy
-        if: steps.changed.outputs.run == 'true'
+        if: steps.changed.outputs.run == 'true' && steps.creds.outputs.ok == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

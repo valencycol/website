@@ -165,7 +165,7 @@ export default {
     let webSources = [];
     let ctxHeader = 'CONTEXT — retrieved from Valency\'s documents. This is all you know:';
     if (!context && env.LANGSEARCH_API_KEY && body.allowWeb !== false) {
-      const web = await webSearch(question, env);
+      const web = await webSearch(question, env, body.place);
       if (web.context) {
         context = web.context;
         webSources = web.sources;
@@ -449,7 +449,13 @@ function mime(from, to, subject, body) {
    empties on any failure — a search that fell over must not sink the answer;
    gpt-oss just falls back to its own knowledge. Result URLs are scheme-checked
    before they are ever handed to the browser as links. */
-async function webSearch(query, env) {
+async function webSearch(query, env, place) {
+  /* Scope the search to the conversation's city when the query implies a
+     location but doesn't name one ("events this weekend" → "... Linköping"),
+     so it can't drift to a random place. */
+  if (place && typeof place === 'string' && !query.toLowerCase().includes(place.toLowerCase())) {
+    query = query + ' ' + place;
+  }
   try {
     const r = await fetch('https://api.langsearch.com/v1/web-search', {
       method: 'POST',

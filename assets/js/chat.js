@@ -219,6 +219,12 @@ const BARE_META   = /^(translate|summari[sz]e|rewrite|rephrase|shorten|expand|el
 const IN_LANGUAGE = /^(in|to|into)\s+(english|swedish|french|spanish|german|hindi|arabic|chinese|mandarin|japanese|italian|portuguese|russian|dutch)\b/i;
 const BACKREF = /\b(this|that|it|these|those|them|everything|the above|all (this|that|of it|of this|of that)|the whole (thing|text|list|passage))\b/i;
 const A_LANGUAGE = /\b(swedish|english|french|spanish|german|hindi|arabic|chinese|mandarin|japanese|italian|portuguese|russian|dutch|korean|norwegian|danish|finnish)\b/i;
+/* The place the conversation is about — learned from "weather in linkoping",
+   "events in X", etc. — so a later location-implicit web query ("events this
+   weekend", "restaurants nearby") can be searched in the right city. */
+const PLACE_CUE = /\b(?:in|at|near|around|from)\s+([a-zà-öø-ÿ][\wà-öø-ÿ'’.-]+(?:\s+[a-zà-öø-ÿ][\wà-öø-ÿ'’.-]+)?)/i;
+const LOC_IMPLICIT = /\b(here|nearby|near me|around here|this (weekend|week|evening|month|afternoon|morning|area)|tonight|today|tomorrow|events|gigs|concerts|what'?s on|whats on|restaurants?|cafes?|things to do|attractions|museums?|weather|forecast)\b/i;
+
 function isFollowUp(q, historyLen) {
   if (historyLen < 2) return false;   // needs a prior exchange to refer to
   if (REFERS_BACK.test(q) || META_ON_REF.test(q) || BARE_META.test(q) || IN_LANGUAGE.test(q)) return true;
@@ -320,6 +326,7 @@ const HISTORY_EXCHANGES = 10;
 
 const Chat = {
   history: [],
+  place: '',
   busy: false,
 
   /* onToken(text) is called as the answer streams in; onStatus(n) fires
@@ -327,7 +334,7 @@ const Chat = {
      onStatus(n, info) also fires with { waiting: seconds } while a rate
      limit is being waited out. Returns { text, cites, grounded } or throws. */
   /* Forget the conversation — clears the memory a follow-up would draw on. */
-  reset() { const n = this.history.length; this.history = []; return n; },
+  reset() { const n = this.history.length; this.history = []; this.place = ''; return n; },
 
   async ask(question, onToken, onStatus, retried) {
     const route = classify(question);
@@ -347,6 +354,13 @@ const Chat = {
     if (!RAG.ready) await RAG.load();
 
     const followUp = isFollowUp(question, this.history.length);
+
+    /* Learn / carry the place. If this question names a place, remember it;
+       if it is location-implicit and names none, reuse the remembered one so
+       the web search runs in the right city instead of a random one. */
+    const named = question.match(PLACE_CUE);
+    if (named) this.place = named[1].trim().replace(/[.?!,]+$/, '');
+    const searchPlace = (!named && LOC_IMPLICIT.test(question) && this.place) ? this.place : '';
     const hits = RAG.search(question, 6);
     const { topical, known } = RAG.anchors(question);
 
@@ -422,7 +436,7 @@ const Chat = {
       res = await fetch(CHAT_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, context, allowWeb: !followUp, history: this.history.slice(-2 * HISTORY_EXCHANGES),
+        body: JSON.stringify({ question, context, allowWeb: !followUp, place: searchPlace, history: this.history.slice(-2 * HISTORY_EXCHANGES),
                                pass: (typeof Gate !== 'undefined' ? Gate.pass : '') }),
       });
     } catch (e) {

@@ -207,6 +207,15 @@ const Term = {
 
       /* A rate limit is being waited out — count it down rather than
          freezing, so the wait reads as deliberate instead of broken. */
+      if (info && info.reset) {
+        /* The conversation was auto-reset because it exceeded the model's
+           token limit. Show it plainly, then let the retried answer stream in. */
+        this.print('\u26a0 conversation was too long — memory reset automatically.', 'warn sp');
+        updateMem();
+        body.innerHTML = 'retrying with fresh context<span class="dots"></span><span class="cursor-blk"></span>';
+        this.scroll();
+        return;
+      }
       if (info && info.verifying) {
         body.innerHTML = 'verifying session<span class="dots"></span><span class="cursor-blk"></span>';
         this.scroll();
@@ -283,10 +292,10 @@ const PS1 = 'visitor@colaco.se:~$';
 function updateMem() {
   const el = $('#mem');
   if (!el) return;
-  const n = Math.min(10, Math.floor((typeof Chat !== 'undefined' ? Chat.history.length : 0) / 2));
-  el.textContent = 'memory ' + n + '/10';
-  el.classList.toggle('active', n > 0 && n < 10);
-  el.classList.toggle('full', n >= 10);
+  const n = Math.min(3, Math.floor((typeof Chat !== 'undefined' ? Chat.history.length : 0) / 2));
+  el.textContent = 'memory ' + n + '/3';
+  el.classList.toggle('active', n > 0 && n < 3);
+  el.classList.toggle('full', n >= 3);
 }
 
 /* Short, readable label for a web-source chip: the hostname without www. */

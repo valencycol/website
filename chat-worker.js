@@ -68,7 +68,7 @@ const MODEL      = 'openai/gpt-oss-20b';
 // this as a general-purpose LLM if it can only send a short question.
 const MAX_QUESTION_CHARS = 2000;
 const MAX_CONTEXT_CHARS  = 5200;   // ~1300 tokens
-const MAX_HISTORY_TURNS  = 20;  // 10 exchanges; fitBudget() trims further to stay in TPM
+const MAX_HISTORY_TURNS  = 6;   // 3 exchanges; fitBudget() trims further to stay in TPM
 const TOKEN_BUDGET       = 4200; // prompt tokens; + MAX_TOKENS_OUT stays well under Groq's 8000 TPM
 const MAX_TOKENS_OUT     = 700;
 
@@ -215,6 +215,13 @@ export default {
              + retryAfter + ' second' + (retryAfter === 1 ? '' : 's') + '.',
         retryAfter,
       }, 429, { ...cors, 'Retry-After': String(retryAfter) });
+    }
+
+    if (upstream.status === 413) {
+      // Single request too big for the model's per-minute token limit. Tell the
+      // browser to reset the conversation and try again with a clean slate.
+      return json({ error: 'The conversation grew past the model\'s limit. Memory was reset — ask again.',
+                    resetContext: true }, 413, cors);
     }
 
     if (!upstream.ok) {

@@ -141,7 +141,7 @@ The site is a terminal. Visitors type slash-commands:
 - `/fun` — suggested questions worth asking
 - `/theme` — phosphor colour: green, amber or ice
 - `/reset` — clear the conversation memory (the assistant keeps the last
-  ~10 exchanges as context; /reset forgets them)
+  3 exchanges as context; /reset forgets them)
 - `/banner`, `/clear`, `/date`, `/exit` — terminal housekeeping
 
 **Commands need the leading slash** — `/news`, `/contact`, `/publications`.

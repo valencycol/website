@@ -320,9 +320,9 @@ function classify(query) {
 
 /* ── The ask ───────────────────────────────────────────────── */
 
-/* Conversation memory: the last 10 exchanges (a question + its answer
-   each), so a follow-up can reference up to ~10 messages back. */
-const HISTORY_EXCHANGES = 10;
+/* Conversation memory: the last 3 exchanges (a question + its answer each).
+   Small on purpose — enough for follow-ups, well within Groq's token budget. */
+const HISTORY_EXCHANGES = 3;
 
 const Chat = {
   history: [],
@@ -479,6 +479,16 @@ const Chat = {
         throw new Error('could not verify this browser with Turnstile: ' + e.message
           + '. Reload the page to try again.');
       }
+    }
+
+    /* The conversation got too big for the model's token budget. Reset it and
+       retry once from a clean slate. onStatus signals the terminal to print a
+       reset notice and update the memory meter. */
+    if (res.status === 413 && !retried) {
+      this.history = [];
+      this.place = '';
+      if (onStatus) onStatus(0, { reset: true });
+      return this.ask(question, onToken, onStatus, true);
     }
 
     if (res.status === 429) {

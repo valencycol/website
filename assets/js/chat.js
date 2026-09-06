@@ -320,9 +320,17 @@ function classify(query) {
 
 /* ── The ask ───────────────────────────────────────────────── */
 
-/* Conversation memory: the last 3 exchanges (a question + its answer each).
-   Small on purpose — enough for follow-ups, well within Groq's token budget. */
-const HISTORY_EXCHANGES = 3;
+/* Token gauge. Groq's free tier caps gpt-oss-20b at 8000 tokens/minute, and
+   every request spends: the system prompt + the conversation history + this
+   turn's context + question + reserved output. The bar shows the part the
+   CONVERSATION fixes (system + history + reserved output) against that 8000,
+   and the chat resets when it climbs high enough that a normal question on top
+   would risk the ceiling. ~4 chars/token; SYS_TOKENS/OUT_TOKENS approximate
+   the worker's system prompt and MAX_TOKENS_OUT. */
+const TPM_LIMIT   = 8000;
+const SYS_TOKENS  = 560;
+const OUT_TOKENS  = 700;
+const RESET_TOKENS = 6000;   // reset the conversation once its load passes this
 
 const Chat = {
   history: [],
@@ -333,19 +341,23 @@ const Chat = {
      while the model is still reasoning and nothing is renderable yet.
      onStatus(n, info) also fires with { waiting: seconds } while a rate
      limit is being waited out. Returns { text, cites, grounded } or throws. */
+  /* Estimated tokens this conversation forces into every request: the system
+     prompt, the compacted history, and the reserved output. */
+  memTokens() {
+    const histChars = this.compactHistory().reduce((n, m) => n + (m.content || '').length, 0);
+    return SYS_TOKENS + OUT_TOKENS + Math.ceil(histChars / 4);
+  },
+
   /* Compact the history before sending so a long chat can't blow the model's
      per-minute token budget. Recent exchanges go verbatim (follow-ups lean on
      them); older ones are truncated to an excerpt — enough to keep the gist,
      a fraction of the size. The worker enforces a hard cap on top of this. */
   compactHistory() {
-    const RECENT = 6;                      // last 3 exchanges, full
-    const h = this.history;
-    if (h.length <= RECENT) return h.slice();
-    const older = h.slice(0, -RECENT).map(m => {
-      const cap = m.role === 'user' ? 140 : 240;
-      return { role: m.role, content: m.content.length > cap ? m.content.slice(0, cap) + '…' : m.content };
-    });
-    return older.concat(h.slice(-RECENT));
+    /* Full recent history — no per-message truncation. The token-based reset
+       (RESET_TOKENS) clears it before it grows dangerous, and the worker's
+       fitBudget is the hard backstop, so the load can climb honestly and the
+       gauge reflects real accumulation. */
+    return this.history.slice();
   },
 
   /* Forget the conversation — clears the memory a follow-up would draw on. */
@@ -370,11 +382,10 @@ const Chat = {
 
     const followUp = isFollowUp(question, this.history.length);
 
-    /* Memory is full and this isn't a follow-up that needs the old context —
-       reset before answering so the bar fills over 3 exchanges then starts
-       fresh, and the request stays small. Follow-ups are spared so "translate
-       that" at the boundary still works. */
-    if (!retried && this.history.length >= 2 * HISTORY_EXCHANGES && !followUp) {
+    /* The conversation's token load has climbed near the per-minute ceiling —
+       reset before answering so the next request stays under 8000. Follow-ups
+       are spared so "translate that" at the boundary still has its context. */
+    if (!retried && !followUp && this.memTokens() > RESET_TOKENS) {
       this.history = [];
       this.place = '';
       if (onStatus) onStatus(0, { reset: true, proactive: true });
@@ -532,7 +543,7 @@ const Chat = {
     const { text, sources } = await readSSE(res, onToken, onStatus);
     this.history.push({ role: 'user', content: question });
     this.history.push({ role: 'assistant', content: text });
-    if (this.history.length > 2 * HISTORY_EXCHANGES) this.history = this.history.slice(-2 * HISTORY_EXCHANGES);
+    if (this.history.length > 60) this.history = this.history.slice(-60);
     return { text, cites, grounded, sources, followUp };
   },
 };

@@ -295,11 +295,14 @@ const PS1 = 'visitor@colaco.se:~$';
 function updateMem() {
   const el = $('#mem');
   if (!el) return;
-  const n = Math.min(3, Math.floor((typeof Chat !== 'undefined' ? Chat.history.length : 0) / 2));
-  const cells = el.querySelectorAll('i');
-  cells.forEach((c, i) => c.classList.toggle('on', i < n));
-  el.classList.toggle('full', n >= 3);
-  el.setAttribute('aria-label', 'memory ' + n + ' of 3 exchanges');
+  const used = (typeof Chat !== 'undefined' && Chat.memTokens) ? Chat.memTokens() : 0;
+  const pct = Math.max(0, Math.min(100, used / 8000 * 100));
+  const fill = el.querySelector('.mem-fill');
+  if (fill) fill.style.width = pct.toFixed(1) + '%';
+  el.classList.toggle('warn', pct >= 55 && pct < 75);
+  el.classList.toggle('full', pct >= 75);
+  el.setAttribute('aria-label', '~' + used + ' of 8000 tokens used');
+  el.title = 'Conversation token load: ~' + used + ' / 8000 per-minute limit. Resets automatically as it fills; /reset clears it now.';
 }
 
 /* Short, readable label for a web-source chip: the hostname without www. */

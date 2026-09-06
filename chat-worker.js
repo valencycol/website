@@ -67,9 +67,9 @@ const MODEL      = 'openai/gpt-oss-20b';
 // Request shape limits. These are the real abuse guard: a scraper cannot use
 // this as a general-purpose LLM if it can only send a short question.
 const MAX_QUESTION_CHARS = 2000;
-const MAX_CONTEXT_CHARS  = 5200;   // ~1300 tokens
+const MAX_CONTEXT_CHARS  = 4000;   // ~1000 tokens
 const MAX_HISTORY_TURNS  = 6;   // 3 exchanges; fitBudget() trims further to stay in TPM
-const TOKEN_BUDGET       = 4200; // prompt tokens; + MAX_TOKENS_OUT stays well under Groq's 8000 TPM
+const TOKEN_BUDGET       = 6800; // prompt tokens; + MAX_TOKENS_OUT (700) stays under Groq's 8000 TPM
 const MAX_TOKENS_OUT     = 700;
 
 // Per-IP budget (only enforced when the CHAT_RL KV namespace is bound).

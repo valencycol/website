@@ -8,6 +8,13 @@
   // worker metadata, so a binding added only in the dashboard is REMOVED by
   // the next deploy. Anything the worker needs belongs in this file.
   "name": "colaco-chat",
+  // Model id, kept here rather than in the source so it can be changed without
+  // a code edit. Google retires ids on their own schedule: gemini-2.5-flash
+  // began returning 404 ("no longer available to new users") in September 2026,
+  // which the worker used to hide by falling back to Groq's much smaller
+  // budget. Flash-Lite is chosen for the higher daily request allowance.
+  "vars": { "GEMINI_MODEL": "gemini-3.1-flash-lite" },
+
   "compatibility_date": "2026-08-28",
   "main": "chat-worker.js",
 

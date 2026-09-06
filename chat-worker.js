@@ -67,9 +67,13 @@ const GROQ_URL   = 'https://api.groq.com/openai/v1/chat/completions';
    kept wired rather than removed: Gemini's free tier caps by DAY as well
    (250-1000 requests), and a site that stops answering at the cap would be
    worse than one that slows down. */
-const GEMINI_MODEL = 'gemini-2.5-flash';
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/'
-  + GEMINI_MODEL + ':streamGenerateContent?alt=sse';
+/* Overridable with the GEMINI_MODEL variable, because Google retires model
+   ids on their own schedule and a 404 here is indistinguishable, from the
+   visitor's side, from Groq rate limiting: the worker just falls back and the
+   site gets slow. Changing it is a wrangler command, not a deploy. */
+const GEMINI_MODEL = 'gemini-3.6-flash';
+const geminiUrl = (env, override) => 'https://generativelanguage.googleapis.com/v1beta/models/'
+  + (override || env.GEMINI_MODEL || GEMINI_MODEL) + ':streamGenerateContent?alt=sse';
 const MODEL      = 'openai/gpt-oss-20b';
 
 // Request shape limits. These are the real abuse guard: a scraper cannot use
@@ -246,18 +250,55 @@ export default {
     let upstream = null;
     if (env.GEMINI_API_KEY) {
       try {
-        const g = await callGemini(messages, env);
+        let g = await callGemini(messages, env);
+        /* Retired id: take Google's own recommendation and try again once. */
+        if (g.status === 404) {
+          const body404 = await g.clone().text().catch(() => '');
+          const suggested = suggestedModel(body404);
+          if (suggested) {
+            console.log('gemini model retired, retrying with', suggested);
+            const retry = await callGemini(messages, env, suggested);
+            if (retry.ok && retry.body) {
+              g = retry;
+              if (env.CHAT_RL) {
+                ctx.waitUntil(env.CHAT_RL.put('gemini:model', JSON.stringify({
+                  use: suggested, at: Math.floor(Date.now() / 1000),
+                }), { expirationTtl: 86400 }).catch(() => {}));
+              }
+            }
+          }
+        }
         if (g.ok && g.body) {
           provider = 'gemini';
           upstream = g;
+          if (env.CHAT_RL) ctx.waitUntil(env.CHAT_RL.delete('gemini:err').catch(() => {}));
         } else {
-          if (g.status === 429 && env.CHAT_RL) {
-            ctx.waitUntil(env.CHAT_RL.put('gemini:rl',
-              JSON.stringify({ until: Math.floor(Date.now() / 1000) + 60 }),
-              { expirationTtl: 120 }).catch(() => {}));
+          /* Record WHY, not just that it failed. Falling through silently made
+             a broken key look like "Gemini is fine, Groq is rate limiting" —
+             the site degraded to Groq's 8,000 tokens a minute with nothing
+             anywhere saying so. */
+          const detail = await g.text().catch(() => '');
+          const note = { status: g.status, at: Math.floor(Date.now() / 1000),
+                         model: env.GEMINI_MODEL || GEMINI_MODEL,
+                         message: detail.slice(0, 300) };
+          console.log('gemini failed', JSON.stringify(note));
+          if (env.CHAT_RL) {
+            const key = g.status === 429 ? 'gemini:rl' : 'gemini:err';
+            const value = g.status === 429
+              ? { until: Math.floor(Date.now() / 1000) + 60, ...note }
+              : note;
+            ctx.waitUntil(env.CHAT_RL.put(key, JSON.stringify(value),
+              { expirationTtl: 900 }).catch(() => {}));
           }
         }
-      } catch (err) { /* fall through to Groq */ }
+      } catch (err) {
+        console.log('gemini threw', String(err).slice(0, 300));
+        if (env.CHAT_RL) {
+          ctx.waitUntil(env.CHAT_RL.put('gemini:err', JSON.stringify({
+            status: 0, at: Math.floor(Date.now() / 1000), message: String(err).slice(0, 300),
+          }), { expirationTtl: 900 }).catch(() => {}));
+        }
+      }
     }
 
     if (!upstream) {
@@ -357,7 +398,18 @@ export default {
    shaped {candidates:[{content:{parts:[{text}]}}]}. Rather than teach the
    browser a second format, its stream is translated into the OpenAI-shaped
    frames the client already parses, so nothing downstream changes. */
-async function callGemini(messages, env) {
+/* Google retires model ids on their own schedule, and the 404 it returns names
+   the replacement: "no longer available ... use models/gemini-3.6-flash". Rather
+   than fail over to the slower provider and wait for somebody to notice, the
+   suggestion is read out of the error and retried once. The site then heals
+   itself the next time an id is retired, and /status still records what
+   happened. */
+function suggestedModel(body) {
+  const m = String(body || '').match(/use\s+models\/([A-Za-z0-9._-]+)/);
+  return m ? m[1] : null;
+}
+
+async function callGemini(messages, env, modelOverride) {
   const system = messages.find(m => m.role === 'system');
   const turns = messages.filter(m => m.role !== 'system');
   while (turns.length && turns[0].role !== 'user') turns.shift();   // must open on a user turn
@@ -365,7 +417,7 @@ async function callGemini(messages, env) {
     role: m.role === 'assistant' ? 'model' : 'user',
     parts: [{ text: m.content }],
   }));
-  const res = await fetch(GEMINI_URL, {
+  const res = await fetch(geminiUrl(env, modelOverride), {
     method: 'POST',
     headers: { 'x-goog-api-key': env.GEMINI_API_KEY, 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -434,13 +486,34 @@ async function handleStatus(env, cors) {
       return Math.max(0, until - Math.floor(Date.now() / 1000));
     } catch (e) { return 0; }
   };
-  const [groq, gemini] = await Promise.all([left('groq:rl'), left('gemini:rl')]);
+  const readErr = async () => {
+    if (!env.CHAT_RL) return null;
+    try {
+      const raw = await env.CHAT_RL.get('gemini:err');
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  };
+  const readModel = async () => {
+    if (!env.CHAT_RL) return null;
+    try { const raw = await env.CHAT_RL.get('gemini:model'); return raw ? JSON.parse(raw) : null; }
+    catch (e) { return null; }
+  };
+  const [groq, gemini, gemErr, gemModel] = await Promise.all([
+    left('groq:rl'), left('gemini:rl'), readErr(), readModel()]);
+  /* A provider that is configured but failing is neither ok nor rate limited,
+     and calling it ok is how a broken key hid behind Groq's rate limiting. */
+  const gemState = gemini > 0 ? 'limited' : gemErr ? 'error' : 'ok';
   return json({
     /* Kept flat for the original single-provider client. */
     groq: groq > 0 ? 'limited' : 'ok', seconds: groq,
     providers: {
-      gemini: { configured: !!env.GEMINI_API_KEY, state: gemini > 0 ? 'limited' : 'ok', seconds: gemini },
-      groq:   { configured: !!env.GROQ_API_KEY,   state: groq   > 0 ? 'limited' : 'ok', seconds: groq },
+      gemini: { configured: !!env.GEMINI_API_KEY, state: gemState, seconds: gemini,
+                model: env.GEMINI_MODEL || GEMINI_MODEL,
+                /* Set when a retirement was auto-followed: the default in the
+                   source should be corrected to this. */
+                usingInstead: gemModel ? gemModel.use : undefined,
+                lastError: gemErr || undefined },
+      groq:   { configured: !!env.GROQ_API_KEY,   state: groq > 0 ? 'limited' : 'ok', seconds: groq },
     },
     primary: env.GEMINI_API_KEY ? 'gemini' : 'groq',
   }, 200, { ...cors, 'Cache-Control': 'no-store' });

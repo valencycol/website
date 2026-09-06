@@ -496,7 +496,7 @@ const ALIASES = {
   bio: 'about', me: 'about',
   cls: 'clear', reboot: 'restart', 'new': 'reset', mem: 'memory', remember: 'memory',
   clearmemory: 'clear-memory', 'forget-memory': 'clear-memory', forget_chat: 'reset', man: 'help', '?': 'help',
-  quit: 'exit', q: 'exit',
+  quit: 'exit', q: 'exit', su: 'sudo', root: 'sudo',
 };
 
 const COMMANDS = {
@@ -857,7 +857,7 @@ const COMMANDS = {
     desc: 'no',
     run(arg, t) {
       t.print('visitor is not in the sudoers file. This incident has been reported.', 'err');
-      t.print('(it has not been reported. there is no sudoers file. this is a static site.)', 'dim sp');
+      t.gap();
     }
   },
 

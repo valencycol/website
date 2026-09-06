@@ -480,14 +480,37 @@ function isMetaOnly(q) {
   return BARE_META.test(q) || IN_LANGUAGE.test(q) || META_ON_REF.test(q) || REFERS_BACK.test(q);
 }
 
-/* Questions that are nothing but a reaction to the last answer. They carry no
-   subject at all, so nothing else in here can recognise them: "Why not" after
-   "it will not snow" was read as a fresh topic. */
-const ELLIPTIC = /^(why|why not|why is that|why though|how so|how come|and|really|says who|since when|what for|go on|continue|more|such as|like what|for example|e\.g\.)[\s.?!]*$/i;
+/* Words that point at the SHAPE of the conversation rather than at a subject:
+   ordinals, generic placeholders, and the verbs of asking for more. This is a
+   CLOSED class — the ways English points back at what was just said do not
+   grow, unlike the set of things people can ask about — so enumerating it once
+   is a rule rather than another patch.
+
+   It replaced a list of literal phrases ("why", "why not", "how so", …) that
+   could only ever match what somebody had thought of: "tell me more about the
+   first point" carried none of them, was read as a brand-new topic, and got
+   web-searched into an article about startup failure. */
+const DISCOURSE = new Set(('first second third fourth fifth sixth seventh eighth ninth tenth last final next '
+  + 'previous latter former point points item items one ones thing things bullet bullets option options '
+  + 'example examples entry entries suggestion suggestions idea ideas line lines answer answers reply replies '
+  + 'response message paragraph passage more detail details further deeper again number not so such').split(' '));
+
+/* A question with no subject of its own can only be about what was just said.
+   "tell me more about the first point" reduces to nothing; "weather in
+   linkoping" keeps two words and is therefore a topic in its own right. */
+function carriesOwnSubject(q) {
+  if (typeof RAG === 'undefined' || !RAG.ready) return true;
+  const { topical } = RAG.anchors(q);
+  return topical.some(w => !DISCOURSE.has(w));
+}
 
 function isFollowUp(q, historyLen) {
   if (historyLen < 2) return false;
-  if (ELLIPTIC.test(q.trim())) return true;   // needs a prior exchange to refer to
+  /* A question about this site is about the site, never about the previous
+     answer — "what can THIS site do" would otherwise trip the demonstrative
+     test below on the word "this". */
+  if (SELF_REF.test(q)) return false;
+  if (!carriesOwnSubject(q)) return true;   // needs a prior exchange to refer to
   if (REFERS_BACK.test(q) || META_ON_REF.test(q) || BARE_META.test(q) || IN_LANGUAGE.test(q)) return true;
   /* Typo-proof fallback: a SHORT message that hinges on a back-reference
      ("ranslate all this o swedish" — verb mangled, but "all this" is clearly
@@ -703,7 +726,9 @@ const Chat = {
     /* The web search runs for everything except a pure text operation. A
        follow-up searches for the topic the conversation established, not its
        own bare words — "tell me more" on its own finds nothing useful. */
-    const metaOnly = isMetaOnly(question);
+    /* Nothing to look up: the answer is in what was just said, and searching
+       the words themselves returns whatever the engine makes of them. */
+    const metaOnly = isMetaOnly(question) || !carriesOwnSubject(question);
     if (!followUp) this.topic = question.slice(0, 120);
     /* A follow-up searches for what was just being discussed. The last thing
        the visitor actually asked is a better anchor than the topic that

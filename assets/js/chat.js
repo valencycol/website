@@ -352,11 +352,33 @@ function quickAnswers() {
     const nl = part.indexOf('\n');
     if (nl < 0) continue;
     const q = part.slice(0, nl).trim();
-    const a = part.slice(nl + 1).trim();
-    if (q && a) QUICK_CACHE.set(normQ(q), a);
+    let body = part.slice(nl + 1).trim();
+    if (!q || !body) continue;
+    QUICK_CACHE.set(normQ(q), body);
+    /* An "Also asked as:" line under the heading registers other phrasings
+       for the same answer, so "what can this site do?" doesn't miss the entry
+       written as "What can this website actually do?" and get web-searched.
+       Kept in the Markdown so phrasings can be added without touching code. */
+    const alt = body.match(/^\*Also asked as:\s*([^*]+)\*\s*/i);
+    if (alt) {
+      body = body.slice(alt[0].length).trim();
+      QUICK_CACHE.set(normQ(q), body);
+      for (const phrase of alt[1].split(/[;|]/)) {
+        const k = normQ(phrase);
+        if (k) QUICK_CACHE.set(k, body);
+      }
+    }
   }
   return QUICK_CACHE;
 }
+
+/* Questions about this site itself. A search engine cannot resolve "this
+   site" — it returns whatever site it likes, which is how "what can this site
+   do?" came to be answered about an unrelated tools website. These are always
+   about colaco.se, so they are answered from the corpus with no web search.
+   "here" is deliberately absent: in a conversation about a city it means the
+   city, not the website. */
+const SELF_REF = /\b(?:this|the)\s+(?:site|website|web\s?page|page|terminal|chat|assistant|bot)\b|\bwhat can you do\b|\bwho\s+(?:made|built|owns|runs)\s+(?:this|the)\b/i;
 
 function isMetaOnly(q) {
   return BARE_META.test(q) || IN_LANGUAGE.test(q) || META_ON_REF.test(q) || REFERS_BACK.test(q);
@@ -601,7 +623,13 @@ const Chat = {
        bare words: "how is it different from maverick" alone retrieves nothing
        and web-searches into Top Gun. Anchored to "what is iceman" it finds
        both papers. */
-    const retrievalQ = (followUp && this.topic) ? question + ' ' + this.topic : question;
+    /* A question about the site retrieves against the site's own vocabulary —
+       "what can this site do" shares only the word "site" with the corpus,
+       which is not enough to surface the page that answers it. */
+    const selfRef = SELF_REF.test(question);
+    const retrievalQ = selfRef
+      ? question + ' colaco.se website terminal commands assistant what can this website actually do'
+      : (followUp && this.topic) ? question + ' ' + this.topic : question;
 
     /* The visitor's own uploads outrank everything. They are retrieved from
        the same index but kept in their own list, so they can be sent as a
@@ -658,7 +686,9 @@ const Chat = {
       (known.length >= 2 && coverage >= 0.7 && docMatch(hits, topical, known))
     );
     if (!followUp) this.topicGrounded = groundedNow;
-    const grounded = followUp ? (this.topicGrounded && hits.length > 0) : groundedNow;
+    const grounded = selfRef ? hits.length > 0
+                   : followUp ? (this.topicGrounded && hits.length > 0)
+                   : groundedNow;
 
     /* A document question whose subject shares a name with something famous
        — "what is iceman" — searches straight into Marvel and Top Gun, and the
@@ -727,7 +757,7 @@ const Chat = {
       res = await fetch(CHAT_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, context, uploads, allowWeb: !metaOnly, searchQuery, place: searchPlace, history: this.compactHistory(question),
+        body: JSON.stringify({ question, context, uploads, allowWeb: !metaOnly && !selfRef, searchQuery, place: searchPlace, history: this.compactHistory(question),
                                pass: (typeof Gate !== 'undefined' ? Gate.pass : '') }),
       });
     } catch (e) {

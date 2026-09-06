@@ -7,6 +7,8 @@
 
 ### Which paper should I read first?
 
+*Also asked as: what should I read first; where do I start; which paper first; what should I read*
+
 Start with the licentiate thesis, *Hardening Tree Ensembles: Real-Time and
 Effective Evasion Defences Beyond Adversarial Re-Training* (2025). It frames
 the whole problem and summarises the rest: why proactive defences fall short
@@ -19,6 +21,8 @@ VoTE extension (SafeAI@AAAI 2023). For log and rule engineering, read the SIEM
 rules paper (IFIP DBSEC 2026).
 
 ### What's the difference between Iceman and Maverick?
+
+*Also asked as: iceman vs maverick; how do iceman and maverick differ; difference between iceman and maverick*
 
 Both detect evasion attacks against tree-ensemble intrusion detection systems
 without modifying the model they protect, but they solve different halves of
@@ -58,6 +62,8 @@ itself, at the speed the system runs at, without touching the model.
 
 ### Why is adversarial retraining a bad idea for tree ensembles?
 
+*Also asked as: why is adversarial retraining bad; what is wrong with adversarial retraining*
+
 The licentiate thesis shows adversarial retraining is not merely weak for tree
 ensembles but can be counterproductive: it can leave a model *more* vulnerable
 to evasion than it was before. The defence also costs accuracy in the ordinary,
@@ -84,6 +90,8 @@ Good openings, in rough order of how much discussion they tend to generate:
 
 ### Give me the elevator pitch for the licentiate thesis
 
+*Also asked as: what is the licentiate thesis about; elevator pitch for the thesis; summarise the thesis*
+
 Machine learning intrusion detection is only as good as its behaviour under
 attack, and the standard defence for tree ensembles — adversarial retraining —
 is ineffective and can make things worse. The thesis argues for the opposite
@@ -95,6 +103,8 @@ Effective Evasion Defences Beyond Adversarial Re-Training*, Linköping
 University, 2025.
 
 ### How fast is Maverick, and why does the speed matter?
+
+*Also asked as: how fast is maverick; why does maverick speed matter; maverick latency*
 
 Maverick is 85–563× faster than the previous state of the art (OC-Score), at
 identical detection accuracy — it is mathematically equivalent, so the speed
@@ -108,6 +118,8 @@ than the network it protects is not a real-time detector: it either drops
 messages or delays safety-critical decisions.
 
 ### What is a SIGMA rule evasion?
+
+*Also asked as: what is sigma rule evasion; sigma evasion; what are sigma rules*
 
 SIGMA is the widely adopted open format for writing SIEM detection rules. A
 rule evasion is an attacker rewriting a command so it means the same thing but
@@ -134,6 +146,8 @@ those recommendations were submitted upstream and fixed real SIGMA rules.
 
 ### Is any of this work relevant to automotive security?
 
+*Also asked as: is this relevant to cars; automotive relevance; does this apply to vehicles*
+
 Directly. Maverick is an automotive paper: modern vehicles run safety-critical
 functions over the CAN protocol, which has no meaningful security built in, so
 machine-learning IDSs were proposed to add detection. Maverick addresses what
@@ -143,6 +157,8 @@ transmission rate for CAN 2.0 and CAN FD. It was published at IEEE VNC 2025,
 the IEEE Vehicular Networking Conference.
 
 ### What can this website actually do?
+
+*Also asked as: what can this site do; what can you do; what is this site; what is this website; what does this site do; what can I do on this site; who made this site; what is this terminal; what can this page do; tell me about this website*
 
 It is a terminal. Type `/help` for every command; the useful ones are
 `/publications` for the papers, `/news` and `/cve` for live security feeds,
@@ -162,6 +178,8 @@ gets tired, never needs coffee, and scales to a thousand trees, so a long fight
 favours the forest. The published results favour Valency.
 
 ### Sell me on reading the thesis
+
+*Also asked as: why should I read the thesis; convince me to read the thesis; why read the licentiate*
 
 It kills a comfortable assumption. Adversarial retraining is the reflexive
 answer to adversarial examples, and the thesis shows that for tree ensembles it

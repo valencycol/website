@@ -475,7 +475,7 @@ const ALIASES = {
   hello: 'contact', email: 'contact', hire: 'contact',
   docs: 'sources', kb: 'sources',
   bio: 'about', me: 'about',
-  cls: 'clear', 'new': 'reset', forget_chat: 'reset', man: 'help', '?': 'help',
+  cls: 'clear', reboot: 'restart', 'new': 'reset', forget_chat: 'reset', man: 'help', '?': 'help',
   quit: 'exit', q: 'exit',
 };
 
@@ -714,6 +714,34 @@ const COMMANDS = {
     }
   },
 
+  'restart': {
+    desc: 'wipe everything and boot fresh',
+    async run(_, t) {
+      /* A restart, not a tidy-up: the transcript, the conversation the
+         assistant remembers, the place and topic it was tracking, and every
+         uploaded document all go. The corpus under knowledge/ is read-only
+         and comes back with the boot, as it would on a real machine. Command
+         history and the phosphor theme survive, the way a shell's history
+         file and your settings survive a reboot. */
+      const exchanges = (typeof Chat !== 'undefined') ? (Chat.reset() / 2 | 0) : 0;
+      const dropped = (typeof RAG !== 'undefined' && RAG.dropSessionDoc) ? RAG.dropSessionDoc() : [];
+
+      t.clear();
+      updateMem();
+      t.print('shutting down …', 'dim');
+      await sleep(220);
+      await bootSequence();
+
+      const gone = [];
+      if (exchanges) gone.push(exchanges + ' exchange' + (exchanges === 1 ? '' : 's'));
+      if (dropped.length) gone.push(dropped.length + ' uploaded document' + (dropped.length === 1 ? '' : 's'));
+      t.print(gone.length
+        ? 'restarted \u2014 ' + gone.join(' and ') + ' forgotten.'
+        : 'restarted \u2014 nothing was in memory.', 'ok');
+      t.gap();
+    }
+  },
+
   'banner': {
     desc: 'reprint the banner',
     run(_, t) { printBanner(t); }
@@ -853,7 +881,7 @@ function printBanner(t) {
 const BOOT_WIDE = [
   ['booting colaco.se …', 'dim', 90],
   ['[ok] display       phosphor green', 'ok', 60],
-  ['[ok] feeds         thehackernews · bleepingcomputer · krebs · securityweek · cisa', 'ok', 60],
+  ['[ok] feeds         thehackernews · krebs · securityweek · cisa · ground news', 'ok', 60],
   ['[ok] assistant     groq · gpt-oss-20b · retrieval-scoped', 'ok', 60],
   ['[ok] corpus        knowledge/ mounted read-only', 'ok', 60],
   ['', '', 120],
@@ -861,7 +889,7 @@ const BOOT_WIDE = [
 const BOOT_NARROW = [
   ['booting colaco.se …', 'dim', 90],
   ['[ok] display    phosphor', 'ok', 55],
-  ['[ok] feeds      5 sources', 'ok', 55],
+  ['[ok] feeds      4 sources', 'ok', 55],
   ['[ok] assistant  gpt-oss-20b', 'ok', 55],
   ['[ok] corpus     read-only', 'ok', 55],
   ['', '', 100],

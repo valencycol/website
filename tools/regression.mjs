@@ -264,6 +264,29 @@ pass('gemini lit when it answers', /\bon\b/.test(lights.onGemini.gem) && !/\bon\
 pass('fallback shows gemini limited and groq lit',
   /limited/.test(lights.fellBack.gem) && /\bon\b/.test(lights.fellBack.groq));
 
+/* ------------------------------------------------------------ vendoring
+   /upload promises the file never leaves the browser. Fetching the converter
+   from a CDN did not send the file anywhere, but it did tell that CDN an
+   upload had happened. The converters are served from this origin now. */
+section('uploads contact nobody');
+{
+  const outside = [];
+  const watch = r => {
+    const u = r.url();
+    if (!/^data:|^blob:/.test(u) && !u.startsWith(BASE) && !/chat\.colaco\.se/.test(u)) {
+      outside.push(new URL(u).host);
+    }
+  };
+  page.on('request', watch);
+  await page.setInputFiles('#file-input', ['tools/fixtures/sample.pdf']).catch(() => {});
+  await page.waitForTimeout(4000);
+  page.off('request', watch);
+  const hosts = [...new Set(outside)];
+  pass('no third party is told an upload happened', hosts.length === 0, hosts.join(', '));
+  const converted = await page.evaluate(() => RAG.docs.filter(d => d.session).map(d => d.file));
+  pass('the pdf was converted locally', converted.some(f => f.endsWith('.md')), converted.join(', '));
+}
+
 /* ------------------------------------------------------------ degradation */
 section('degradation');
 pass('no uncaught page errors', pageErrors.length === 0, pageErrors.join(' | '));

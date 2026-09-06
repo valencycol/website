@@ -25,12 +25,29 @@
 const UPLOAD_EXT  = /\.(txt|pdf|docx)$/i;
 const MAX_UPLOAD  = 8 * 1024 * 1024;
 
+/* Served from this origin rather than a CDN. Beyond removing a third-party
+   dependency, it closes a hole in the promise /upload makes: fetching the
+   converter from cdnjs told cdnjs that somebody on this site had just opened a
+   PDF. Now nothing outside colaco.se learns that an upload happened.
+   Licences are recorded in assets/vendor/README.md. */
 const CONV_LIB = {
-  pdf:       'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs',
-  pdfWorker: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs',
-  mammoth:   'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.9.0/mammoth.browser.min.js',
-  turndown:  'https://cdnjs.cloudflare.com/ajax/libs/turndown/7.2.0/turndown.min.js',
+  pdf:       'assets/vendor/pdf.min.mjs',
+  pdfWorker: 'assets/vendor/pdf.worker.min.mjs',
+  mammoth:   'assets/vendor/mammoth.browser.min.js',
+  turndown:  'assets/vendor/turndown.min.js',
 };
+
+/* Stamp local assets with the page's own cache-busting version, as embed.js
+   does, so a redeploy cannot serve a stale converter beside fresh scripts. */
+function convUrl(path) {
+  if (/^https?:/i.test(path)) return path;
+  const tag = document.querySelector('script[src*="docconv.js"]');
+  const v = ((tag && tag.getAttribute('src')) || '').match(/\?v=([a-z0-9]+)/);
+  /* Resolved against the page, not left relative: dynamic import() treats
+     "assets/..." as a BARE module specifier and refuses it, and pdf.js wants
+     an absolute URL for its worker. */
+  return new URL(path + (v ? '?v=' + v[1] : ''), document.baseURI).href;
+}
 
 function loadScript(src) {
   return new Promise((resolve, reject) => {
@@ -55,21 +72,21 @@ const DocConv = {
 
   async pdfjs() {
     if (this._pdfjs) return this._pdfjs;
-    const mod = await import(CONV_LIB.pdf);
-    mod.GlobalWorkerOptions.workerSrc = CONV_LIB.pdfWorker;
+    const mod = await import(convUrl(CONV_LIB.pdf));
+    mod.GlobalWorkerOptions.workerSrc = convUrl(CONV_LIB.pdfWorker);
     this._pdfjs = mod;
     return mod;
   },
 
   async turndown() {
-    if (!window.TurndownService) await loadScript(CONV_LIB.turndown);
+    if (!window.TurndownService) await loadScript(convUrl(CONV_LIB.turndown));
     /* ATX headings ("## x") because the chunker keys off them, and fenced
        code so an indented block in a paper isn't mistaken for prose. */
     return new window.TurndownService({ headingStyle: 'atx', codeBlockStyle: 'fenced' });
   },
 
   async mammoth() {
-    if (!window.mammoth) await loadScript(CONV_LIB.mammoth);
+    if (!window.mammoth) await loadScript(convUrl(CONV_LIB.mammoth));
     return window.mammoth;
   },
 

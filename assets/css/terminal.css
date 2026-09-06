@@ -400,6 +400,9 @@ body.booting{overflow:hidden}
 
 .spin{display:inline-flex;align-items:center;gap:7px;color:var(--ink2)}
 .oai{width:13px;height:13px;flex:none;fill:currentColor;color:var(--acc2);animation:oai-turn 3s linear infinite}
+/* Gemini's mark reads heavier at the same box, and its own blue tells the
+   two providers apart at a glance while an answer is being produced. */
+.oai.gem-mark{width:12px;height:12px;color:#8ab4f8}
 .spin-word{color:var(--ink2)}
 @keyframes oai-turn{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.oai{animation:none}}

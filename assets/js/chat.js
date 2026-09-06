@@ -676,9 +676,12 @@ const MODEL_CARD = [
      conversation: "do you remember what I asked" is a question about
      memory, not about storage. This card keeps the privacy half. */
   [/\b(do|will)\s+you\s+(store|save|keep|log|train)\b|\b(my|the)\s+(data|privacy|uploads?)\b|\bis\s+this\s+private\b/i,
-   "Files you add with /upload (.txt, .pdf or .docx) are converted to Markdown inside your browser and indexed for this session only \u2014 the file itself never leaves your machine, and excerpts go to the model only as retrieved context when they answer your question. "
-   + "Questions are sent to Groq via the site's worker to be answered, and the question text is kept for 14 days "
-   + "so Valency can see what people ask — no IP address, no identifier, nothing linking questions to each other. "
+   () => "Files you add with /upload (.txt, .pdf or .docx) are converted to Markdown inside your browser and indexed for this session only \u2014 the file itself never leaves your machine, and excerpts go to the model only as retrieved context when they answer your question. "
+   /* Naming the provider from live state, not from a constant: this sentence
+      said "sent to Groq" for a day after Gemini became the one answering. */
+   + "Questions are sent to " + currentProvider().via + " via the site's worker to be answered, and the question "
+   + "text is kept for 14 days so Valency can see what people ask \u2014 stored with the country Cloudflare "
+   + "reports and nothing else: no IP address, no identifier, nothing linking questions to each other. "
    + "When the answer needs the live web (anything not in Valency's documents), the question is also sent to the "
    + "LangSearch web-search API to fetch sources. Greetings and questions about me are answered in your browser "
    + "and never sent anywhere."],

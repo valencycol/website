@@ -136,7 +136,10 @@ The site is a terminal. Visitors type slash-commands:
 - `/contact` — send Valency a message
 - `/scholar` — open the Google Scholar profile
 - `/sources` — list the documents the assistant is allowed to read
-- `/upload` — add your own documents for the current session only
+- `/upload` — add your own documents for the current session only. Accepts `.txt`,
+  `.pdf` and `.docx` (8 MB max); each is converted to Markdown in your browser
+  (pdf.js, mammoth and turndown — the file itself is never sent anywhere) and is
+  then searched **first**, ahead of the live web search and of this knowledge base
 - `/forget` — remove an uploaded document (`/forget all` clears them)
 - `/fun` — suggested questions worth asking
 - `/theme` — phosphor colour: green, amber or ice

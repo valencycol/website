@@ -298,7 +298,14 @@ const Term = {
       const { cites, local, grounded, sources, followUp } = await Chat.ask(question, onToken, onStatus);
       clearInterval(this._rlTimer);
       Spinner.stop();
-      if (first) { body.textContent = '(no answer returned)'; wrap.classList.remove('thinking'); }
+      if (first) {
+        /* The model streamed reasoning but no answer — it spent its output
+           budget thinking. Say what happened and what helps, rather than a
+           bare "(no answer returned)". */
+        body.textContent = 'The model used its whole budget reasoning and returned no answer. '
+          + 'Ask again, more specifically \u2014 or run /reset first.';
+        wrap.classList.remove('thinking');
+      }
 
       if (!local) {
         const c = document.createElement('div');
@@ -307,7 +314,7 @@ const Term = {
            other: the corpus (named doc chips), a live web search (clickable
            link chips), or the model's own memory (a plain marker). */
         const parts = [];
-        if (grounded && cites.length) {
+        if (cites.length) {
           parts.push('<b>sources:</b>' + cites.map(s => '<span class="cite">' + esc(s) + '</span>').join(''));
         }
         if (sources && sources.length) {
@@ -540,7 +547,9 @@ const COMMANDS = {
     desc: 'add your own documents (this session)',
     run(_, t) {
       $('#file-input').click();
-      t.print('file picker open — .md .txt .json .csv .log', 'dim');
+      t.print('file picker open \u2014 .txt, .pdf or .docx (8 MB max)', 'dim');
+      t.print('each is converted to Markdown in your browser, then searched FIRST \u2014 '
+            + 'ahead of the web and of Valency\u2019s knowledge base.', 'dim');
       t.print('or just drag files anywhere onto this page.', 'dim sp');
     }
   },
@@ -752,34 +761,48 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 /* ============================================================
    Session document uploads
    ============================================================ */
-const TEXT_EXT = /\.(md|markdown|txt|json|csv|log|yml|yaml|html?)$/i;
-
+/* Uploads are restricted to the three formats a visitor actually has —
+   plain text, PDF, Word — and every one is converted to Markdown before it
+   reaches the corpus, so retrieval only ever indexes one format. The
+   conversion runs in the browser (see docconv.js): the file itself is never
+   sent anywhere. */
 async function ingestFiles(files) {
   const list = Array.from(files || []);
   if (!list.length) return;
   await RAG.load().catch(() => {});
   let added = 0;
   for (const f of list) {
-    if (!TEXT_EXT.test(f.name)) {
-      Term.print('[skip] ' + f.name + ' — not a text format. Convert PDFs with pdftotext first.', 'warn');
+    if (!UPLOAD_EXT.test(f.name)) {
+      Term.print('[skip] ' + f.name + ' \u2014 only .txt, .pdf and .docx can be uploaded.', 'warn');
       continue;
     }
-    if (f.size > 2 * 1024 * 1024) {
-      Term.print('[skip] ' + f.name + ' — over 2 MB.', 'warn');
+    if (f.size > MAX_UPLOAD) {
+      Term.print('[skip] ' + f.name + ' \u2014 over 8 MB.', 'warn');
       continue;
     }
+    const line = Term.print('[..] ' + f.name + ' \u2014 converting to Markdown\u2026', 'dim');
     try {
-      RAG.addSessionDoc(f.name, await f.text());
-      Term.print('[ok] ' + f.name + ' — indexed (' +
-        (f.size < 1024 ? f.size + ' B' : Math.round(f.size / 1024) + ' KB') + ')', 'ok');
+      const { name, markdown } = await DocConv.toMarkdown(f, step => {
+        line.textContent = '[..] ' + f.name + ' \u2014 converting to Markdown (' + step + ')';
+        Term.scroll();
+      });
+      RAG.addSessionDoc(name, markdown);
+      const kb = markdown.length < 1024
+        ? markdown.length + ' B'
+        : Math.round(markdown.length / 1024) + ' KB';
+      line.className = 'line ok';
+      line.textContent = '[ok] ' + f.name + ' \u2192 ' + name + ' \u2014 converted and indexed (' + kb + ' of Markdown)';
       added++;
     } catch (e) {
-      Term.print('[err] ' + f.name + ' — ' + e.message, 'err');
+      line.className = 'line err';
+      line.textContent = '[err] ' + f.name + ' \u2014 ' + e.message;
     }
   }
   if (added) {
-    Term.print(added + ' document' + (added > 1 ? 's' : '') + ' added for this session only — nothing is uploaded anywhere.', 'dim');
-    Term.print('Ask a question about them, or run /sources to see the full corpus.', 'dim sp');
+    Term.print(added + ' document' + (added > 1 ? 's' : '') + ' converted to Markdown and indexed for this '
+      + 'session only \u2014 the file never left your browser.', 'dim');
+    Term.print('Your documents are now searched FIRST, ahead of the web and of Valency\u2019s knowledge base. '
+      + 'Run /sources to see them, /forget to remove one.', 'dim sp');
   }
   Term.scroll();
 }

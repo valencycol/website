@@ -228,6 +228,27 @@ const LOC_IMPLICIT = /\b(here|nearby|near me|around here|this (weekend|week|even
 /* A question that only operates on text already on screen — "translate the
    above", "summarise that", "in swedish" — has nothing to look up. Every
    other question gets a live search, so answers stay current and citable. */
+/* Coverage alone says a question's words are IN the corpus, not that the
+   corpus is ABOUT it. "latest developments in the eu ai act" scores coverage
+   1.0 — "developments" and "act" both occur — and would otherwise be answered
+   with Valency's papers cited underneath. Rarity can't separate them either:
+   those two terms are RARER in this corpus (0% and 1% of chunks) than
+   "iceman" (28%).
+   What does separate them is whether the match reaches a document's identity:
+   a topical word in a title or heading, or all matched words together in one
+   chunk. Measured over 24 questions this splits 11/12 document questions from
+   12/12 general ones. */
+function docMatch(hits, topical, known) {
+  if (!hits.length || !known.length) return false;
+  for (const h of hits.slice(0, 3)) {
+    const t = ((h.c.title || '') + ' ' + (h.c.heading || '') + ' ' + (h.c.doc || '')).toLowerCase();
+    if (topical.some(w => w.length > 2 && t.includes(w))) return true;
+  }
+  const c = hits[0].c;
+  const blob = ((c.text || '') + ' ' + (c.title || '') + ' ' + (c.heading || '')).toLowerCase();
+  return known.every(w => blob.includes(w));
+}
+
 function isMetaOnly(q) {
   return BARE_META.test(q) || IN_LANGUAGE.test(q) || META_ON_REF.test(q) || REFERS_BACK.test(q);
 }
@@ -305,7 +326,7 @@ const MODEL_CARD = [
    + "Type /fun for questions worth asking, or /help for the full command list. Anything outside those documents, I decline."],
 
   [/\b(do|will)\s+you\s+(store|save|keep|remember|log|train)\b|\b(my|the)\s+(data|privacy|uploads?)\b|\bis\s+this\s+private\b/i,
-   "Files you add with /upload are read in your browser for this session only and never leave it. "
+   "Files you add with /upload (.txt, .pdf or .docx) are converted to Markdown inside your browser and indexed for this session only \u2014 the file itself never leaves your machine, and excerpts go to the model only as retrieved context when they answer your question. "
    + "Questions are sent to Groq via the site's worker to be answered, and the question text is kept for 14 days "
    + "so Valency can see what people ask — no IP address, no identifier, nothing linking questions to each other. "
    + "When the answer needs the live web (anything not in Valency's documents), the question is also sent to the "
@@ -336,13 +357,14 @@ function classify(query) {
    the worker's system prompt and MAX_TOKENS_OUT. */
 const TPM_LIMIT   = 8000;
 const SYS_TOKENS  = 560;
-const OUT_TOKENS  = 700;
+const OUT_TOKENS  = 1100;
 const RESET_TOKENS = 5200;   // reset the conversation once its load passes this
 
 const Chat = {
   history: [],
   place: '',
   topic: '',
+  topicGrounded: false,
   busy: false,
 
   /* onToken(text) is called as the answer streams in; onStatus(n) fires
@@ -369,7 +391,7 @@ const Chat = {
   },
 
   /* Forget the conversation — clears the memory a follow-up would draw on. */
-  reset() { const n = this.history.length; this.history = []; this.place = ''; this.topic = ''; return n; },
+  reset() { const n = this.history.length; this.history = []; this.place = ''; this.topic = ''; this.topicGrounded = false; return n; },
 
   async ask(question, onToken, onStatus, retried) {
     const route = classify(question);
@@ -397,6 +419,7 @@ const Chat = {
       this.history = [];
       this.place = '';
       this.topic = '';
+      this.topicGrounded = false;
       if (onStatus) onStatus(0, { reset: true, proactive: true });
     }
 
@@ -411,12 +434,24 @@ const Chat = {
        own bare words — "tell me more" on its own finds nothing useful. */
     const metaOnly = isMetaOnly(question);
     if (!followUp) this.topic = question.slice(0, 120);
-    const searchQuery = (followUp && this.topic && !metaOnly)
+    let searchQuery = (followUp && this.topic && !metaOnly)
       ? question + ' ' + this.topic
       : question;
 
-    const hits = RAG.search(question, 5);
-    const { topical, known } = RAG.anchors(question);
+    /* A follow-up retrieves on the topic it is continuing, not on its own
+       bare words: "how is it different from maverick" alone retrieves nothing
+       and web-searches into Top Gun. Anchored to "what is iceman" it finds
+       both papers. */
+    const retrievalQ = (followUp && this.topic) ? question + ' ' + this.topic : question;
+
+    /* The visitor's own uploads outrank everything. They are retrieved from
+       the same index but kept in their own list, so they can be sent as a
+       separate, higher-priority block rather than competing with the site's
+       corpus for the same five slots. */
+    const allHits = RAG.search(retrievalQ, 12);
+    const upHits  = allHits.filter(h => h.c.session).slice(0, 5);
+    const hits    = allHits.filter(h => !h.c.session).slice(0, 5);
+    const { topical, known } = RAG.anchors(retrievalQ);
 
     /* The corpus is consulted first and always. When it has something
        relevant, it is supplied as context and the model is told to prefer
@@ -450,7 +485,24 @@ const Chat = {
        doc lookup or a web search. Forcing it ungrounded stops "what can we
        do here?" grounding to the site's own docs ("here" = the city we've
        been discussing, not this website). */
-    const grounded = !followUp && hits.length > 0 && known.length > 0 && coverage >= 0.7;
+    /* Grounded when the corpus is genuinely about the question. A follow-up
+       inherits the topic's verdict: if the conversation was about Valency's
+       papers, its follow-ups still get the papers — otherwise the model is
+       left to answer "which venue was it published in" from web results, and
+       a search for those words lands on Marvel and Top Gun. */
+    const groundedNow = hits.length > 0 && known.length > 0 && coverage >= 0.7
+                        && docMatch(hits, topical, known);
+    if (!followUp) this.topicGrounded = groundedNow;
+    const grounded = followUp ? (this.topicGrounded && hits.length > 0) : groundedNow;
+
+    /* A document question whose subject shares a name with something famous
+       — "what is iceman" — searches straight into Marvel and Top Gun, and the
+       model then volunteers a disambiguation nobody asked for. Scoping the
+       query to the document's own title and author turns the same search into
+       one that finds the actual paper. */
+    if (grounded && hits.length) {
+      searchQuery = question + ' ' + (hits[0].c.title || '') + ' Valency Colaco';
+    }
 
     /* Context goes up only when the corpus actually has a claim on the
        question. Sending Valency's bio alongside "write a prime sieve" is
@@ -473,7 +525,21 @@ const Chat = {
        More to the point, this list is a provenance statement, not a
        relevance ranking. Every one of these chunks was visible to the model,
        so hiding one would imply the answer could not have come from it. */
+    /* Uploaded documents go up whenever they matched at all — the visitor
+       put them there for this conversation, so they do not have to clear the
+       grounding bar the site's own corpus does. */
+    const uploads = upHits.length
+      ? upHits.map((h, i) =>
+          '[' + (i + 1) + '] ' + (h.c.title || h.c.doc) +
+          (h.c.heading ? ' \u203a ' + h.c.heading : '') + '\n' + h.c.text
+        ).join('\n\n---\n\n')
+      : '';
+
     const cites = [];
+    for (const h of upHits) {
+      const label = (h.c.title || h.c.doc) + ' (yours)';
+      if (!cites.includes(label)) cites.push(label);
+    }
     if (grounded) {
       for (const h of hits) {
         const label = h.c.title || h.c.doc;
@@ -490,7 +556,7 @@ const Chat = {
       res = await fetch(CHAT_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, context, allowWeb: !metaOnly, searchQuery, place: searchPlace, history: this.compactHistory(),
+        body: JSON.stringify({ question, context, uploads, allowWeb: !metaOnly, searchQuery, place: searchPlace, history: this.compactHistory(),
                                pass: (typeof Gate !== 'undefined' ? Gate.pass : '') }),
       });
     } catch (e) {
@@ -527,6 +593,7 @@ const Chat = {
       this.history = [];
       this.place = '';
       this.topic = '';
+      this.topicGrounded = false;
       if (onStatus) onStatus(0, { reset: true });
       return this.ask(question, onToken, onStatus, true);
     }

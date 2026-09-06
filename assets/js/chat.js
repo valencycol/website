@@ -611,14 +611,26 @@ const PROVIDER_NAMES = {
   /* tpm is the provider's free-tier tokens-per-minute allowance, and reset is
      how much conversation is worth carrying against it. Groq's 8,000 is why
      the context had to be kept so tight; Gemini's 250,000 does not need that
-     discipline, so it keeps roughly eight times more of the conversation. */
-  gemini: { model: 'gemini-2.5-flash', via: 'the Google Gemini API', tpm: 250000, reset: 24000 },
-  groq:   { model: 'openai/gpt-oss-20b', via: 'Groq', tpm: 8000, reset: 3000 },
+     discipline, so it keeps roughly eight times more of the conversation.
+
+     `model` here is only a last resort. The worker chooses the model and
+     reports it from /status, and writing an id here is how the card came to
+     claim gemini-2.5-flash after the worker had moved to gemini-3.1-flash-lite:
+     a fact about the running system, frozen into the client. */
+  gemini: { model: 'a Gemini model', via: 'the Google Gemini API', tpm: 250000, reset: 24000 },
+  groq:   { model: 'an open-weight model', via: 'Groq', tpm: 8000, reset: 3000 },
 };
+
+/* Whatever /status last reported each provider is actually running. */
+function reportedModel(name) {
+  const seen = (typeof ProviderLights !== 'undefined' && ProviderLights.models) || {};
+  return seen[name] || null;
+}
 
 function currentProvider() {
   const p = (typeof ProviderLights !== 'undefined' && ProviderLights.primary) || 'groq';
-  return PROVIDER_NAMES[p] || PROVIDER_NAMES.groq;
+  const base = PROVIDER_NAMES[p] || PROVIDER_NAMES.groq;
+  return { ...base, model: reportedModel(p) || base.model };
 }
 
 function providerLimit() { return currentProvider().tpm || 8000; }
@@ -626,7 +638,9 @@ function providerReset() { return currentProvider().reset || RESET_TOKENS; }
 
 function otherProvider() {
   const p = (typeof ProviderLights !== 'undefined' && ProviderLights.primary) || 'groq';
-  return PROVIDER_NAMES[p === 'gemini' ? 'groq' : 'gemini'];
+  const o = p === 'gemini' ? 'groq' : 'gemini';
+  const base = PROVIDER_NAMES[o];
+  return { ...base, model: reportedModel(o) || base.model };
 }
 
 const MODEL_CARD = [

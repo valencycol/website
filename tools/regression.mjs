@@ -221,17 +221,26 @@ pass('/restart keeps the knowledge base', before === after, `${before} -> ${afte
 pass('/restart clears the conversation', (await page.evaluate(() => Chat.history.length)) === 0);
 
 /* --------------------------------------------------------- model identity
-   The site answered "I'm openai/gpt-oss-20b, served by Groq" while the Gemini
-   light was lit and Gemini was in fact answering. Identity and the token
-   allowance both come from whichever provider is serving. */
+   The card said "openai/gpt-oss-20b, served by Groq" while Gemini answered,
+   and later "gemini-2.5-flash" after the worker had moved to
+   gemini-3.1-flash-lite. Both were facts about the running system frozen into
+   the client. The model id now comes from /status, so this asserts the
+   plumbing rather than a name that will age. */
 section('identity: the model card names the model that is answering');
-for (const [primary, expectModel, expectLimit] of
-     [['gemini', 'gemini-2.5-flash', 250000], ['groq', 'openai/gpt-oss-20b', 8000]]) {
-  await page.evaluate(p => { ProviderLights.primary = p; ProviderLights.paint(); updateMem(); }, primary);
+for (const [primary, fakeModel, expectLimit] of
+     [['gemini', 'test-gemini-model-id', 250000], ['groq', 'test-groq-model-id', 8000]]) {
+  await page.evaluate(([p, m]) => {
+    ProviderLights.primary = p;
+    ProviderLights.models = { gemini: 'test-gemini-model-id', groq: 'test-groq-model-id' };
+    ProviderLights.paint();
+    updateMem();
+  }, [primary, fakeModel]);
   const card = await ask('which model are you?');
-  pass(`${primary}: model card says ${expectModel}`, card.text.includes(expectModel), card.text.slice(0, 60));
+  pass(`${primary}: card reports whatever /status said`, card.text.includes(fakeModel), card.text.slice(0, 70));
+  pass(`${primary}: card does not hardcode an id`,
+    !/gemini-2\.5-flash|gpt-oss-20b/.test(card.text), card.text.slice(0, 70));
   const human = await ask('are you human?');
-  pass(`${primary}: "are you human" is answered locally`, human.used === 0 && human.text.includes(expectModel));
+  pass(`${primary}: "are you human" is answered locally`, human.used === 0 && human.text.includes(fakeModel));
   const title = await page.locator('#mem').getAttribute('title');
   pass(`${primary}: gauge is drawn against ${expectLimit}`, title.includes(String(expectLimit)), title.slice(0, 56));
 }

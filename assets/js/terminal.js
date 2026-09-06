@@ -73,6 +73,9 @@ const Spinner = {
    visitor shows for everyone. */
 const ProviderLights = {
   els: null, until: { gemini: 0, groq: 0 }, primary: 'groq',
+  /* Model ids as last reported by the worker, so nothing about the running
+     system is duplicated in the browser. */
+  models: {},
 
   init() {
     this.els = {
@@ -132,6 +135,7 @@ const ProviderLights = {
       if (d.primary) this.primary = d.primary;
       for (const name of ['gemini', 'groq']) {
         const p = provs[name];
+        if (p && p.model) this.models[name] = p.usingInstead || p.model;
         if (p && p.state === 'limited') this.limited(name, p.seconds || 10);
         else if (Date.now() / 1000 >= this.until[name]) this.until[name] = 0;
       }

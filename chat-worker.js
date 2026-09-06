@@ -513,7 +513,8 @@ async function handleStatus(env, cors) {
                    source should be corrected to this. */
                 usingInstead: gemModel ? gemModel.use : undefined,
                 lastError: gemErr || undefined },
-      groq:   { configured: !!env.GROQ_API_KEY,   state: groq > 0 ? 'limited' : 'ok', seconds: groq },
+      groq:   { configured: !!env.GROQ_API_KEY,   state: groq > 0 ? 'limited' : 'ok', seconds: groq,
+                model: env.GROQ_MODEL || MODEL },
     },
     primary: env.GEMINI_API_KEY ? 'gemini' : 'groq',
   }, 200, { ...cors, 'Cache-Control': 'no-store' });

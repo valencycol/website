@@ -58,6 +58,25 @@ Only needed if you want the workers to **auto-deploy from CI** on push
 
 ---
 
+## Rebuilding the semantic index
+
+The assistant matches rephrased questions with static embeddings from
+[Model2Vec](https://github.com/MinishLab/model2vec) (MIT). The browser only needs a
+token table, checked in at `assets/data/embed.{json,bin}` — you do **not** need to
+rebuild it to run the site. Rebuild only after editing `knowledge/`, so new
+vocabulary is covered:
+
+```sh
+pip install model2vec numpy
+python3 tools/build-embeddings.py     # writes assets/data/embed.{json,bin}
+node tools/embed-verify.mjs           # proves the JS port matches Python
+node tools/embed-eval.mjs             # task accuracy of the pruned table
+```
+
+The table is ~1.8 MB, pruned from the model's 29,528 tokens to the 7,108 this
+corpus can actually use. It is fetched lazily on the first keystroke, never at
+boot, and everything degrades to lexical search if it fails to load.
+
 ## Setup from a fresh clone
 
 **Prerequisites:** a Cloudflare account with your **domain already added as a

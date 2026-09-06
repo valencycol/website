@@ -96,6 +96,7 @@ const RAG = {
      vocabulary the scope check tests against. */
   reindex() {
     this._nameSets = null;
+    this._vecs = null;
     this.df = Object.create(null);
     this.vocab = new Set();
     for (const c of this.chunks) {
@@ -160,7 +161,50 @@ const RAG = {
     }).filter(x => x.s > 0);
 
     scored.sort((a, b) => b.s - a.s);
+
+    /* Reciprocal rank fusion with the semantic ranking when the table is
+       loaded. RRF is used rather than a weighted sum of scores because BM25
+       and cosine are on unrelated scales; ranks are comparable, scores are
+       not. Grounding is deliberately NOT handed to the embedding: measured on
+       this corpus it decides document-versus-web at 84%, against 100% for the
+       lexical rules, because topical adjacency ("how does a random forest
+       work") is not the same as the corpus having the answer. */
+    if (this.ensureVectors()) {
+      const qv = Embed.encode(query);
+      if (qv) {
+        const K = 60;
+        const lexRank = new Map();
+        scored.forEach((h, i) => lexRank.set(h.c, i));
+        const sem = this.chunks
+          .map((c, i) => ({ c, s: Embed.cos(qv, this._vecs[i]) }))
+          .sort((a, b) => b.s - a.s)
+          .slice(0, 30);
+        const fused = new Map();
+        scored.forEach((h, i) => fused.set(h.c, { c: h.c, s: h.s, f: 1 / (K + i) }));
+        sem.forEach((h, i) => {
+          const cur = fused.get(h.c) || { c: h.c, s: 0, f: 0 };
+          cur.f += 1 / (K + i);
+          fused.set(h.c, cur);
+        });
+        const out = Array.from(fused.values()).sort((a, b) => b.f - a.f);
+        /* Keep the lexical score on the objects: callers use it, and the
+           grounding rules are calibrated against it. */
+        return out.slice(0, k || 6);
+      }
+    }
     return scored.slice(0, k || 6);
+  },
+
+  /* Chunk vectors, built once when the table arrives. 225 chunks of lookups
+     and means costs a few tens of milliseconds and buys paraphrase matching
+     that BM25 cannot do: "what can this site do" shares no word with the page
+     that answers it. */
+  ensureVectors() {
+    if (!Embed.ready) return false;
+    if (this._vecs && this._vecs.length === this.chunks.length) return true;
+    this._vecs = this.chunks.map(c =>
+      Embed.encode((c.title || '') + ' ' + (c.heading || '') + ' ' + c.text));
+    return true;
   },
 
   /* Does the question NAME one of the documents? "can you print the maverick
@@ -380,6 +424,58 @@ function quickAnswers() {
    city, not the website. */
 const SELF_REF = /\b(?:this|the)\s+(?:site|website|web\s?page|page|terminal|chat|assistant|bot)\b|\bwhat can you do\b|\bwho\s+(?:made|built|owns|runs)\s+(?:this|the)\b/i;
 
+/* Semantic matching for prepared answers.
+
+   Exact matching, even with the alias lines, only ever covers phrasings
+   somebody thought of in advance — which is a treadmill. A static embedding
+   ranks the right prepared question first for every rephrasing tested (17/17),
+   but its SCORE cannot be trusted on its own: "what is the licentiate thesis
+   published as" scores 0.73 against the elevator-pitch entry, higher than most
+   genuine matches, because it is the same topic asked a different way. Serving
+   it would recreate exactly the venue bug this corpus was fixed for.
+
+   So similarity ranks, and a containment check decides: every distinctive word
+   of the question must appear in the prepared question or its answer. Measured
+   over 17 rephrasings and 17 unrelated questions: 12 served, 0 misrouted, 0
+   false matches. The other 5 fall through to the model, which is the safe
+   direction. */
+const QUICK_T = 0.50;
+let QUICK_SEM = null;
+
+function quickSemantic() {
+  if (QUICK_SEM || !Embed.ready) return QUICK_SEM;
+  const entries = [];
+  for (const [key, answer] of quickAnswers()) {
+    const vec = Embed.encode(key);
+    if (vec) entries.push({ key, answer, vec, hay: contentWords(key + ' ' + answer) });
+  }
+  QUICK_SEM = entries;
+  return QUICK_SEM;
+}
+
+function contentWords(text) {
+  const out = new Set();
+  for (const w of String(text).toLowerCase().match(/[a-z0-9]{3,}/g) || []) {
+    if (!STOP.has(w) && !ASK.has(w)) out.add(w);
+  }
+  return out;
+}
+
+function quickMatch(question) {
+  const entries = quickSemantic();
+  if (!entries || !entries.length) return null;
+  const qv = Embed.encode(question);
+  if (!qv) return null;
+  let best = null, score = QUICK_T;
+  for (const e of entries) {
+    const s = Embed.cos(qv, e.vec);
+    if (s >= score) { score = s; best = e; }
+  }
+  if (!best) return null;
+  for (const w of contentWords(question)) if (!best.hay.has(w)) return null;
+  return best.answer;
+}
+
 function isMetaOnly(q) {
   return BARE_META.test(q) || IN_LANGUAGE.test(q) || META_ON_REF.test(q) || REFERS_BACK.test(q);
 }
@@ -570,11 +666,14 @@ const Chat = {
       return { text: route.answer, cites: [], local: true };
     }
     if (!RAG.ready) await RAG.load();
+    /* Fire-and-forget: the first question is answered lexically if the table
+       has not arrived, and every later one gets the semantic layer. */
+    Embed.load();
 
     /* One of the suggested questions, with an answer already written. No
        model call, no web search, no rate limit — and it still goes into the
        history, so a follow-up can build on it. */
-    const canned = quickAnswers().get(normQ(question));
+    const canned = quickAnswers().get(normQ(question)) || quickMatch(question);
     if (canned) {
       if (onToken) await typeOut(canned, onToken);
       this.history.push({ role: 'user', content: question });

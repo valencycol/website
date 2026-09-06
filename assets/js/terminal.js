@@ -111,7 +111,12 @@ const Term = {
     this.histIdx  = this.hist.length;
 
     this.input.addEventListener('keydown', e => this.onKey(e));
-    this.input.addEventListener('input', () => this.suggest());
+    this.input.addEventListener('input', () => {
+      /* Start fetching the embedding table on the first keystroke, so it is
+         usually there by the time the question is submitted. */
+      if (typeof Embed !== 'undefined') Embed.load();
+      this.suggest();
+    });
     this.ghostTyped = $('.g-typed');
     this.ghostRest  = $('.g-rest');
     $('#go').addEventListener('click', () => {

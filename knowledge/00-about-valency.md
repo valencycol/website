@@ -140,6 +140,9 @@ The site is a terminal. Visitors type slash-commands:
   `.pdf` and `.docx` (8 MB max); each is converted to Markdown in your browser
   (pdf.js, mammoth and turndown — the file itself is never sent anywhere) and is
   then searched **first**, ahead of the live web search and of this knowledge base
+- `/show <name>` — print a source document in full, exactly as the assistant
+  reads it. Matches on words, so `/show maverick`, `/show the maverick paper`
+  and `/show siem rules` all work, as does `/show the file I just uploaded`
 - `/forget` — remove an uploaded document (`/forget all` clears them)
 - `/fun` — suggested questions worth asking
 - `/theme` — phosphor colour: green, amber or ice

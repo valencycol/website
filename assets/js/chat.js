@@ -162,6 +162,31 @@ const RAG = {
     return scored.slice(0, k || 6);
   },
 
+  /* Does the question NAME one of the documents? "can you print the maverick
+     source" scores 1-of-3 on coverage — "print" and "source" are not corpus
+     vocabulary — so the coverage gate sent it to the web, which answered
+     about Ford pickup trucks. A question that names a document is about that
+     document whatever else it contains.
+
+     Titles and filenames only, never headings: a heading match is far too
+     loose ("work" appears in one, which would ground "how does TLS work").
+     Ubiquitous words are skipped — a term in most chunks identifies nothing. */
+  namesDoc(topical) {
+    const ceiling = this.chunks.length * 0.6;
+    for (const w of topical) {
+      if (w.length < 4 || (this.df[w] || 0) > ceiling) continue;
+      for (const d of this.docs) {
+        if ((d.title + ' ' + d.file).toLowerCase().includes(w)) return true;
+      }
+    }
+    return false;
+  },
+
+  /* The indexed text of one document, in order — what /show prints. */
+  docText(file) {
+    return this.chunks.filter(c => c.doc === file).map(c => c.text).join('\n\n');
+  },
+
   /* Session uploads — read in the browser, never sent anywhere except
      as retrieved context. Gone on reload. */
   addSessionDoc(name, text) {
@@ -490,8 +515,10 @@ const Chat = {
        papers, its follow-ups still get the papers — otherwise the model is
        left to answer "which venue was it published in" from web results, and
        a search for those words lands on Marvel and Top Gun. */
-    const groundedNow = hits.length > 0 && known.length > 0 && coverage >= 0.7
-                        && docMatch(hits, topical, known);
+    const groundedNow = hits.length > 0 && (
+      RAG.namesDoc(topical) ||
+      (known.length > 0 && coverage >= 0.7 && docMatch(hits, topical, known))
+    );
     if (!followUp) this.topicGrounded = groundedNow;
     const grounded = followUp ? (this.topicGrounded && hits.length > 0) : groundedNow;
 

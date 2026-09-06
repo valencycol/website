@@ -520,6 +520,83 @@ const COMMANDS = {
     }
   },
 
+  'show': {
+    desc: 'print a source document \u2014 /show maverick, /show my upload',
+    async run(arg, t) {
+      try { await RAG.load(); } catch (e) { t.print(e.message, 'err'); return; }
+      const list = () => RAG.docs.forEach(d =>
+        t.print('  ' + d.file + '  \u2014  ' + d.title, 'dim'));
+      const a = (arg || '').trim().toLowerCase();
+      if (!a) {
+        t.print('usage: /show <name>   e.g. /show maverick', 'dim');
+        t.print('DOCUMENTS', 'hd');
+        list();
+        return;
+      }
+      /* Match on words, not on one literal substring: people type "/show
+         maverick paper", "/show the iceman paper", "/show siem rules". Filler
+         words that describe the KIND of thing rather than which one are
+         dropped, then documents are ranked by how many of the remaining words
+         they carry, so the extra word narrows the search instead of breaking
+         it. An exact substring still wins outright. */
+      const FILLER = new Set(['the', 'a', 'an', 'paper', 'papers', 'doc', 'docs',
+        'document', 'documents', 'file', 'files', 'source', 'sources', 'pdf', 'md',
+        'markdown', 'please', 'me', 'out', 'full', 'my', 'mine', 'i', 'just',
+        'uploaded', 'upload', 'uploads', 'added', 'own', 'that', 'this', 'one', 'it']);
+      const hay = d => (d.title + ' ' + d.file).toLowerCase();
+
+      /* "/show the source I just uploaded" names no document, it points at
+         one. When the phrasing refers to the visitor's own files, only those
+         are considered — and if nothing in the phrase distinguishes between
+         them, "just uploaded" means the most recent. */
+      const refersToUpload = /\b(uploaded|upload|uploads|mine|my)\b/i.test(a);
+      const session = RAG.docs.filter(d => d.session);
+      if (refersToUpload && !session.length) {
+        t.print('you have not uploaded anything this session \u2014 /upload takes a .txt, .pdf or .docx.', 'warn');
+        t.print('DOCUMENTS', 'hd'); list();
+        return;
+      }
+      const pool = refersToUpload ? session : RAG.docs;
+
+      let hits = pool.filter(d => hay(d).includes(a));
+      if (!hits.length) {
+        /* Three characters minimum, and no fallback to the unfiltered words:
+           "i" in "the source i just uploaded" substring-matches "revIew" and
+           "frostbIte", which tied both uploads and reported them ambiguous. */
+        const terms = a.split(/[\s,._\-\u2014\u2013]+/)
+          .filter(w => w.length >= 3 && !FILLER.has(w));
+        const scored = pool
+          .map(d => ({ d, n: terms.filter(w => hay(d).includes(w)).length }))
+          .filter(x => x.n > 0)
+          .sort((x, y) => y.n - x.n);
+        if (scored.length) {
+          const best = scored[0].n;
+          hits = scored.filter(x => x.n === best).map(x => x.d);
+        }
+      }
+      /* Pointed at an upload but nothing in the phrase picks one out. */
+      if (!hits.length && refersToUpload) hits = [session[session.length - 1]];
+      if (!hits.length) {
+        t.print('no source matching "' + arg.trim() + '"', 'err');
+        t.print('DOCUMENTS', 'hd'); list();
+        return;
+      }
+      if (hits.length > 1) {
+        t.print('"' + arg.trim() + '" matches ' + hits.length + ' documents \u2014 be more specific:', 'warn');
+        hits.forEach(d => t.print('  ' + d.file + '  \u2014  ' + d.title, 'dim'));
+        return;
+      }
+      const d = hits[0];
+      t.print(d.title, 'hd');
+      t.print(d.file + ' \u00b7 ' + d.chunks + ' chunks \u00b7 ' +
+        (d.chars < 1024 ? d.chars + ' B' : Math.round(d.chars / 1024) + ' KB') +
+        ' \u2014 exactly what the assistant reads', 'dim');
+      const wrap = t.html('<pre class="doc-dump" tabindex="0"></pre>');
+      wrap.querySelector('.doc-dump').textContent = RAG.docText(d.file);
+      t.scroll();
+    }
+  },
+
   'forget': {
     desc: 'remove an uploaded document — name, or "all"',
     async run(arg, t) {
@@ -807,6 +884,27 @@ async function ingestFiles(files) {
   Term.scroll();
 }
 
+/* The terminal is the page, so a wheel event over the empty margin around it
+   should scroll the transcript rather than doing nothing. Anything that
+   scrolls on its own — the transcript itself, a modal, a printed document —
+   keeps its own wheel events, and the whole thing stands down when the page
+   has its own scrollbar (narrow screens), where hijacking the wheel would
+   trap the visitor. */
+function initPageScroll() {
+  addEventListener('wheel', e => {
+    const s = Term.stream;
+    if (!s) return;
+    if (document.documentElement.scrollHeight > innerHeight + 2) return;
+    for (let n = e.target; n && n !== document.body; n = n.parentElement) {
+      if (n.scrollHeight > n.clientHeight + 1) {
+        const oy = getComputedStyle(n).overflowY;
+        if (oy === 'auto' || oy === 'scroll') return;
+      }
+    }
+    s.scrollTop += e.deltaY;
+  }, { passive: true });
+}
+
 function initUploads() {
   $('#file-input').addEventListener('change', e => {
     ingestFiles(e.target.files);
@@ -958,6 +1056,7 @@ function initContact() {
   initContact();
   initCopy();
   initUploads();
+  initPageScroll();
   initMatrix();
   updateMem();
 

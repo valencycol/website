@@ -208,11 +208,14 @@ const Term = {
       /* A rate limit is being waited out — count it down rather than
          freezing, so the wait reads as deliberate instead of broken. */
       if (info && info.reset) {
-        /* The conversation was auto-reset because it exceeded the model's
-           token limit. Show it plainly, then let the retried answer stream in. */
-        this.print('\u26a0 conversation was too long — memory reset automatically.', 'warn sp');
+        /* Memory reset — either proactively when the 3-exchange bar filled, or
+           because a request hit the model's token limit. Show it plainly. */
+        this.print(info.proactive
+          ? '\u26a0 memory full — context reset. Answering fresh.'
+          : '\u26a0 conversation was too long — memory reset automatically.', 'warn sp');
         updateMem();
-        body.innerHTML = 'retrying with fresh context<span class="dots"></span><span class="cursor-blk"></span>';
+        body.innerHTML = (info.proactive ? 'thinking' : 'retrying with fresh context')
+          + '<span class="dots"></span><span class="cursor-blk"></span>';
         this.scroll();
         return;
       }
@@ -293,9 +296,10 @@ function updateMem() {
   const el = $('#mem');
   if (!el) return;
   const n = Math.min(3, Math.floor((typeof Chat !== 'undefined' ? Chat.history.length : 0) / 2));
-  el.textContent = 'memory ' + n + '/3';
-  el.classList.toggle('active', n > 0 && n < 3);
+  const cells = el.querySelectorAll('i');
+  cells.forEach((c, i) => c.classList.toggle('on', i < n));
   el.classList.toggle('full', n >= 3);
+  el.setAttribute('aria-label', 'memory ' + n + ' of 3 exchanges');
 }
 
 /* Short, readable label for a web-source chip: the hostname without www. */

@@ -370,6 +370,16 @@ const Chat = {
 
     const followUp = isFollowUp(question, this.history.length);
 
+    /* Memory is full and this isn't a follow-up that needs the old context —
+       reset before answering so the bar fills over 3 exchanges then starts
+       fresh, and the request stays small. Follow-ups are spared so "translate
+       that" at the boundary still works. */
+    if (!retried && this.history.length >= 2 * HISTORY_EXCHANGES && !followUp) {
+      this.history = [];
+      this.place = '';
+      if (onStatus) onStatus(0, { reset: true, proactive: true });
+    }
+
     /* Learn / carry the place. If this question names a place, remember it;
        if it is location-implicit and names none, reuse the remembered one so
        the web search runs in the right city instead of a random one. */

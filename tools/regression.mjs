@@ -220,6 +220,22 @@ const after = await page.evaluate(() => RAG.chunks.filter(c => !c.session).lengt
 pass('/restart keeps the knowledge base', before === after, `${before} -> ${after}`);
 pass('/restart clears the conversation', (await page.evaluate(() => Chat.history.length)) === 0);
 
+/* --------------------------------------------------------- model identity
+   The site answered "I'm openai/gpt-oss-20b, served by Groq" while the Gemini
+   light was lit and Gemini was in fact answering. Identity and the token
+   allowance both come from whichever provider is serving. */
+section('identity: the model card names the model that is answering');
+for (const [primary, expectModel, expectLimit] of
+     [['gemini', 'gemini-2.5-flash', 250000], ['groq', 'openai/gpt-oss-20b', 8000]]) {
+  await page.evaluate(p => { ProviderLights.primary = p; ProviderLights.paint(); updateMem(); }, primary);
+  const card = await ask('which model are you?');
+  pass(`${primary}: model card says ${expectModel}`, card.text.includes(expectModel), card.text.slice(0, 60));
+  const human = await ask('are you human?');
+  pass(`${primary}: "are you human" is answered locally`, human.used === 0 && human.text.includes(expectModel));
+  const title = await page.locator('#mem').getAttribute('title');
+  pass(`${primary}: gauge is drawn against ${expectLimit}`, title.includes(String(expectLimit)), title.slice(0, 56));
+}
+
 /* ------------------------------------------------------- provider lights
    Which model answered changes the token budget by 30x, so a silent fallback
    from Gemini to Groq has to be visible. */

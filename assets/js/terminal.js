@@ -84,6 +84,10 @@ const ProviderLights = {
     if (!this.els || !this.els[name]) return;
     this.primary = name;
     this.paint();
+    /* The gauge is drawn against the serving provider's allowance, so it has
+       to be redrawn when that changes — 8,000 and 250,000 are not the same
+       bar. */
+    updateMem();
   },
 
   limited(name, seconds) {
@@ -124,6 +128,7 @@ const ProviderLights = {
       /* Older worker, single provider. */
       if (!d.providers && d.groq === 'limited') this.limited('groq', d.seconds || 10);
       this.paint();
+      updateMem();
     } catch (e) { /* offline, or the worker is unreachable — leave it as it is */ }
   },
 };
@@ -442,13 +447,16 @@ function updateMem() {
   const el = $('#mem');
   if (!el) return;
   const used = (typeof Chat !== 'undefined' && Chat.memTokens) ? Chat.memTokens() : 0;
-  const pct = Math.max(0, Math.min(100, used / 8000 * 100));
+  /* Against the serving provider's allowance, not a constant: the same
+     conversation is a quarter of Groq's minute and under 1% of Gemini's. */
+  const limit = (typeof providerLimit === 'function') ? providerLimit() : 8000;
+  const pct = Math.max(0, Math.min(100, used / limit * 100));
   const fill = el.querySelector('.mem-fill');
   if (fill) fill.style.width = pct.toFixed(1) + '%';
   el.classList.toggle('warn', pct >= 55 && pct < 75);
   el.classList.toggle('full', pct >= 75);
-  el.setAttribute('aria-label', '~' + used + ' of 8000 tokens used');
-  el.title = 'Conversation token load: ~' + used + ' / 8000 per-minute limit. Resets automatically as it fills; /reset clears it now.';
+  el.setAttribute('aria-label', '~' + used + ' of ' + limit + ' tokens used');
+  el.title = 'Conversation token load: ~' + used + ' / ' + limit + ' per-minute limit. Resets automatically as it fills; /reset clears it now.';
 }
 
 /* Short, readable label for a web-source chip: the hostname without www. */
@@ -806,8 +814,8 @@ const COMMANDS = {
 
       t.print('CONVERSATION MEMORY', 'hd');
       t.print('held        ' + (pairs || 'no') + ' exchange' + (pairs === 1 ? '' : 's')
-            + '  \u00b7  ~' + tok + ' of 8000 tokens per minute'
-            + '  \u00b7  clears itself past ' + RESET_TOKENS, 'dim');
+            + '  \u00b7  ~' + tok + ' of ' + providerLimit() + ' tokens per minute'
+            + '  \u00b7  clears itself past ' + providerReset(), 'dim');
 
       /* State the assistant derived rather than was told — this is the part
          that decides how a follow-up is answered, and it is invisible

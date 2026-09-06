@@ -496,7 +496,8 @@ function stateAnswer() {
   if (pairs) {
     bits.push('No \u2014 the conversation is still here. I am carrying '
       + pairs + ' exchange' + (pairs === 1 ? '' : 's')
-      + ' (about ' + tok + ' of the 8000 tokens a minute this model allows).');
+      + ' (about ' + tok + ' of the ' + providerLimit() + ' tokens a minute '
+      + currentProvider().model + ' allows).');
     if (this.place) bits.push('"Here" currently means ' + this.place + '.');
     if (this.topic) {
       bits.push('A follow-up would be taken as being about: ' + this.topic.slice(0, 80)
@@ -602,16 +603,46 @@ function tokenize(s) {
 
 /* Facts about the assistant itself. Legitimate questions with fixed
    answers — no reason to spend a model call, and no reason to refuse. */
+/* Which model is answering is a fact about the running system, not a constant.
+   The site said "I'm openai/gpt-oss-20b, served by Groq" while the header's
+   Gemini light was lit and Gemini was in fact answering. /status reports the
+   provider; these answers are built from it. */
+const PROVIDER_NAMES = {
+  /* tpm is the provider's free-tier tokens-per-minute allowance, and reset is
+     how much conversation is worth carrying against it. Groq's 8,000 is why
+     the context had to be kept so tight; Gemini's 250,000 does not need that
+     discipline, so it keeps roughly eight times more of the conversation. */
+  gemini: { model: 'gemini-2.5-flash', via: 'the Google Gemini API', tpm: 250000, reset: 24000 },
+  groq:   { model: 'openai/gpt-oss-20b', via: 'Groq', tpm: 8000, reset: 3000 },
+};
+
+function currentProvider() {
+  const p = (typeof ProviderLights !== 'undefined' && ProviderLights.primary) || 'groq';
+  return PROVIDER_NAMES[p] || PROVIDER_NAMES.groq;
+}
+
+function providerLimit() { return currentProvider().tpm || 8000; }
+function providerReset() { return currentProvider().reset || RESET_TOKENS; }
+
+function otherProvider() {
+  const p = (typeof ProviderLights !== 'undefined' && ProviderLights.primary) || 'groq';
+  return PROVIDER_NAMES[p === 'gemini' ? 'groq' : 'gemini'];
+}
+
 const MODEL_CARD = [
   [/\b(which|what)\s+(ai\s+)?(model|llm|engine)\b|\bwhat\s+are\s+you\s+(running|built)\s+on\b|\bwhich\s+ai\b/i,
-   "I'm openai/gpt-oss-20b, served by Groq, behind a Cloudflare Worker that holds the API key — "
-   + "this site is static, so the key can't live in the page. My answers are grounded in the documents under /sources."],
+   () => "I'm " + currentProvider().model + ", served by " + currentProvider().via + ", behind a "
+     + "Cloudflare Worker that holds the API key \u2014 this site is static, so the key can't live in "
+     + "the page. " + otherProvider().model + " is wired as a fallback if my provider is rate limited "
+     + "or down. My answers are grounded in the documents under /sources, with a live web search for "
+     + "anything they don't cover."],
 
   [/\b(who|what)\s+(made|built|created|wrote|designed)\s+(you|this)\b|\bwhose\s+(site|website)\b/i,
    "This is Valency Oscar Colaco's site. I'm the terminal assistant built into it — I answer from his documents and nothing else. /about has the long version."],
 
-  [/\bare\s+you\s+(chatgpt|gpt|claude|gemini|an?\s+(real\s+)?(human|person|bot|ai|llm|robot|chatbot))\b|\bare\s+you\s+sentient\b/i,
-   "A language model, not a person — gpt-oss-20b on Groq. I only know what's in Valency's documents, which makes me a narrow one."],
+  [/\bare\s+you\s+(chatgpt|gpt|claude|gemini|(an?\s+)?(real\s+)?(human|person|bot|ai|llm|robot|chatbot))\b|\bare\s+you\s+sentient\b/i,
+   () => "A language model, not a person \u2014 " + currentProvider().model + " on "
+     + currentProvider().via + ". I only know what's in Valency's documents, which makes me a narrow one."],
 
   [/\bwhat\s+can\s+you\s+(do|help|answer)\b|\bwhat\s+do\s+you\s+know\b|\bhow\s+do\s+you\s+work\b|\bwhat\s+are\s+you\s+for\b/i,
    "I answer questions about Valency's research, publications and this website — grounded in the files listed by /sources. "
@@ -634,7 +665,9 @@ function classify(query) {
   if (GREETING.test(q)) return { kind: 'greeting' };
 
   for (const [re, answer] of MODEL_CARD) {
-    if (re.test(q)) return { kind: 'meta', answer };
+    /* An answer may be a function when it depends on live state — which model
+       is actually serving, for instance. */
+    if (re.test(q)) return { kind: 'meta', answer: typeof answer === 'function' ? answer() : answer };
   }
 
   return { kind: 'normal' };
@@ -757,7 +790,7 @@ const Chat = {
     /* The conversation's token load has climbed near the per-minute ceiling —
        reset before answering so the next request stays under 8000. Follow-ups
        are spared so "translate that" at the boundary still has its context. */
-    if (!retried && !followUp && this.memTokens() > RESET_TOKENS) {
+    if (!retried && !followUp && this.memTokens() > providerReset()) {
       this.history = [];
       this.place = '';
       this.topic = '';

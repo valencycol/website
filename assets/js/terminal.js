@@ -177,49 +177,12 @@ const Term = {
       return;
     }
 
-    /* Not a slashed command. Before treating it as a question, see if it is
-       just the NAME of a route said without the slash — "news", "contact",
-       "show me the publications". Those open the panel directly, no LLM
-       round-trip. A real question ("what's the latest news on X") is longer
-       and won't reduce to a bare command, so it still goes to the assistant. */
-    const routed = this.resolveRoute(line);
-    if (routed) {
-      this.print('\u2192 /' + routed, 'dim sp');
-      await COMMANDS[routed].run('', this);
-      this.focus();
-      return;
-    }
-
-    /* Not a command — it's a question for the assistant. */
+    /* Not a slashed command — it's a question for the assistant. Commands
+       require the leading slash; a bare word like "news" or "here" is treated
+       as plain language, never silently run as a command. */
     await this.ask(line);
   },
 
-  /* Map a bare phrase to a command name, or null. Deliberately conservative:
-     it strips a few polite/imperative wrappers and articles, then the result
-     must match a command or alias EXACTLY (as one word or hyphen-joined) — so
-     "news" and "cybersecurity news" route, but "latest news about Okta" does
-     not. Never routes anything longer than three words after stripping. */
-  resolveRoute(raw) {
-    let t = String(raw).toLowerCase().trim().replace(/[?!.\s]+$/, '').trim();
-    /* A greeting is not a route, even though "hello" is an alias of /contact.
-       Let it fall through to the assistant's greeting handler. */
-    if (typeof GREETING !== 'undefined' && GREETING.test(t)) return null;
-    t = t
-      .replace(/^(please\s+)?(can|could|would|will)\s+(you\s+|i\s+)?/, '')
-      .replace(/^(please\s+)?(show|open|go|goto|take|see|view|read|play|get|give|let|bring)\s+(me\s+)?(to\s+|up\s+)?/, '')
-      .replace(/^(i\s+want\s+(to\s+see\s+)?|i'?d\s+like\s+(to\s+see\s+)?|lemme\s+see\s+)/, '')
-      .replace(/^(the|your|some|my|a)\s+/, '')
-      .replace(/\s+(please|now|page|section|panel)$/, '')
-      .trim();
-    if (!t || t.split(/\s+/).length > 3) return null;
-
-    const forms = [t, t.replace(/\s+/g, '-'), t.replace(/\s+/g, '')];
-    for (const f of forms) {
-      if (COMMANDS[f]) return f;
-      if (ALIASES[f] && COMMANDS[ALIASES[f]]) return ALIASES[f];
-    }
-    return null;
-  },
 
   async ask(question) {
     this.busy(true);

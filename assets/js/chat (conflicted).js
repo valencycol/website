@@ -217,7 +217,7 @@ const REFERS_BACK = /\b(the above|above|previous|earlier|preceding|the (text|ans
 const META_ON_REF = /\b(translate|summari[sz]e|rewrite|rephrase|shorten|expand|elaborate|explain|rephrase)\b[\s\S]*\b(it|that|this|these|those|above)\b/i;
 const BARE_META   = /^(translate|summari[sz]e|rewrite|rephrase|shorten|expand|elaborate)( (it|that|this|the above|the text|the list))?[.?!\s]*$/i;
 const IN_LANGUAGE = /^(in|to|into)\s+(english|swedish|french|spanish|german|hindi|arabic|chinese|mandarin|japanese|italian|portuguese|russian|dutch)\b/i;
-const BACKREF = /\b(this|that|it|these|those|them|everything|the above|all (this|that|of it|of this|of that)|the whole (thing|text|list|passage))\b/i;
+const BACKREF = /\b(this|that|it|these|those|them|everything|here|there|the (city|town|place|above|area)|this (city|town|place|area|region)|local|nearby|around here|all (this|that|of it|of this|of that)|the whole (thing|text|list|passage))\b/i;
 const A_LANGUAGE = /\b(swedish|english|french|spanish|german|hindi|arabic|chinese|mandarin|japanese|italian|portuguese|russian|dutch|korean|norwegian|danish|finnish)\b/i;
 function isFollowUp(q, historyLen) {
   if (historyLen < 2) return false;   // needs a prior exchange to refer to
@@ -227,8 +227,9 @@ function isFollowUp(q, historyLen) {
      the previous answer). A message this short that points at "this"/"that"
      is referring to the conversation, not naming a new subject to search. */
   /* Locational back-references to the place the conversation established —
-     "here", "this city", "the local church" — regardless of length. "local"
-     is excluded when another place or a year is named (a new topic). */
+     "here", "this city", "the local church" — regardless of sentence length.
+     "local" is excluded when the message names another place or a year, since
+     then it's a new topic ("local elections in Sweden 2026"), not a callback. */
   const LOCATIONAL = /\b(here|there|nearby|around here|this (city|town|place|area|region)|the (city|town|place|area))\b/i;
   const LOCAL_REF = /\blocal\b/i.test(q) && !/\b(sweden|swedish|england|uk|usa|india|london|\d{4})\b/i.test(q);
   if (LOCATIONAL.test(q) || LOCAL_REF) return true;
@@ -378,10 +379,10 @@ const Chat = {
        word ("news", df 1) scores HIGH while the terms that matter ("iceman",
        in most chunks) score low. */
     const coverage = topical.length ? known.length / topical.length : 0;
-    /* A follow-up is about the conversation — it uses history, not a fresh
-       doc lookup or a web search. Forcing it ungrounded stops "what can we
-       do here?" grounding to the site's own docs ("here" = the city we've
-       been discussing, not this website). */
+    /* A follow-up is about the conversation, so it uses history — not a
+       fresh doc lookup and not a web search. Forcing it ungrounded stops
+       "what can we do here?" from grounding to the site's own docs ("here"
+       = the city we've been discussing, not this website). */
     const grounded = !followUp && hits.length > 0 && known.length > 0 && coverage >= 0.7;
 
     /* Context goes up only when the corpus actually has a claim on the

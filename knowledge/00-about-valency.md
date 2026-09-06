@@ -144,13 +144,9 @@ The site is a terminal. Visitors type slash-commands:
   ~10 exchanges as context; /reset forgets them)
 - `/banner`, `/clear`, `/date`, `/exit` — terminal housekeeping
 
-**Commands work with or without the leading slash, and in plain phrasing.**
-Typing `news`, `contact`, `publications`, or `show me the news` opens the
-same panel as `/news`, `/contact`, `/publications` — the terminal recognises
-a bare route name (and simple wrappers like "show me", "open", "take me to")
-and serves it directly, without asking the AI. A longer question that only
-mentions a route ("what's the latest news about X") is treated as a question,
-not a command.
+**Commands need the leading slash** — `/news`, `/contact`, `/publications`.
+Anything typed without a slash is treated as plain language and sent to the
+assistant, never run as a command.
 
 Anything typed that is *not* a command is sent to the AI assistant. It looks
 in these documents first and answers from them when it can, citing which ones.

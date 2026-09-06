@@ -476,6 +476,42 @@ function quickMatch(question) {
   return best.answer;
 }
 
+/* Questions about the assistant's own state.
+
+   "is my context reset?" was sent to the model, which has no way of knowing,
+   and it answered "No. The context has not been reset." — directly
+   contradicting the notice the terminal had printed one line earlier. A model
+   cannot introspect; the browser can. These are answered from the actual
+   values, or not at all.
+
+   Deliberately narrow: it must be asking about THIS conversation's memory, so
+   "what is a memory leak" and "how much RAM does the model need" go to the
+   model like any other question. */
+const STATE_Q = /\b(?:(?:my|your|the|this)\s+(?:context|memory|chat history|conversation history)|context\s+(?:reset|cleared|full|window)|memory\s+(?:reset|cleared|full)|do you (?:remember|recall)|what do you remember|how much do you remember|did you (?:forget|reset)|have you forgotten|are you still (?:remembering|tracking))\b/i;
+
+function stateAnswer() {
+  const pairs = this.history.length / 2 | 0;
+  const tok = this.memTokens();
+  const bits = [];
+  if (pairs) {
+    bits.push('No \u2014 the conversation is still here. I am carrying '
+      + pairs + ' exchange' + (pairs === 1 ? '' : 's')
+      + ' (about ' + tok + ' of the 8000 tokens a minute this model allows).');
+    if (this.place) bits.push('"Here" currently means ' + this.place + '.');
+    if (this.topic) {
+      bits.push('A follow-up would be taken as being about: ' + this.topic.slice(0, 80)
+        + (this.topicGrounded ? ' \u2014 answered from Valency\u2019s documents.'
+                              : ' \u2014 answered from the web and general knowledge.'));
+    }
+  } else {
+    bits.push('Yes \u2014 there is nothing left. I am not carrying any earlier messages, '
+      + 'place or topic into this answer.');
+  }
+  bits.push('Run /memory to see exactly what is held, /clear-memory to clear it, '
+    + 'or /restart to wipe documents too.');
+  return bits.join(' ');
+}
+
 function isMetaOnly(q) {
   return BARE_META.test(q) || IN_LANGUAGE.test(q) || META_ON_REF.test(q) || REFERS_BACK.test(q);
 }
@@ -581,7 +617,10 @@ const MODEL_CARD = [
    "I answer questions about Valency's research, publications and this website — grounded in the files listed by /sources. "
    + "Type /fun for questions worth asking, or /help for the full command list. Anything outside those documents, I decline."],
 
-  [/\b(do|will)\s+you\s+(store|save|keep|remember|log|train)\b|\b(my|the)\s+(data|privacy|uploads?)\b|\bis\s+this\s+private\b/i,
+  /* "remember" belongs to STATE_Q, which answers from the actual
+     conversation: "do you remember what I asked" is a question about
+     memory, not about storage. This card keeps the privacy half. */
+  [/\b(do|will)\s+you\s+(store|save|keep|log|train)\b|\b(my|the)\s+(data|privacy|uploads?)\b|\bis\s+this\s+private\b/i,
    "Files you add with /upload (.txt, .pdf or .docx) are converted to Markdown inside your browser and indexed for this session only \u2014 the file itself never leaves your machine, and excerpts go to the model only as retrieved context when they answer your question. "
    + "Questions are sent to Groq via the site's worker to be answered, and the question text is kept for 14 days "
    + "so Valency can see what people ask — no IP address, no identifier, nothing linking questions to each other. "
@@ -636,6 +675,8 @@ const Chat = {
     const histChars = this.history.reduce((n, m) => n + (m.content || '').length, 0);
     return SYS_TOKENS + OUT_TOKENS + Math.ceil(histChars / 4);
   },
+
+  stateAnswer,
 
   /* Compact the history before sending so a long chat can't blow the model's
      per-minute token budget. Recent exchanges go verbatim (follow-ups lean on
@@ -696,6 +737,13 @@ const Chat = {
     /* One of the suggested questions, with an answer already written. No
        model call, no web search, no rate limit — and it still goes into the
        history, so a follow-up can build on it. */
+    /* Answered from what is actually in memory, never by the model. */
+    if (STATE_Q.test(question)) {
+      const msg = this.stateAnswer();
+      if (onToken) await typeOut(msg, onToken);
+      return { text: msg, cites: [], local: true };
+    }
+
     const canned = quickAnswers().get(normQ(question)) || quickMatch(question);
     if (canned) {
       if (onToken) await typeOut(canned, onToken);

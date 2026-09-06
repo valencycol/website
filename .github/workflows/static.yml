@@ -22,8 +22,28 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Every failure this site has shipped is a case in tools/regression.mjs.
+  # Deployment waits on it: a change that reintroduces one never reaches the
+  # site. If this ever blocks an urgent fix, drop `needs: test` below.
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install test dependencies
+        run: npm install --no-audit --no-fund
+      - name: Install browser
+        run: npx playwright install --with-deps chromium
+      - name: Serve the site
+        run: python3 -m http.server 8080 &
+      - name: Regression suite
+        run: node tools/regression.mjs
+
   # Single deploy job since we're just deploying
   deploy:
+    needs: test
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

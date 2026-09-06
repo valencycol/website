@@ -1,0 +1,12 @@
+{
+  "name": "colaco-se",
+  "private": true,
+  "description": "colaco.se — terminal site. Static; this file exists only for the test tooling.",
+  "scripts": {
+    "test": "node tools/regression.mjs",
+    "embeddings": "python3 tools/build-embeddings.py && node tools/embed-verify.mjs && node tools/embed-eval.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0"
+  }
+}

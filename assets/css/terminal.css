@@ -189,6 +189,17 @@ body.booting{overflow:hidden}
 .win-meta{margin-left:auto;display:flex;align-items:center;gap:12px;flex:none;font-size:11px;color:var(--ink3)}
 .led{display:inline-flex;align-items:center;gap:5px}
 .led::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--acc);box-shadow:0 0 6px var(--acc);animation:pulse 2.4s infinite}
+/* Groq availability light. Green while the model is answering, red while the
+   account is rate limited, with the seconds left in the tooltip. */
+.groq{display:inline-flex;align-items:center;gap:5px;font-size:10px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink3);cursor:default}
+.groq i{width:7px;height:7px;border-radius:50%;background:var(--acc);
+  box-shadow:0 0 6px currentColor;color:var(--acc);transition:background .25s,color .25s}
+.groq.limited{color:var(--red)}
+.groq.limited i{background:var(--red);color:var(--red);animation:groq-pulse 1.1s ease-in-out infinite}
+@keyframes groq-pulse{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.groq.limited i{animation:none}}
+
 .mem{display:inline-flex;align-items:center;gap:5px;cursor:default}
 .mem-lbl{font-size:10px;color:var(--ink3);letter-spacing:.12em;text-transform:uppercase}
 .mem-bar{width:54px;height:7px;border:1px solid var(--stroke);border-radius:2px;overflow:hidden;background:rgba(0,255,156,.05)}

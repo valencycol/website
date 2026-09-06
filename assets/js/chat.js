@@ -274,6 +274,30 @@ function docMatch(hits, topical, known) {
   return known.every(w => blob.includes(w));
 }
 
+/* Prepared answers for the questions /fun suggests. Serving them straight
+   from knowledge/06-quick-answers.md costs no model tokens, cannot drift into
+   generalities ("this thesis will stretch your thinking"), and cannot be rate
+   limited. Anything phrased differently still goes to the model, which has the
+   same file in its corpus. */
+const QUICK_DOC = '06-quick-answers.md';
+let QUICK_CACHE = null;
+
+function normQ(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }
+
+function quickAnswers() {
+  if (QUICK_CACHE) return QUICK_CACHE;
+  QUICK_CACHE = new Map();
+  const text = RAG.docText ? RAG.docText(QUICK_DOC) : '';
+  for (const part of String(text).split(/^###\s+/m).slice(1)) {
+    const nl = part.indexOf('\n');
+    if (nl < 0) continue;
+    const q = part.slice(0, nl).trim();
+    const a = part.slice(nl + 1).trim();
+    if (q && a) QUICK_CACHE.set(normQ(q), a);
+  }
+  return QUICK_CACHE;
+}
+
 function isMetaOnly(q) {
   return BARE_META.test(q) || IN_LANGUAGE.test(q) || META_ON_REF.test(q) || REFERS_BACK.test(q);
 }
@@ -434,6 +458,17 @@ const Chat = {
       return { text: route.answer, cites: [], local: true };
     }
     if (!RAG.ready) await RAG.load();
+
+    /* One of the suggested questions, with an answer already written. No
+       model call, no web search, no rate limit — and it still goes into the
+       history, so a follow-up can build on it. */
+    const canned = quickAnswers().get(normQ(question));
+    if (canned) {
+      if (onToken) await typeOut(canned, onToken);
+      this.history.push({ role: 'user', content: question });
+      this.history.push({ role: 'assistant', content: canned });
+      return { text: canned, cites: ['Quick answers'], grounded: true, sources: [] };
+    }
 
     const followUp = isFollowUp(question, this.history.length);
 
@@ -636,6 +671,9 @@ const Chat = {
       wait = Math.min(Math.max(wait, 2), 60);
 
       if (!retried) {
+        /* Light the GROQ indicator red immediately, rather than waiting for
+           the next background poll to notice. */
+        if (typeof GroqLight !== 'undefined') GroqLight.limited(wait);
         if (onStatus) onStatus(0, { waiting: wait });
         await new Promise(r => setTimeout(r, wait * 1000));
         return this.ask(question, onToken, onStatus, true);   // one retry, then stop
@@ -726,9 +764,12 @@ function pickDecline() {
 function typeOut(text, onToken) {
   return new Promise(resolve => {
     let i = 0;
+    /* Roughly 150 steps whatever the length, so a long prepared answer lands
+       in about two seconds instead of trickling out for ten. */
+    const base = Math.max(2, Math.ceil(text.length / 150));
     const step = () => {
       if (i >= text.length) return resolve();
-      const n = Math.min(text.length - i, 2 + Math.floor(Math.random() * 3));
+      const n = Math.min(text.length - i, base + Math.floor(Math.random() * 3));
       onToken(text.slice(i, i + n));
       i += n;
       setTimeout(step, 14);

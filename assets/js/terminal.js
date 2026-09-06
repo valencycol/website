@@ -55,6 +55,50 @@ const Spinner = {
   },
 };
 
+/* Groq availability light. A background check keeps it honest: the worker
+   records any 429 in KV and /status reports it — one KV read, no call to Groq
+   — so the light reflects the account's real state rather than only what this
+   browser has happened to see. Polling pauses on a hidden tab. */
+const GroqLight = {
+  el: null, until: 0,
+
+  init() {
+    this.el = $('#groq');
+    if (!this.el) return;
+    this.paint();
+    this.poll();
+    setInterval(() => { if (document.visibilityState === 'visible') this.poll(); }, 30000);
+    setInterval(() => { if (this.until) this.paint(); }, 1000);
+    addEventListener('online', () => this.poll());
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') this.poll();
+    });
+  },
+
+  limited(seconds) { this.until = Date.now() / 1000 + Math.max(1, seconds || 0); this.paint(); },
+  clear() { this.until = 0; this.paint(); },
+
+  paint() {
+    if (!this.el) return;
+    const left = Math.max(0, Math.ceil(this.until - Date.now() / 1000));
+    if (!left) this.until = 0;
+    this.el.classList.toggle('limited', left > 0);
+    this.el.title = left > 0
+      ? 'Groq is rate limited \u2014 about ' + left + 's left. Every command still works.'
+      : 'Groq is answering normally.';
+  },
+
+  async poll() {
+    try {
+      const r = await fetch(CHAT_ENDPOINT + 'status', { cache: 'no-store' });
+      if (!r.ok) return;
+      const d = await r.json();
+      if (d.groq === 'limited') this.limited(d.seconds || 10);
+      else if (Date.now() / 1000 >= this.until) this.clear();   // local 429 wins until it expires
+    } catch (e) { /* offline, or the worker is unreachable — leave it as it is */ }
+  },
+};
+
 const Term = {
   stream: null, input: null, promptEl: null,
   hist: [], histIdx: -1, draft: '',
@@ -340,7 +384,8 @@ const Term = {
       const hint = document.createElement('div');
       hint.className = 'line dim';
       hint.textContent = err.rateLimited
-        ? 'Press \u2191 to bring the question back, then Enter to retry.'
+        ? 'Every command still works \u2014 /news, /publications, /sources, /show. Only free-text '
+          + 'questions wait. Press \u2191 to bring yours back, then Enter to retry.'
         : 'Every command still works — this only affects free-text questions. Try /help.';
       wrap.appendChild(hint);
     }
@@ -1057,6 +1102,7 @@ function initContact() {
   initCopy();
   initUploads();
   initPageScroll();
+  GroqLight.init();
   initMatrix();
   updateMem();
 

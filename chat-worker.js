@@ -113,6 +113,14 @@ export default {
     const cors = corsHeaders(origin);
 
     if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
+
+    /* Cheap health probe behind the browser's GROQ light: one KV read, no
+       call to Groq, no rate-limit budget spent. Anyone's 429 sets the flag,
+       so every visitor's light reflects the account's real state. */
+    if (new URL(request.url).pathname.replace(/\/+$/, '') === '/status') {
+      return handleStatus(env, cors);
+    }
+
     if (request.method !== 'POST')    return json({ error: 'POST only' }, 405, cors);
     if (origin && !isAllowedOrigin(origin)) return json({ error: 'origin not allowed: ' + origin }, 403, cors);
     if (!env.GROQ_API_KEY) return json({ error: 'GROQ_API_KEY is not set on this worker' }, 500, cors);
@@ -249,6 +257,13 @@ export default {
         if (m) retryAfter = Math.ceil(Number(m[1]));
       }
       retryAfter = Math.min(Math.max(retryAfter || 10, 2), 60);
+      /* Record it so /status can light the browser's GROQ indicator red for
+         everyone, not just whoever happened to hit the limit. */
+      if (env.CHAT_RL) {
+        ctx.waitUntil(env.CHAT_RL.put('groq:rl',
+          JSON.stringify({ until: Math.floor(Date.now() / 1000) + retryAfter }),
+          { expirationTtl: Math.max(60, retryAfter + 30) }).catch(() => {}));
+      }
       return json({
         error: 'The assistant is rate limited right now. Try again in about '
              + retryAfter + ' second' + (retryAfter === 1 ? '' : 's') + '.',
@@ -291,6 +306,24 @@ export default {
     });
   },
 };
+
+/* Groq availability, as last observed. Reports ok when nothing is recorded —
+   an unknown state is not an outage, and a red light nobody can explain is
+   worse than no light. */
+async function handleStatus(env, cors) {
+  let seconds = 0;
+  if (env.CHAT_RL) {
+    try {
+      const raw = await env.CHAT_RL.get('groq:rl');
+      if (raw) {
+        const until = Number((JSON.parse(raw) || {}).until) || 0;
+        seconds = Math.max(0, until - Math.floor(Date.now() / 1000));
+      }
+    } catch (e) { /* treat as available */ }
+  }
+  return json({ groq: seconds > 0 ? 'limited' : 'ok', seconds }, 200,
+              { ...cors, 'Cache-Control': 'no-store' });
+}
 
 /* Exchange a Turnstile token for a pass.
 

@@ -25,6 +25,11 @@
       "file": "05-ifip-dbsec.md",
       "title": "Improving SIEM Rules using Transformer-Based Rule Evasion Detection and Attribution",
       "tags": "siem sigma rules rule evasion detection attribution transformer bert amides usenix false positive rate fpr security information event management log detection engineering ifip dbsec 2026 nordstrom widen recommend fixes upstream repository"
+    },
+    {
+      "file": "06-quick-answers.md",
+      "title": "Quick answers",
+      "tags": "quick answers fun suggested questions read first difference iceman maverick elevator pitch thesis licentiate sell recommend start conference ask speed matter sigma rule evasion summary bullet points automotive relevance website capabilities random forest fight"
     }
   ]
 }

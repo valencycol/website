@@ -527,10 +527,20 @@ function isMetaOnly(q) {
    could only ever match what somebody had thought of: "tell me more about the
    first point" carried none of them, was read as a brand-new topic, and got
    web-searched into an article about startup failure. */
-const DISCOURSE = new Set(('first second third fourth fifth sixth seventh eighth ninth tenth last final next '
-  + 'previous latter former point points item items one ones thing things bullet bullets option options '
-  + 'example examples entry entries suggestion suggestions idea ideas line lines answer answers reply replies '
-  + 'response message paragraph passage more detail details further deeper again number not so such').split(' '));
+const DISCOURSE = new Set((
+  /* pointing at a position in what was said */
+  'first second third fourth fifth sixth seventh eighth ninth tenth last final next previous latter former '
+  /* generic stand-ins for the thing itself */
+  + 'point points item items one ones thing things bullet bullets option options example examples entry entries '
+  + 'suggestion suggestions idea ideas line lines answer answers reply replies response message paragraph passage '
+  + 'story version versions account '
+  /* asking for the remainder, or for it in full */
+  + 'more detail details further deeper again whole full entire complete rest remainder everything '
+  /* "happened" is deliberately absent: "what happened in the news today" is a
+     real question, and "news" and "today" are already filtered as format words,
+     so treating "happened" as discourse left it with no subject at all. */
+  + 'continue continued go on background gist rundown '
+  + 'number not so such').split(' '));
 
 /* A question with no subject of its own can only be about what was just said.
    "tell me more about the first point" reduces to nothing; "weather in
@@ -821,9 +831,12 @@ const Chat = {
     /* The web search runs for everything except a pure text operation. A
        follow-up searches for the topic the conversation established, not its
        own bare words — "tell me more" on its own finds nothing useful. */
-    /* Nothing to look up: the answer is in what was just said, and searching
-       the words themselves returns whatever the engine makes of them. */
-    const metaOnly = isMetaOnly(question) || !carriesOwnSubject(question);
+    /* A pure text operation ("translate the above") has nothing to look up.
+       A continuation ("give me the whole story") does — it wants MORE about
+       the subject, which history alone cannot supply. Those still search, but
+       on the anchored query below, which carries the previous question, so
+       "give me the whole story" searches the show rather than the phrase. */
+    const metaOnly = isMetaOnly(question);
     if (!followUp) this.topic = question.slice(0, 120);
     /* A follow-up searches for what was just being discussed. The last thing
        the visitor actually asked is a better anchor than the topic that

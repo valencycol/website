@@ -166,6 +166,29 @@ const fu = await page.evaluate(() => {
 pass(`${fu.fN} discourse references recognised`, fu.missed.length === 0, fu.missed.join(', '));
 pass(`${fu.tN} real topics left alone`, fu.wrong.length === 0, fu.wrong.join(', '));
 
+/* "give me the whole story", after a synopsis, was read as a new topic and
+   web-searched into three unrelated stories. Asking for the REST of something
+   names no subject either. */
+const cont = await page.evaluate(() => {
+  const CONT = ['give me the whole story', 'tell me the whole thing', 'the rest of it', 'give me everything',
+    'the full version', 'continue', 'more of it', 'and the rest', 'go on'];
+  const TOPIC = ['tell me the story of iceman', 'what happened in the news today',
+    'what version of tls is current', 'the background of the vote paper',
+    'give me the full synopsis of house of cards'];
+  return { missed: CONT.filter(q => !isFollowUp(q, 4)), cN: CONT.length,
+           wrong: TOPIC.filter(q => isFollowUp(q, 4)), tN: TOPIC.length };
+});
+pass(`${cont.cN} continuation requests recognised`, cont.missed.length === 0, cont.missed.join(', '));
+pass(`${cont.tN} questions that merely contain those words are not`, cont.wrong.length === 0, cont.wrong.join(', '));
+
+/* A continuation still searches, but for the subject rather than the phrase:
+   the query carries the question that came before it. */
+await cmd('/clear-memory');
+await ask('tell me the synopsis of house of cards season1');
+await ask('give me the whole story');
+pass('a continuation search is anchored to the previous question',
+  /house of cards/i.test(lastBody.searchQuery || ''), (lastBody.searchQuery || '').slice(0, 70));
+
 /* ------------------------------------------------------------ state truth
    "is my context reset?" was answered "No" one line after the terminal
    printed that it had been. */

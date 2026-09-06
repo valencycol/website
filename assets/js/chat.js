@@ -225,6 +225,13 @@ const A_LANGUAGE = /\b(swedish|english|french|spanish|german|hindi|arabic|chines
 const PLACE_CUE = /\b(?:in|at|near|around|from)\s+([a-zà-öø-ÿ][\wà-öø-ÿ'’.-]+(?:\s+[a-zà-öø-ÿ][\wà-öø-ÿ'’.-]+)?)/i;
 const LOC_IMPLICIT = /\b(here|nearby|near me|around here|this (weekend|week|evening|month|afternoon|morning|area)|tonight|today|tomorrow|events|gigs|concerts|what'?s on|whats on|restaurants?|cafes?|things to do|attractions|museums?|weather|forecast)\b/i;
 
+/* A question that only operates on text already on screen — "translate the
+   above", "summarise that", "in swedish" — has nothing to look up. Every
+   other question gets a live search, so answers stay current and citable. */
+function isMetaOnly(q) {
+  return BARE_META.test(q) || IN_LANGUAGE.test(q) || META_ON_REF.test(q) || REFERS_BACK.test(q);
+}
+
 function isFollowUp(q, historyLen) {
   if (historyLen < 2) return false;   // needs a prior exchange to refer to
   if (REFERS_BACK.test(q) || META_ON_REF.test(q) || BARE_META.test(q) || IN_LANGUAGE.test(q)) return true;
@@ -330,11 +337,12 @@ function classify(query) {
 const TPM_LIMIT   = 8000;
 const SYS_TOKENS  = 560;
 const OUT_TOKENS  = 700;
-const RESET_TOKENS = 6000;   // reset the conversation once its load passes this
+const RESET_TOKENS = 5200;   // reset the conversation once its load passes this
 
 const Chat = {
   history: [],
   place: '',
+  topic: '',
   busy: false,
 
   /* onToken(text) is called as the answer streams in; onStatus(n) fires
@@ -361,7 +369,7 @@ const Chat = {
   },
 
   /* Forget the conversation — clears the memory a follow-up would draw on. */
-  reset() { const n = this.history.length; this.history = []; this.place = ''; return n; },
+  reset() { const n = this.history.length; this.history = []; this.place = ''; this.topic = ''; return n; },
 
   async ask(question, onToken, onStatus, retried) {
     const route = classify(question);
@@ -388,6 +396,7 @@ const Chat = {
     if (!retried && !followUp && this.memTokens() > RESET_TOKENS) {
       this.history = [];
       this.place = '';
+      this.topic = '';
       if (onStatus) onStatus(0, { reset: true, proactive: true });
     }
 
@@ -397,6 +406,15 @@ const Chat = {
     const named = question.match(PLACE_CUE);
     if (named) this.place = named[1].trim().replace(/[.?!,]+$/, '');
     const searchPlace = (!named && LOC_IMPLICIT.test(question) && this.place) ? this.place : '';
+    /* The web search runs for everything except a pure text operation. A
+       follow-up searches for the topic the conversation established, not its
+       own bare words — "tell me more" on its own finds nothing useful. */
+    const metaOnly = isMetaOnly(question);
+    if (!followUp) this.topic = question.slice(0, 120);
+    const searchQuery = (followUp && this.topic && !metaOnly)
+      ? question + ' ' + this.topic
+      : question;
+
     const hits = RAG.search(question, 5);
     const { topical, known } = RAG.anchors(question);
 
@@ -472,7 +490,7 @@ const Chat = {
       res = await fetch(CHAT_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, context, allowWeb: !followUp, place: searchPlace, history: this.compactHistory(),
+        body: JSON.stringify({ question, context, allowWeb: !metaOnly, searchQuery, place: searchPlace, history: this.compactHistory(),
                                pass: (typeof Gate !== 'undefined' ? Gate.pass : '') }),
       });
     } catch (e) {
@@ -508,6 +526,7 @@ const Chat = {
     if (res.status === 413 && !retried) {
       this.history = [];
       this.place = '';
+      this.topic = '';
       if (onStatus) onStatus(0, { reset: true });
       return this.ask(question, onToken, onStatus, true);
     }

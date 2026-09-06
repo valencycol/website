@@ -8,6 +8,53 @@
    cloned, nothing is re-wired.
    ============================================================ */
 
+/* The assistant consults the documents AND runs a live web search before it
+   answers, so the wait runs a second or two longer than a bare model call.
+   Rather than a frozen "retrieving", cycle a rotating vocabulary under a
+   turning OpenAI mark — the model doing the work is openai/gpt-oss-20b. */
+const SPIN_WORDS = [
+  'Vibing', 'Percolating', 'Discombobulating', 'Ruminating', 'Noodling',
+  'Marinating', 'Simmering', 'Conjuring', 'Tinkering', 'Puzzling',
+  'Cogitating', 'Wrangling', 'Finagling', 'Bamboozling', 'Frolicking',
+  'Schlepping', 'Pondering', 'Scheming', 'Whirring', 'Untangling',
+  'Spelunking', 'Divining', 'Manifesting', 'Incanting', 'Caffeinating',
+  'Yak-shaving', 'Rubber-ducking', 'Overthinking', 'Enumerating', 'Fuzzing',
+  'Pivoting', 'Grepping', 'Deobfuscating', 'Sandboxing', 'Triangulating',
+  'Decrypting', 'Reticulating splines', 'Defenestrating', 'Hyperfixating',
+  'Consulting the oracle', 'Bribing the GPU', 'Herding tokens',
+];
+
+const OAI_MARK = '<svg class="oai" viewBox="0 0 24 24" aria-hidden="true"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg>';
+
+const Spinner = {
+  timer: null, ticker: null, t0: 0, note: '',
+  start(body) {
+    this.stop();
+    this.t0 = Date.now();
+    this.note = '';
+    let i = Math.floor(Math.random() * SPIN_WORDS.length);
+    body.innerHTML = '<span class="spin">' + OAI_MARK +
+      '<span class="spin-word"></span><span class="dots"></span>' +
+      '<span class="tick"></span></span><span class="cursor-blk"></span>';
+    const word = body.querySelector('.spin-word');
+    const tick = body.querySelector('.tick');
+    const paint = () => {
+      word.textContent = SPIN_WORDS[i % SPIN_WORDS.length];
+      const secs = Math.round((Date.now() - this.t0) / 1000);
+      tick.textContent = (secs ? secs + 's' : '') +
+        (this.note ? (secs ? ' \u00b7 ' : '') + this.note : '');
+    };
+    paint();
+    this.timer  = setInterval(() => { i++; paint(); }, 1700);
+    this.ticker = setInterval(paint, 1000);
+  },
+  setNote(t) { this.note = t; },
+  stop() {
+    clearInterval(this.timer); clearInterval(this.ticker);
+    this.timer = this.ticker = null;
+  },
+};
+
 const Term = {
   stream: null, input: null, promptEl: null,
   hist: [], histIdx: -1, draft: '',
@@ -190,11 +237,11 @@ const Term = {
       '<div class="msg ai thinking"><div class="who">assistant</div>' +
       '<div class="body"></div></div>').firstElementChild;
     const body = wrap.querySelector('.body');
-    body.innerHTML = 'retrieving<span class="cursor-blk"></span>';
+    Spinner.start(body);
 
     let first = true;
     const onToken = t => {
-      if (first) { body.textContent = ''; wrap.classList.remove('thinking'); first = false; }
+      if (first) { Spinner.stop(); body.textContent = ''; wrap.classList.remove('thinking'); first = false; }
       body.textContent += t;
       this.scroll();
     };
@@ -214,17 +261,19 @@ const Term = {
           ? '\u26a0 memory full — context reset. Answering fresh.'
           : '\u26a0 conversation was too long — memory reset automatically.', 'warn sp');
         updateMem();
-        body.innerHTML = (info.proactive ? 'thinking' : 'retrying with fresh context')
-          + '<span class="dots"></span><span class="cursor-blk"></span>';
+        Spinner.start(body);
+        if (!info.proactive) Spinner.setNote('fresh context');
         this.scroll();
         return;
       }
       if (info && info.verifying) {
+        Spinner.stop();
         body.innerHTML = 'verifying session<span class="dots"></span><span class="cursor-blk"></span>';
         this.scroll();
         return;
       }
       if (info && info.waiting) {
+        Spinner.stop();
         let left = info.waiting;
         clearInterval(this._rlTimer);
         const tickDown = () => {
@@ -241,13 +290,14 @@ const Term = {
 
       clearInterval(this._rlTimer);
       thought += n;
-      body.innerHTML = 'thinking<span class="dots"></span> ' +
-        '<span class="tick">' + thought + ' chars</span><span class="cursor-blk"></span>';
+      if (!Spinner.timer) Spinner.start(body);
+      Spinner.setNote(thought + ' chars');
     };
 
     try {
       const { cites, local, grounded, sources, followUp } = await Chat.ask(question, onToken, onStatus);
       clearInterval(this._rlTimer);
+      Spinner.stop();
       if (first) { body.textContent = '(no answer returned)'; wrap.classList.remove('thinking'); }
 
       if (!local) {
@@ -256,19 +306,24 @@ const Term = {
         /* Say where the answer came from, three ways never mistaken for each
            other: the corpus (named doc chips), a live web search (clickable
            link chips), or the model's own memory (a plain marker). */
+        const parts = [];
         if (grounded && cites.length) {
-          c.innerHTML = '<b>sources:</b>' + cites.map(s => '<span class="cite">' + esc(s) + '</span>').join('');
-        } else if (sources && sources.length) {
-          c.innerHTML = '<b>web:</b>' + sources.map(src =>
-            '<a class="cite web" href="' + esc(src.url) + '" target="_blank" rel="noopener nofollow">' +
-            esc(hostOf(src.url)) + '</a>').join('');
-        } else if (!followUp) {
-          c.innerHTML = '<span class="cite ungrounded">general knowledge — not from Valency\u2019s documents</span>';
+          parts.push('<b>sources:</b>' + cites.map(s => '<span class="cite">' + esc(s) + '</span>').join(''));
         }
+        if (sources && sources.length) {
+          parts.push('<b>web:</b>' + sources.map(src =>
+            '<a class="cite web" href="' + esc(src.url) + '" target="_blank" rel="noopener nofollow">' +
+            esc(hostOf(src.url)) + '</a>').join(''));
+        }
+        if (!parts.length && !followUp) {
+          parts.push('<span class="cite ungrounded">general knowledge — not from Valency\u2019s documents</span>');
+        }
+        c.innerHTML = parts.join('');
         if (c.innerHTML) wrap.appendChild(c);
       }
     } catch (err) {
       clearInterval(this._rlTimer);
+      Spinner.stop();
       wrap.classList.remove('thinking');
       body.textContent = '';
       const e = document.createElement('div');

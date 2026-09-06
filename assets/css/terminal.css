@@ -373,6 +373,14 @@ body.booting{overflow:hidden}
 .msg.ai.thinking .body{color:var(--ink3)}
 .msg.ai .tick{color:var(--ink3);font-size:11.5px}
 .dots::after{content:'';animation:dots 1.2s steps(4,end) infinite}
+
+/* Assistant work indicator — a turning OpenAI mark beside a rotating
+   vocabulary, so a two-second wait reads as work rather than a hang. */
+.spin{display:inline-flex;align-items:center;gap:7px;color:var(--ink2)}
+.oai{width:13px;height:13px;flex:none;fill:currentColor;color:var(--acc2);animation:oai-turn 3s linear infinite}
+.spin-word{color:var(--ink2)}
+@keyframes oai-turn{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.oai{animation:none}}
 @keyframes dots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}
 .cursor-blk{display:inline-block;width:8px;height:14px;background:var(--acc2);vertical-align:-2px;animation:blink 1.05s step-end infinite}
 .cites{margin-top:8px;font-size:11px;color:var(--ink3);display:flex;gap:6px;flex-wrap:wrap;align-items:center}

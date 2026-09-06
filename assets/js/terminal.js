@@ -322,8 +322,13 @@ const Term = {
         clearInterval(this._rlTimer);
         const tickDown = () => {
           if (!first) { clearInterval(this._rlTimer); return; }
+          /* Say what still works while the wait runs, not only afterwards in
+             the error: a visitor staring at a countdown assumes the whole
+             site is down. */
           body.innerHTML = '<span class="warn">rate limited</span> — retrying in ' +
-            '<span class="tick">' + left + 's</span><span class="cursor-blk"></span>';
+            '<span class="tick">' + left + 's</span><span class="cursor-blk"></span>' +
+            '<div class="line dim" style="margin-top:6px">Every command still works — ' +
+            '/news, /publications, /sources, /show. Only free-text questions wait.</div>';
           if (--left < 0) clearInterval(this._rlTimer);
         };
         tickDown();

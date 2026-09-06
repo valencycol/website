@@ -89,12 +89,13 @@ const RAG = {
       });
       n++;
     });
-    this.docs.push({ title, file, chunks: n, chars: clean.length, session: !!session });
+    this.docs.push({ title, file, tags: tags || '', chunks: n, chars: clean.length, session: !!session });
   },
 
   /* Document frequencies for the IDF half of the score, and the
      vocabulary the scope check tests against. */
   reindex() {
+    this._nameSets = null;
     this.df = Object.create(null);
     this.vocab = new Set();
     for (const c of this.chunks) {
@@ -173,11 +174,18 @@ const RAG = {
      Ubiquitous words are skipped — a term in most chunks identifies nothing. */
   namesDoc(topical) {
     const ceiling = this.chunks.length * 0.6;
+    if (!this._nameSets) {
+      /* Whole words, never substrings: "not" is inside "anNOTation", which is
+         how "why not" came to be treated as a question about Valency's papers.
+         The manifest tags are included because they are curated identifying
+         terms — "publications" names the bio document as surely as its title
+         does. */
+      this._nameSets = this.docs.map(d =>
+        new Set(String(d.title + ' ' + d.file + ' ' + (d.tags || '')).toLowerCase().match(/[a-z0-9]+/g) || []));
+    }
     for (const w of topical) {
       if (w.length < 4 || (this.df[w] || 0) > ceiling) continue;
-      for (const d of this.docs) {
-        if ((d.title + ' ' + d.file).toLowerCase().includes(w)) return true;
-      }
+      for (const set of this._nameSets) if (set.has(w)) return true;
     }
     return false;
   },
@@ -266,8 +274,9 @@ const LOC_IMPLICIT = /\b(here|nearby|near me|around here|this (weekend|week|even
 function docMatch(hits, topical, known) {
   if (!hits.length || !known.length) return false;
   for (const h of hits.slice(0, 3)) {
-    const t = ((h.c.title || '') + ' ' + (h.c.heading || '') + ' ' + (h.c.doc || '')).toLowerCase();
-    if (topical.some(w => w.length > 2 && t.includes(w))) return true;
+    const t = new Set(String((h.c.title || '') + ' ' + (h.c.heading || '') + ' ' + (h.c.doc || ''))
+      .toLowerCase().match(/[a-z0-9]+/g) || []);
+    if (topical.some(w => w.length > 2 && t.has(w))) return true;
   }
   const c = hits[0].c;
   const blob = ((c.text || '') + ' ' + (c.title || '') + ' ' + (c.heading || '')).toLowerCase();
@@ -302,8 +311,14 @@ function isMetaOnly(q) {
   return BARE_META.test(q) || IN_LANGUAGE.test(q) || META_ON_REF.test(q) || REFERS_BACK.test(q);
 }
 
+/* Questions that are nothing but a reaction to the last answer. They carry no
+   subject at all, so nothing else in here can recognise them: "Why not" after
+   "it will not snow" was read as a fresh topic. */
+const ELLIPTIC = /^(why|why not|why is that|why though|how so|how come|and|really|says who|since when|what for|go on|continue|more|such as|like what|for example|e\.g\.)[\s.?!]*$/i;
+
 function isFollowUp(q, historyLen) {
-  if (historyLen < 2) return false;   // needs a prior exchange to refer to
+  if (historyLen < 2) return false;
+  if (ELLIPTIC.test(q.trim())) return true;   // needs a prior exchange to refer to
   if (REFERS_BACK.test(q) || META_ON_REF.test(q) || BARE_META.test(q) || IN_LANGUAGE.test(q)) return true;
   /* Typo-proof fallback: a SHORT message that hinges on a back-reference
      ("ranslate all this o swedish" — verb mangled, but "all this" is clearly
@@ -406,8 +421,8 @@ function classify(query) {
    the worker's system prompt and MAX_TOKENS_OUT. */
 const TPM_LIMIT   = 8000;
 const SYS_TOKENS  = 560;
-const OUT_TOKENS  = 1100;
-const RESET_TOKENS = 5200;   // reset the conversation once its load passes this
+const OUT_TOKENS  = 800;
+const RESET_TOKENS = 2400;   // reset the conversation once its load passes this
 
 const Chat = {
   history: [],
@@ -432,11 +447,17 @@ const Chat = {
      them); older ones are truncated to an excerpt — enough to keep the gist,
      a fraction of the size. The worker enforces a hard cap on top of this. */
   compactHistory() {
-    /* Full recent history — no per-message truncation. The token-based reset
-       (RESET_TOKENS) clears it before it grows dangerous, and the worker's
-       fitBudget is the hard backstop, so the load can climb honestly and the
-       gauge reflects real accumulation. */
-    return this.history.slice();
+    /* The last two exchanges go verbatim — follow-ups lean on them — and
+       everything older is cut to an excerpt. Sending the whole transcript is
+       what made a single question cost most of the minute's token budget. */
+    const RECENT = 4;
+    const h = this.history;
+    if (h.length <= RECENT) return h.slice();
+    const older = h.slice(0, -RECENT).map(m => {
+      const cap = m.role === 'user' ? 120 : 200;
+      return { role: m.role, content: m.content.length > cap ? m.content.slice(0, cap) + '…' : m.content };
+    });
+    return older.concat(h.slice(-RECENT));
   },
 
   /* Forget the conversation — clears the memory a follow-up would draw on. */
@@ -494,9 +515,18 @@ const Chat = {
        own bare words — "tell me more" on its own finds nothing useful. */
     const metaOnly = isMetaOnly(question);
     if (!followUp) this.topic = question.slice(0, 120);
-    let searchQuery = (followUp && this.topic && !metaOnly)
-      ? question + ' ' + this.topic
-      : question;
+    /* A follow-up searches for what was just being discussed. The last thing
+       the visitor actually asked is a better anchor than the topic that
+       started the thread, and the remembered place pins it to the right
+       city — without them "Why not" was searched verbatim and came back
+       with tutoring sites. */
+    let searchQuery = question;
+    if (followUp && !metaOnly) {
+      const lastAsk = [...this.history].reverse().find(m => m.role === 'user');
+      const anchor = [(lastAsk && lastAsk.content) || this.topic, this.place]
+        .filter(Boolean).join(' ').slice(0, 160);
+      if (anchor) searchQuery = question + ' ' + anchor;
+    }
 
     /* A follow-up retrieves on the topic it is continuing, not on its own
        bare words: "how is it different from maverick" alone retrieves nothing
@@ -550,9 +580,13 @@ const Chat = {
        papers, its follow-ups still get the papers — otherwise the model is
        left to answer "which venue was it published in" from web results, and
        a search for those words lands on Marvel and Top Gun. */
+    /* Two content words minimum on the coverage path. "why not" is one word
+       the corpus happens to contain ("not"), which scored coverage 1.0 and
+       pulled Valency's papers into a conversation about snow. A question that
+       genuinely names a document still grounds on one word, via namesDoc. */
     const groundedNow = hits.length > 0 && (
       RAG.namesDoc(topical) ||
-      (known.length > 0 && coverage >= 0.7 && docMatch(hits, topical, known))
+      (known.length >= 2 && coverage >= 0.7 && docMatch(hits, topical, known))
     );
     if (!followUp) this.topicGrounded = groundedNow;
     const grounded = followUp ? (this.topicGrounded && hits.length > 0) : groundedNow;

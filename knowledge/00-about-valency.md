@@ -148,6 +148,10 @@ The site is a terminal. Visitors type slash-commands:
   reads it. Matches on words, so `/show maverick`, `/show the maverick paper`
   and `/show siem rules` all work, as does `/show the file I just uploaded`
 - `/forget` — remove an uploaded document (`/forget all` clears them)
+- `/memory` (or `/mem`) — show exactly what the assistant is carrying from this
+  conversation: the exchanges it holds, the place and topic it inferred, your
+  uploaded documents, and the token load
+- `/clear-memory` (or `/reset`) — forget the conversation; uploaded documents stay
 - `/restart` (or `/reboot`) — a full restart: clears the screen, forgets the
   conversation and every uploaded document, and boots fresh
 - `/fun` — suggested questions worth asking

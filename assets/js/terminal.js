@@ -467,6 +467,20 @@ const Modal = {
 /* ============================================================
    Commands
    ============================================================ */
+/* Shared by /clear-memory and /reset — the same act under two names, because
+   people reach for both. Documents are untouched: /forget and /restart do
+   those. */
+function forgetConversation(t) {
+  const n = (typeof Chat !== 'undefined') ? Chat.reset() : 0;
+  const pairs = n / 2 | 0;
+  t.print(pairs
+    ? 'memory cleared \u2014 ' + pairs + ' exchange' + (pairs === 1 ? '' : 's') + ' forgotten.'
+    : 'nothing to clear \u2014 no conversation yet.', 'ok');
+  t.print('The assistant no longer has the earlier messages, the place, or the topic as context. '
+        + 'Uploaded documents are untouched.', 'dim sp');
+  updateMem();
+}
+
 const ALIASES = {
   cyber: 'cybersecurity-news', sec: 'cybersecurity-news', security: 'cybersecurity-news',
   threats: 'cybersecurity-news', infosec: 'cybersecurity-news',
@@ -475,7 +489,8 @@ const ALIASES = {
   hello: 'contact', email: 'contact', hire: 'contact',
   docs: 'sources', kb: 'sources',
   bio: 'about', me: 'about',
-  cls: 'clear', reboot: 'restart', 'new': 'reset', forget_chat: 'reset', man: 'help', '?': 'help',
+  cls: 'clear', reboot: 'restart', 'new': 'reset', mem: 'memory', remember: 'memory',
+  clearmemory: 'clear-memory', 'forget-memory': 'clear-memory', forget_chat: 'reset', man: 'help', '?': 'help',
   quit: 'exit', q: 'exit',
 };
 
@@ -747,15 +762,75 @@ const COMMANDS = {
     run(_, t) { printBanner(t); }
   },
 
+  'memory': {
+    desc: 'what the assistant remembers from this conversation',
+    run(_, t) {
+      if (typeof Chat === 'undefined') { t.print('assistant not loaded yet.', 'err'); return; }
+      const h = Chat.history;
+      const pairs = h.length / 2 | 0;
+      const tok = Chat.memTokens ? Chat.memTokens() : 0;
+
+      t.print('CONVERSATION MEMORY', 'hd');
+      t.print('held        ' + (pairs || 'no') + ' exchange' + (pairs === 1 ? '' : 's')
+            + '  \u00b7  ~' + tok + ' of 8000 tokens per minute'
+            + '  \u00b7  clears itself past ' + RESET_TOKENS, 'dim');
+
+      /* State the assistant derived rather than was told — this is the part
+         that decides how a follow-up is answered, and it is invisible
+         everywhere else. */
+      const derived = [];
+      if (Chat.place) derived.push(['place  ', Chat.place, 'where "here" and "nearby" resolve to']);
+      if (Chat.topic) derived.push(['topic  ', Chat.topic.slice(0, 60), 'what a follow-up is taken to be about']);
+      if (Chat.topic) derived.push(['sourced', Chat.topicGrounded ? "Valency's documents" : 'web search and general knowledge',
+                                    'where follow-ups on this topic look']);
+      if (derived.length) {
+        t.gap();
+        t.print('INFERRED', 'hd');
+        derived.forEach(([k, v, why]) => t.print('  ' + k + '  ' + v + '   \u2014 ' + why, 'dim'));
+      }
+
+      if (!h.length) {
+        t.gap();
+        t.print('No messages yet \u2014 nothing is being carried into the next answer.', 'dim sp');
+      } else {
+        t.gap();
+        t.print('MESSAGES', 'hd');
+        for (let i = 0; i < h.length; i += 2) {
+          const q = h[i], a = h[i + 1];
+          const n = String(i / 2 + 1).padStart(2, ' ');
+          const cut = (m, len) => {
+            const one = String((m && m.content) || '').replace(/\s+/g, ' ');
+            return one.length > len ? one.slice(0, len) + '\u2026' : one;
+          };
+          t.print(n + '  you        ' + cut(q, 110), '');
+          if (a) t.print('    assistant  ' + cut(a, 150), 'dim');
+        }
+      }
+
+      const up = (typeof RAG !== 'undefined' ? RAG.docs.filter(d => d.session) : []);
+      if (up.length) {
+        t.gap();
+        t.print('YOUR DOCUMENTS', 'hd');
+        up.forEach(d => t.print('  ' + d.file + '  \u00b7  ' + d.chunks +
+          (d.chunks === 1 ? ' chunk' : ' chunks') + '  \u2014 searched before the web and the knowledge base', 'dim'));
+      }
+
+      t.gap();
+      t.print('Not all of this is sent with every question: older exchanges go only when they '
+            + 'share wording with what you ask, and passages are cut to the sentences that answer it.', 'dim');
+      t.print('/clear-memory forgets the conversation \u00b7 /forget removes a document \u00b7 '
+            + '/restart wipes both.', 'dim sp');
+    }
+  },
+
+  'clear-memory': {
+    desc: 'forget the conversation (documents stay)',
+    run(_, t) { forgetConversation(t); }
+  },
+
   'reset': {
     desc: 'forget the conversation history',
-    run(_, t) {
-      const n = (typeof Chat !== 'undefined') ? Chat.reset() : 0;
-      t.print(n ? 'conversation reset — ' + (n / 2 | 0) + ' exchange' + ((n / 2 | 0) === 1 ? '' : 's') + ' forgotten.'
-                : 'nothing to reset — no conversation yet.', 'ok');
-      t.print('The assistant no longer has the earlier messages as context.', 'dim sp');
-      updateMem();
-    }
+    run(_, t) { forgetConversation(t); }
   },
 
   'clear': {

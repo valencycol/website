@@ -288,6 +288,57 @@ function docMatch(hits, topical, known) {
    generalities ("this thesis will stretch your thinking"), and cannot be rate
    limited. Anything phrased differently still goes to the model, which has the
    same file in its corpus. */
+/* Context pruning.
+
+   A retrieved chunk is ~1100 characters of paper, of which two or three
+   sentences usually carry the answer and the rest is surrounding prose. The
+   model pays for all of it, and on an 8000-tokens-per-minute budget that is
+   what makes the next question wait. Pruning scores each sentence by overlap
+   with the question, keeps the best ones inside a character budget, and
+   restores their original order so the passage still reads correctly. Elided
+   runs are marked, so the model can see something was cut rather than reading
+   two unrelated sentences as consecutive. */
+function sentencesOf(text) {
+  return String(text).split(/(?<=[.!?:])\s+|\n+/).map(x => x.trim()).filter(Boolean);
+}
+
+function wordsOf(text) {
+  return new Set(String(text).toLowerCase().match(/[a-z0-9]+/g) || []);
+}
+
+function prunePassage(text, terms, maxChars) {
+  if (!text || text.length <= maxChars) return text;
+  const sents = sentencesOf(text);
+  if (sents.length < 2) return text.slice(0, maxChars);
+  const scored = sents.map((sent, i) => {
+    const w = wordsOf(sent);
+    let n = 0;
+    for (const t of terms) if (w.has(t)) n++;
+    return { i, sent, n };
+  });
+  /* Best first, ties by original position; then fill the budget. A sentence
+     with no overlap is taken only to seed a passage that would be empty. */
+  scored.sort((a, b) => b.n - a.n || a.i - b.i);
+  const keep = [];
+  let len = 0;
+  for (const x of scored) {
+    if (!x.n && keep.length) continue;
+    if (len + x.sent.length + 1 > maxChars) continue;
+    keep.push(x);
+    len += x.sent.length + 1;
+  }
+  if (!keep.length) return text.slice(0, maxChars);
+  keep.sort((a, b) => a.i - b.i);
+  let out = '';
+  let prev = -1;
+  for (const x of keep) {
+    if (prev >= 0 && x.i > prev + 1) out += '[…] ';
+    out += x.sent + ' ';
+    prev = x.i;
+  }
+  return out.trim();
+}
+
 const QUICK_DOC = '06-quick-answers.md';
 let QUICK_CACHE = null;
 
@@ -422,7 +473,7 @@ function classify(query) {
 const TPM_LIMIT   = 8000;
 const SYS_TOKENS  = 560;
 const OUT_TOKENS  = 800;
-const RESET_TOKENS = 2400;   // reset the conversation once its load passes this
+const RESET_TOKENS = 3000;   // reset the conversation once its load passes this
 
 const Chat = {
   history: [],
@@ -438,7 +489,10 @@ const Chat = {
   /* Estimated tokens this conversation forces into every request: the system
      prompt, the compacted history, and the reserved output. */
   memTokens() {
-    const histChars = this.compactHistory().reduce((n, m) => n + (m.content || '').length, 0);
+    /* The conversation actually being held, not the pruned copy that gets
+       sent — pruning depends on the question, which isn't known yet, and a
+       gauge that reads lower than the memory it represents would reset late. */
+    const histChars = this.history.reduce((n, m) => n + (m.content || '').length, 0);
     return SYS_TOKENS + OUT_TOKENS + Math.ceil(histChars / 4);
   },
 
@@ -446,18 +500,33 @@ const Chat = {
      per-minute token budget. Recent exchanges go verbatim (follow-ups lean on
      them); older ones are truncated to an excerpt — enough to keep the gist,
      a fraction of the size. The worker enforces a hard cap on top of this. */
-  compactHistory() {
-    /* The last two exchanges go verbatim — follow-ups lean on them — and
-       everything older is cut to an excerpt. Sending the whole transcript is
-       what made a single question cost most of the minute's token budget. */
-    const RECENT = 4;
+  /* Prune the transcript against the question being asked. The most recent
+     exchange always survives — a follow-up is about exactly that — and older
+     exchanges are kept only when they share vocabulary with the question, and
+     then only as an excerpt. Earlier this sent the whole transcript every
+     time, which was most of the weight of a request. */
+  compactHistory(question) {
     const h = this.history;
+    const RECENT = 2;
     if (h.length <= RECENT) return h.slice();
-    const older = h.slice(0, -RECENT).map(m => {
-      const cap = m.role === 'user' ? 120 : 200;
-      return { role: m.role, content: m.content.length > cap ? m.content.slice(0, cap) + '…' : m.content };
-    });
-    return older.concat(h.slice(-RECENT));
+    const recent = h.slice(-RECENT);
+    const older = h.slice(0, -RECENT);
+    const qw = new Set(String(question || '').toLowerCase().match(/[a-z0-9]{4,}/g) || []);
+    const kept = [];
+    for (let i = 0; i < older.length; i += 2) {
+      const pair = older.slice(i, i + 2);
+      if (!qw.size) continue;
+      const words = wordsOf(pair.map(m => m.content).join(' '));
+      let overlap = 0;
+      for (const w of qw) if (words.has(w)) overlap++;
+      if (overlap < 1) continue;
+      for (const m of pair) {
+        const cap = m.role === 'user' ? 120 : 220;
+        kept.push({ role: m.role,
+          content: m.content.length > cap ? m.content.slice(0, cap) + '…' : m.content });
+      }
+    }
+    return kept.concat(recent);
   },
 
   /* Forget the conversation — clears the memory a follow-up would draw on. */
@@ -604,10 +673,15 @@ const Chat = {
        question. Sending Valency's bio alongside "write a prime sieve" is
        noise the model has to ignore, and it makes the answer's provenance
        ambiguous — the label the visitor sees should match what was sent. */
+    /* Terms the pruner scores against: the question's own words plus the
+       corpus vocabulary it matched, so a chunk keeps the sentences about the
+       subject rather than its opening boilerplate. */
+    const pruneTerms = new Set([...wordsOf(retrievalQ), ...known]);
     const context = grounded
       ? hits.map((h, i) =>
           '[' + (i + 1) + '] ' + (h.c.title || h.c.doc) +
-          (h.c.heading ? ' \u203a ' + h.c.heading : '') + '\n' + h.c.text
+          (h.c.heading ? ' \u203a ' + h.c.heading : '') + '\n' +
+          prunePassage(h.c.text, pruneTerms, 320)
         ).join('\n\n---\n\n')
       : '';
 
@@ -627,7 +701,8 @@ const Chat = {
     const uploads = upHits.length
       ? upHits.map((h, i) =>
           '[' + (i + 1) + '] ' + (h.c.title || h.c.doc) +
-          (h.c.heading ? ' \u203a ' + h.c.heading : '') + '\n' + h.c.text
+          (h.c.heading ? ' \u203a ' + h.c.heading : '') + '\n' +
+          prunePassage(h.c.text, pruneTerms, 520)
         ).join('\n\n---\n\n')
       : '';
 
@@ -652,7 +727,7 @@ const Chat = {
       res = await fetch(CHAT_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, context, uploads, allowWeb: !metaOnly, searchQuery, place: searchPlace, history: this.compactHistory(),
+        body: JSON.stringify({ question, context, uploads, allowWeb: !metaOnly, searchQuery, place: searchPlace, history: this.compactHistory(question),
                                pass: (typeof Gate !== 'undefined' ? Gate.pass : '') }),
       });
     } catch (e) {

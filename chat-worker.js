@@ -519,6 +519,45 @@ function mime(from, to, subject, body) {
    empties on any failure — a search that fell over must not sink the answer;
    gpt-oss just falls back to its own knowledge. Result URLs are scheme-checked
    before they are ever handed to the browser as links. */
+/* Same sentence-level pruning the browser applies to retrieved passages, for
+   search results. A LangSearch summary is often a page's worth of prose whose
+   relevant part is one sentence; the rest is navigation copy and boilerplate
+   the model still pays for. Results with no overlap at all are dropped
+   outright — they are the ones that produce answers about a different
+   subject. */
+function pruneText(text, terms, maxChars) {
+  const t = String(text || '').replace(/\s+/g, ' ').trim();
+  if (!t) return '';
+  if (t.length <= maxChars) return t;
+  const sents = t.split(/(?<=[.!?:])\s+/).map(x => x.trim()).filter(Boolean);
+  if (sents.length < 2) return t.slice(0, maxChars);
+  const scored = sents.map((sent, i) => {
+    const w = new Set(sent.toLowerCase().match(/[a-z0-9]+/g) || []);
+    let n = 0;
+    for (const term of terms) if (w.has(term)) n++;
+    return { i, sent, n };
+  });
+  scored.sort((a, b) => b.n - a.n || a.i - b.i);
+  const keep = [];
+  let len = 0;
+  for (const x of scored) {
+    if (!x.n && keep.length) continue;
+    if (len + x.sent.length + 1 > maxChars) continue;
+    keep.push(x);
+    len += x.sent.length + 1;
+  }
+  if (!keep.length) return t.slice(0, maxChars);
+  keep.sort((a, b) => a.i - b.i);
+  let out = '';
+  let prev = -1;
+  for (const x of keep) {
+    if (prev >= 0 && x.i > prev + 1) out += '[…] ';
+    out += x.sent + ' ';
+    prev = x.i;
+  }
+  return out.trim();
+}
+
 async function webSearch(query, env, place) {
   /* Scope the search to the conversation's city when the query implies a
      location but doesn't name one ("events this weekend" → "... Linköping"),
@@ -544,15 +583,24 @@ async function webSearch(query, env, place) {
     const data = await r.json();
     const items = ((data.data || {}).webPages || {}).value || [];
 
+    const terms = new Set((query.toLowerCase().match(/[a-z0-9]{3,}/g) || []));
     const sources = [];
     const blocks = [];
     for (const it of items.slice(0, 5)) {
       const url = String(it.url || '');
       if (!/^https:\/\//i.test(url)) continue;            // https links only
       const title = String(it.name || it.displayUrl || url).slice(0, 150);
-      const text = String(it.summary || it.snippet || '').replace(/\s+/g, ' ').trim().slice(0, 700);
+      const raw = String(it.summary || it.snippet || '');
+      const text = pruneText(raw, terms, 380);
+      /* No word in common with the question — this is the result that answers
+         about somebody else's Iceman. Keep it only if nothing better came
+         back, and never let it into the block. */
+      const hasOverlap = /[a-z0-9]/.test(text) &&
+        [...terms].some(t => text.toLowerCase().includes(t));
+      if (!hasOverlap && blocks.length >= 2) continue;
       sources.push({ title, url });
       blocks.push('[' + sources.length + '] ' + title + '\n' + text + '\n' + url);
+      if (blocks.length >= 4) break;
     }
     return { context: blocks.join('\n\n---\n\n'), sources };
   } catch (e) {

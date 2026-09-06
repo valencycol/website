@@ -333,6 +333,21 @@ const Chat = {
      while the model is still reasoning and nothing is renderable yet.
      onStatus(n, info) also fires with { waiting: seconds } while a rate
      limit is being waited out. Returns { text, cites, grounded } or throws. */
+  /* Compact the history before sending so a long chat can't blow the model's
+     per-minute token budget. Recent exchanges go verbatim (follow-ups lean on
+     them); older ones are truncated to an excerpt — enough to keep the gist,
+     a fraction of the size. The worker enforces a hard cap on top of this. */
+  compactHistory() {
+    const RECENT = 6;                      // last 3 exchanges, full
+    const h = this.history;
+    if (h.length <= RECENT) return h.slice();
+    const older = h.slice(0, -RECENT).map(m => {
+      const cap = m.role === 'user' ? 140 : 240;
+      return { role: m.role, content: m.content.length > cap ? m.content.slice(0, cap) + '…' : m.content };
+    });
+    return older.concat(h.slice(-RECENT));
+  },
+
   /* Forget the conversation — clears the memory a follow-up would draw on. */
   reset() { const n = this.history.length; this.history = []; this.place = ''; return n; },
 
@@ -361,7 +376,7 @@ const Chat = {
     const named = question.match(PLACE_CUE);
     if (named) this.place = named[1].trim().replace(/[.?!,]+$/, '');
     const searchPlace = (!named && LOC_IMPLICIT.test(question) && this.place) ? this.place : '';
-    const hits = RAG.search(question, 6);
+    const hits = RAG.search(question, 5);
     const { topical, known } = RAG.anchors(question);
 
     /* The corpus is consulted first and always. When it has something
@@ -436,7 +451,7 @@ const Chat = {
       res = await fetch(CHAT_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, context, allowWeb: !followUp, place: searchPlace, history: this.history.slice(-2 * HISTORY_EXCHANGES),
+        body: JSON.stringify({ question, context, allowWeb: !followUp, place: searchPlace, history: this.compactHistory(),
                                pass: (typeof Gate !== 'undefined' ? Gate.pass : '') }),
       });
     } catch (e) {

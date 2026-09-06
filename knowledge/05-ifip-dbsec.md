@@ -1,5 +1,7 @@
 ## Improving SIEM Rules Using Transformer-Based Rule Evasion Detection and Attribution
 
+**Venue:** Published at IFIP DBSEC 2026 (the IFIP WG 11.3 Conference on Data and Applications Security and Privacy). Publication venue: IFIP DBSEC 2026. Year: 2026.
+
 Erik Nordström1(B), Hannes Widéen1, Valency Oscar Colaco2 , [URL 🔗](http://orcid.org/0000-0001-6405-4794)
 
 and Simin Nadjm-Tehrani2

@@ -1,5 +1,7 @@
 ## Fast Evasion Detection & Alert Management in Tree-Ensemble-Based Intrusion Detection Systems
 
+**Venue:** Published at IEEE ICTAI 2024 (the IEEE International Conference on Tools with Artificial Intelligence). Publication venue: IEEE ICTAI 2024. Year: 2024.
+
 Valency Oscar Colaco
 
 Link¨oping University, Sweden valency.colaco@liu.se

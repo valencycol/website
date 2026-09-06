@@ -70,6 +70,7 @@ Valency's work sits at the intersection of **adversarial machine learning** and
 
 ### 2026 — Improving SIEM Rules using Transformer-Based Rule Evasion Detection and Attribution
 - **Type:** Conference paper
+- **Venue:** IFIP DBSEC 2026 (the IFIP WG 11.3 Conference on Data and Applications Security and Privacy)
 - **Authors:** Erik Nordström · Hannes Widén · Valency Oscar Colaco · Simin Nadjm-Tehrani
 - **Link:** https://link.springer.com/chapter/10.1007/978-3-032-33260-8_5
 - **Summary:** A transformer-based approach that detects SIGMA rule evasions
@@ -91,6 +92,7 @@ Valency's work sits at the intersection of **adversarial machine learning** and
 
 ### 2025 — Real-Time Evasion Detection in Tree Ensemble Automotive Intrusion Detection Systems
 - **Type:** Conference paper
+- **Venue:** IEEE VNC 2025 (the IEEE Vehicular Networking Conference)
 - **Authors:** Valency Oscar Colaco · Simin Nadjm-Tehrani
 - **Link:** https://ieeexplore.ieee.org/document/11054177
 - **Summary:** Introduces Maverick. Identical detection accuracy to OC-Score
@@ -99,6 +101,7 @@ Valency's work sits at the intersection of **adversarial machine learning** and
 
 ### 2024 — Fast Evasion Detection & Alert Management in Tree-Ensemble-Based Intrusion Detection Systems
 - **Type:** Conference paper
+- **Venue:** IEEE ICTAI 2024 (the IEEE International Conference on Tools with Artificial Intelligence)
 - **Authors:** Valency Oscar Colaco · Simin Nadjm-Tehrani
 - **Link:** https://ieeexplore.ieee.org/document/10849397
 - **Summary:** Introduces Iceman. >98% detection accuracy, 5–115× lower latency
@@ -106,6 +109,7 @@ Valency's work sits at the intersection of **adversarial machine learning** and
 
 ### 2023 — Formal Verification of Tree Ensembles against Real-World Composite Geometric Perturbations
 - **Type:** Workshop paper (SafeAI)
+- **Venue:** SafeAI@AAAI 2023 (the AAAI Workshop on Artificial Intelligence Safety)
 - **Authors:** Valency Oscar Colaco · Simin Nadjm-Tehrani
 - **Link:** https://ceur-ws.org/Vol-3381/38.pdf
 - **Summary:** Extends VoTE to verify tree ensembles against composite

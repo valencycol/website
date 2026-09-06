@@ -1,5 +1,7 @@
 ## Formal Verification of Tree Ensembles against Real-World Composite Geometric Perturbations
 
+**Venue:** Published at SafeAI@AAAI 2023 (the AAAI Workshop on Artificial Intelligence Safety). Publication venue: SafeAI@AAAI 2023. Year: 2023.
+
 Valency Oscar Colaco1,∗, Simin Nadjm-Tehrani1
 
 1Department ofComputer and Information Science, Linköping University, Sweden

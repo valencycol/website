@@ -1,5 +1,7 @@
 ## Real-Time Evasion Detection in Tree Ensemble Automotive Intrusion Detection Systems
 
+**Venue:** Published at IEEE VNC 2025 (the IEEE Vehicular Networking Conference). Publication venue: IEEE VNC 2025. Year: 2025.
+
 Valency Oscar Colaco
 
 Link¨oping University, Sweden valency.colaco@liu.se

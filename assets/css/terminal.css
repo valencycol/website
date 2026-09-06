@@ -509,6 +509,7 @@ body.booting{overflow:hidden}
 .paper-card h3 a{color:var(--ink)}
 .paper-card h3 a:hover{color:var(--acc)}
 .paper-year,.paper-type{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase}
+.paper-venue{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.06em;color:var(--acc2);border:1px solid var(--stroke);border-radius:999px;padding:1px 7px;white-space:nowrap}
 .paper-abstract,.paper-authors{font-size:13.5px;line-height:1.6}
 .paper-link{font-size:12px;color:var(--acc)}
 input,textarea{

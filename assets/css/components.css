@@ -37,6 +37,7 @@
 .paper-meta{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
 .paper-year{font-family:var(--font-mono);font-weight:700;font-size:.78rem;color:var(--ink);padding:.18rem .6rem;border-radius:999px;border:1px solid var(--stroke);background:rgba(255,255,255,.06)}
 .paper-type{font-size:.74rem;letter-spacing:.04em;text-transform:uppercase;color:var(--ink3);font-weight:700}
+.paper-venue{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.04em;color:var(--acc2);border:1px solid var(--stroke);border-radius:999px;padding:.16rem .55rem;white-space:nowrap}
 .paper-card h3{font-family:var(--font-display);font-size:1.2rem;font-weight:700;line-height:1.35;letter-spacing:-.01em}
 .paper-card h3 a{text-decoration:none}
 .paper-card h3 a:hover{text-decoration:underline;text-underline-offset:3px}

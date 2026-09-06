@@ -11,6 +11,7 @@
  * every check here is deterministic browser-side behaviour.
  */
 import { chromium } from 'playwright';
+import fs from 'fs';
 
 const BASE = process.env.BASE || 'http://localhost:8080/';
 let failures = 0;
@@ -19,6 +20,47 @@ const pass = (name, ok, detail = '') => {
   console.log(`  ${ok ? 'pass' : 'FAIL'}  ${name}${detail ? '  — ' + detail : ''}`);
 };
 const section = t => console.log(`\n${t}`);
+
+/* ------------------------------------------------ Gemini stream translation
+   The worker translates Gemini's SSE into the OpenAI-shaped frames the client
+   already parses. An early version read one chunk per pull and returned having
+   emitted nothing, which stalled forever on a real network — so the sizes
+   below deliberately fragment the stream. */
+section('gemini: streaming translation survives fragmentation');
+{
+  const src = fs.readFileSync('chat-worker.js', 'utf8');
+  const fn = src.slice(src.indexOf('function geminiToOpenAI'), src.indexOf('/* Groq availability'));
+  const geminiToOpenAI = new Function(fn + '\nreturn geminiToOpenAI;')();
+  const frames = [
+    'data: {"candidates":[{"content":{"parts":[{"text":"Iceman is "}],"role":"model"}}]}', '',
+    'data: {"candidates":[{"content":{"parts":[{"text":"a fast evasion detector."}],"role":"model"}}]}', '',
+    ': keep-alive', '',
+    'data: {"candidates":[{"finishReason":"STOP","content":{"parts":[],"role":"model"}}]}', '',
+  ].join('\n') + '\n';
+  for (const size of [1, 5, 17, 1024]) {
+    const bytes = new TextEncoder().encode(frames);
+    const source = new ReadableStream({ start(c) {
+      for (let i = 0; i < bytes.length; i += size) c.enqueue(bytes.slice(i, i + size));
+      c.close();
+    } });
+    const rd = geminiToOpenAI(source).getReader();
+    const dec = new TextDecoder();
+    let text = '', hung = false;
+    const timer = setTimeout(() => { hung = true; rd.cancel(); }, 5000);
+    try { for (;;) { const { done, value } = await rd.read(); if (done) break; text += dec.decode(value, { stream: true }); } }
+    catch (e) { /* cancelled */ }
+    clearTimeout(timer);
+    let content = '', finished = false;
+    for (const line of text.split('\n')) {
+      if (!line.startsWith('data: ')) continue;
+      const d = line.slice(6);
+      if (d === '[DONE]') { finished = true; continue; }
+      try { content += JSON.parse(d).choices[0].delta.content || ''; } catch (e) {}
+    }
+    pass(`reassembles at ${size}-byte chunks`,
+      !hung && finished && content === 'Iceman is a fast evasion detector.', hung ? 'HUNG' : content);
+  }
+}
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1200, height: 900 } });
@@ -177,6 +219,34 @@ await page.waitForTimeout(1200);
 const after = await page.evaluate(() => RAG.chunks.filter(c => !c.session).length);
 pass('/restart keeps the knowledge base', before === after, `${before} -> ${after}`);
 pass('/restart clears the conversation', (await page.evaluate(() => Chat.history.length)) === 0);
+
+/* ------------------------------------------------------- provider lights
+   Which model answered changes the token budget by 30x, so a silent fallback
+   from Gemini to Groq has to be visible. */
+section('provider lights');
+const lights = await page.evaluate(async () => {
+  const read = () => ({
+    gemHidden: document.querySelector('#prov-gemini').hidden,
+    gem: document.querySelector('#prov-gemini').className,
+    groq: document.querySelector('#prov-groq').className,
+  });
+  ProviderLights.primary = 'groq';
+  ProviderLights.until = { gemini: 0, groq: 0 };
+  ProviderLights.els.gemini.hidden = true;
+  ProviderLights.paint();
+  const noKey = read();
+  ProviderLights.els.gemini.hidden = false;
+  ProviderLights.active('gemini');
+  const onGemini = read();
+  ProviderLights.limited('gemini', 45);
+  ProviderLights.active('groq');
+  const fellBack = read();
+  return { noKey, onGemini, fellBack };
+});
+pass('gemini hidden when not configured', lights.noKey.gemHidden && /\bon\b/.test(lights.noKey.groq));
+pass('gemini lit when it answers', /\bon\b/.test(lights.onGemini.gem) && !/\bon\b/.test(lights.onGemini.groq));
+pass('fallback shows gemini limited and groq lit',
+  /limited/.test(lights.fellBack.gem) && /\bon\b/.test(lights.fellBack.groq));
 
 /* ------------------------------------------------------------ degradation */
 section('degradation');

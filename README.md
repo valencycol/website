@@ -58,6 +58,25 @@ Only needed if you want the workers to **auto-deploy from CI** on push
 
 ---
 
+## Model providers
+
+The worker prefers Gemini and falls back to Groq. Only `GROQ_API_KEY` is
+required; adding `GEMINI_API_KEY` raises the ceiling considerably:
+
+| | free tier | questions/min at the current prompt size |
+|---|---|---|
+| Groq (`openai/gpt-oss-20b`) | 8,000 tokens/min | ~2.7 |
+| Gemini (`gemini-2.5-flash`) | 250,000 tokens/min | ~83 |
+
+```sh
+wrangler secret put GEMINI_API_KEY --name colaco-chat   # from aistudio.google.com/apikey
+```
+
+Groq is kept wired rather than replaced: Gemini's free tier also caps by day
+(250–1,000 requests), so the site slows down at the cap instead of stopping.
+The header shows which provider answered — lit green — and pulses red on the
+one that is rate limited.
+
 ## Rebuilding the semantic index
 
 The assistant matches rephrased questions with static embeddings from

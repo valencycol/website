@@ -984,7 +984,7 @@ const Chat = {
       if (!retried) {
         /* Light the GROQ indicator red immediately, rather than waiting for
            the next background poll to notice. */
-        if (typeof GroqLight !== 'undefined') GroqLight.limited(wait);
+        if (typeof ProviderLights !== 'undefined') ProviderLights.limited('groq', wait);
         if (onStatus) onStatus(0, { waiting: wait });
         await new Promise(r => setTimeout(r, wait * 1000));
         return this.ask(question, onToken, onStatus, true);   // one retry, then stop
@@ -1037,6 +1037,12 @@ async function readSSE(res, onToken, onStatus) {
         const obj = JSON.parse(payload);
         // Custom frame the worker prepends when it answered from a web
         // search — not a Groq frame. Capture the links and move on.
+        if (obj.type === 'provider' && obj.provider) {
+          /* The worker names whichever model actually answered, so a silent
+             fallback from Gemini to Groq is visible in the header. */
+          if (typeof ProviderLights !== 'undefined') ProviderLights.active(obj.provider);
+          continue;
+        }
         if (obj.type === 'sources' && Array.isArray(obj.sources)) {
           for (const src of obj.sources) {
             if (src && typeof src.url === 'string' && /^https:\/\//i.test(src.url)) {

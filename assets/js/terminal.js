@@ -55,37 +55,57 @@ const Spinner = {
   },
 };
 
-/* Groq availability light. A background check keeps it honest: the worker
-   records any 429 in KV and /status reports it — one KV read, no call to Groq
-   — so the light reflects the account's real state rather than only what this
-   browser has happened to see. Polling pauses on a hidden tab. */
-const GroqLight = {
-  el: null, until: 0,
+/* Provider lights. Which model answered is worth showing: Gemini's free tier
+   allows 250,000 tokens a minute and Groq's allows 8,000, so a silent fallback
+   from one to the other is the difference between the assistant keeping up and
+   rate limiting. The worker names the provider in a frame ahead of each answer,
+   and /status reports both — one KV read, no model call — so a limit hit by any
+   visitor shows for everyone. */
+const ProviderLights = {
+  els: null, until: { gemini: 0, groq: 0 }, primary: 'groq',
 
   init() {
-    this.el = $('#groq');
-    if (!this.el) return;
-    this.paint();
+    this.els = {
+      gemini: $('#prov-gemini'),
+      groq: $('#prov-groq'),
+    };
+    if (!this.els.groq) return;
     this.poll();
     setInterval(() => { if (document.visibilityState === 'visible') this.poll(); }, 30000);
-    setInterval(() => { if (this.until) this.paint(); }, 1000);
+    setInterval(() => this.paint(), 1000);
     addEventListener('online', () => this.poll());
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') this.poll();
     });
   },
 
-  limited(seconds) { this.until = Date.now() / 1000 + Math.max(1, seconds || 0); this.paint(); },
-  clear() { this.until = 0; this.paint(); },
+  /* Called when an answer names the provider that produced it. */
+  active(name) {
+    if (!this.els || !this.els[name]) return;
+    this.primary = name;
+    this.paint();
+  },
+
+  limited(name, seconds) {
+    this.until[name] = Date.now() / 1000 + Math.max(1, seconds || 0);
+    this.paint();
+  },
 
   paint() {
-    if (!this.el) return;
-    const left = Math.max(0, Math.ceil(this.until - Date.now() / 1000));
-    if (!left) this.until = 0;
-    this.el.classList.toggle('limited', left > 0);
-    this.el.title = left > 0
-      ? 'Groq is rate limited \u2014 about ' + left + 's left. Every command still works.'
-      : 'Groq is answering normally.';
+    if (!this.els) return;
+    for (const name of ['gemini', 'groq']) {
+      const el = this.els[name];
+      if (!el) continue;
+      const left = Math.max(0, Math.ceil(this.until[name] - Date.now() / 1000));
+      if (!left) this.until[name] = 0;
+      el.classList.toggle('limited', left > 0);
+      el.classList.toggle('on', left === 0 && this.primary === name);
+      el.title = left > 0
+        ? name + ' is rate limited \u2014 about ' + left + 's left. Every command still works.'
+        : this.primary === name
+          ? name + ' is answering.'
+          : name + ' is configured and standing by.';
+    }
   },
 
   async poll() {
@@ -93,8 +113,17 @@ const GroqLight = {
       const r = await fetch(CHAT_ENDPOINT + 'status', { cache: 'no-store' });
       if (!r.ok) return;
       const d = await r.json();
-      if (d.groq === 'limited') this.limited(d.seconds || 10);
-      else if (Date.now() / 1000 >= this.until) this.clear();   // local 429 wins until it expires
+      const provs = d.providers || {};
+      if (this.els.gemini) this.els.gemini.hidden = !(provs.gemini && provs.gemini.configured);
+      if (d.primary) this.primary = d.primary;
+      for (const name of ['gemini', 'groq']) {
+        const p = provs[name];
+        if (p && p.state === 'limited') this.limited(name, p.seconds || 10);
+        else if (Date.now() / 1000 >= this.until[name]) this.until[name] = 0;
+      }
+      /* Older worker, single provider. */
+      if (!d.providers && d.groq === 'limited') this.limited('groq', d.seconds || 10);
+      this.paint();
     } catch (e) { /* offline, or the worker is unreachable — leave it as it is */ }
   },
 };
@@ -1215,7 +1244,7 @@ function initContact() {
   initCopy();
   initUploads();
   initPageScroll();
-  GroqLight.init();
+  ProviderLights.init();
   initMatrix();
   updateMem();
 

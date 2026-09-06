@@ -62,6 +62,14 @@ const DIGEST_FROM   = 'digest@colaco.se';
 const DIGEST_MAX    = 400;         // questions per email
 
 const GROQ_URL   = 'https://api.groq.com/openai/v1/chat/completions';
+/* Gemini's free tier allows 250,000 tokens a minute against Groq's 8,000, so
+   it leads when a key is configured and Groq becomes the fallback. Groq is
+   kept wired rather than removed: Gemini's free tier caps by DAY as well
+   (250-1000 requests), and a site that stops answering at the cap would be
+   worse than one that slows down. */
+const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/'
+  + GEMINI_MODEL + ':streamGenerateContent?alt=sse';
 const MODEL      = 'openai/gpt-oss-20b';
 
 // Request shape limits. These are the real abuse guard: a scraper cannot use
@@ -221,7 +229,28 @@ export default {
       { role: 'user', content: userMessage },
     ]);
 
-    let upstream;
+    /* Gemini first when configured, Groq when it is not, or when it fails.
+       A daily cap or an outage degrades to the slower provider instead of
+       taking the assistant down. */
+    let provider = 'groq';
+    let upstream = null;
+    if (env.GEMINI_API_KEY) {
+      try {
+        const g = await callGemini(messages, env);
+        if (g.ok && g.body) {
+          provider = 'gemini';
+          upstream = g;
+        } else {
+          if (g.status === 429 && env.CHAT_RL) {
+            ctx.waitUntil(env.CHAT_RL.put('gemini:rl',
+              JSON.stringify({ until: Math.floor(Date.now() / 1000) + 60 }),
+              { expirationTtl: 120 }).catch(() => {}));
+          }
+        }
+      } catch (err) { /* fall through to Groq */ }
+    }
+
+    if (!upstream) {
     try {
       upstream = await fetch(GROQ_URL, {
         method: 'POST',
@@ -245,6 +274,7 @@ export default {
       });
     } catch (err) {
       return json({ error: 'could not reach Groq: ' + err }, 502, cors);
+    }
     }
 
     if (upstream.status === 429) {
@@ -291,11 +321,14 @@ export default {
        URLs to render clickable citations. They ride in front of the Groq
        stream as one custom SSE frame the client recognises and peels off;
        every following frame is Groq's own, passed through untouched. */
-    let outBody = upstream.body;
+    let outBody = provider === 'gemini' ? geminiToOpenAI(upstream.body) : upstream.body;
+    /* One frame in front naming the provider, so the header can light the
+       right one, plus the sources frame when the answer used a web search. */
+    let frame = 'data: ' + JSON.stringify({ type: 'provider', provider }) + '\n\n';
     if (webSources.length) {
-      const frame = 'data: ' + JSON.stringify({ type: 'sources', sources: webSources }) + '\n\n';
-      outBody = prependFrame(frame, upstream.body);
+      frame += 'data: ' + JSON.stringify({ type: 'sources', sources: webSources }) + '\n\n';
     }
+    outBody = prependFrame(frame, outBody);
 
     return new Response(outBody, {
       headers: {
@@ -308,22 +341,98 @@ export default {
   },
 };
 
+/* Gemini speaks a different streaming dialect: contents rather than messages,
+   "model" rather than "assistant", the system prompt hoisted out, and frames
+   shaped {candidates:[{content:{parts:[{text}]}}]}. Rather than teach the
+   browser a second format, its stream is translated into the OpenAI-shaped
+   frames the client already parses, so nothing downstream changes. */
+async function callGemini(messages, env) {
+  const system = messages.find(m => m.role === 'system');
+  const turns = messages.filter(m => m.role !== 'system');
+  while (turns.length && turns[0].role !== 'user') turns.shift();   // must open on a user turn
+  const contents = turns.map(m => ({
+    role: m.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: m.content }],
+  }));
+  const res = await fetch(GEMINI_URL, {
+    method: 'POST',
+    headers: { 'x-goog-api-key': env.GEMINI_API_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents,
+      systemInstruction: system ? { parts: [{ text: system.content }] } : undefined,
+      generationConfig: { temperature: 0.2, maxOutputTokens: MAX_TOKENS_OUT },
+    }),
+  });
+  return res;
+}
+
+function geminiToOpenAI(body) {
+  const dec = new TextDecoder();
+  const enc = new TextEncoder();
+  const reader = body.getReader();
+  let buf = '';
+  return new ReadableStream({
+    /* Keep reading until something is emitted or the source ends. A single
+       read is not enough: a network delivers this stream in fragments, and a
+       fragment often carries no complete line, so a pull that returned having
+       enqueued nothing stalled the whole response. */
+    async pull(controller) {
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) {
+          controller.enqueue(enc.encode('data: [DONE]\n\n'));
+          controller.close();
+          return;
+        }
+        buf += dec.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop() || '';
+        let emitted = false;
+        for (const line of lines) {
+          if (!line.startsWith('data:')) continue;
+          const raw = line.slice(5).trim();
+          if (!raw || raw === '[DONE]') continue;
+          try {
+            const obj = JSON.parse(raw);
+            const parts = (((obj.candidates || [])[0] || {}).content || {}).parts || [];
+            const text = parts.map(p => p.text || '').join('');
+            if (text) {
+              controller.enqueue(enc.encode('data: ' +
+                JSON.stringify({ choices: [{ delta: { content: text } }] }) + '\n\n'));
+              emitted = true;
+            }
+          } catch (e) { /* keep-alive or a partial frame */ }
+        }
+        if (emitted) return;
+      }
+    },
+    cancel(reason) { reader.cancel(reason); },
+  });
+}
+
 /* Groq availability, as last observed. Reports ok when nothing is recorded —
    an unknown state is not an outage, and a red light nobody can explain is
    worse than no light. */
 async function handleStatus(env, cors) {
-  let seconds = 0;
-  if (env.CHAT_RL) {
+  const left = async key => {
+    if (!env.CHAT_RL) return 0;
     try {
-      const raw = await env.CHAT_RL.get('groq:rl');
-      if (raw) {
-        const until = Number((JSON.parse(raw) || {}).until) || 0;
-        seconds = Math.max(0, until - Math.floor(Date.now() / 1000));
-      }
-    } catch (e) { /* treat as available */ }
-  }
-  return json({ groq: seconds > 0 ? 'limited' : 'ok', seconds }, 200,
-              { ...cors, 'Cache-Control': 'no-store' });
+      const raw = await env.CHAT_RL.get(key);
+      if (!raw) return 0;
+      const until = Number((JSON.parse(raw) || {}).until) || 0;
+      return Math.max(0, until - Math.floor(Date.now() / 1000));
+    } catch (e) { return 0; }
+  };
+  const [groq, gemini] = await Promise.all([left('groq:rl'), left('gemini:rl')]);
+  return json({
+    /* Kept flat for the original single-provider client. */
+    groq: groq > 0 ? 'limited' : 'ok', seconds: groq,
+    providers: {
+      gemini: { configured: !!env.GEMINI_API_KEY, state: gemini > 0 ? 'limited' : 'ok', seconds: gemini },
+      groq:   { configured: !!env.GROQ_API_KEY,   state: groq   > 0 ? 'limited' : 'ok', seconds: groq },
+    },
+    primary: env.GEMINI_API_KEY ? 'gemini' : 'groq',
+  }, 200, { ...cors, 'Cache-Control': 'no-store' });
 }
 
 /* Exchange a Turnstile token for a pass.
